@@ -214,6 +214,15 @@ Krapula ei kovene päivien mukaan.
 | **Kylmä** | ei mittaria: hahmo tärisee | nälkä kasvaa nopeammin ja health kuluu |
 | **Nälkä** | ei mittaria: maha kurisee, hahmo näyttää nälkäiseltä | health kuluu; alkoholi nostaa alkoholimittaria tavallista enemmän (tyhjään mahaan) |
 
+### Humala
+
+Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
+
+- **Horjuminen:** ohjaus ei mene aivan suoraan, ja lyönnit menevät joskus ohi.
+- **Rohkeus:** lyönnit ovat kovempia ja kylmä tuntuu vähemmän, mutta poliisit huomaavat pelaajan helpommin.
+- **Näkökenttä:** kuva sumenee ja näkökenttä lyhenee.
+- **Sammuminen:** kun alkoholimittari on täynnä, hahmo sammuu paikalleen. Se lasketaan nukahtamiseksi.
+
 ### Nukahtaminen väsymyksestä
 
 - Kun väsymys on täynnä, pelaaja nukahtaa siihen paikkaan, missä on.
