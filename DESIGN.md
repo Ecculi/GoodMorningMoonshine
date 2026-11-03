@@ -52,13 +52,13 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 - Alue on **Oulun keskustan ruutukaava**: noin kauppatorin ja rannan (luoteessa) sekä rautatieaseman (idässä) välinen alue, etelässä suunnilleen Sepänkadulle asti.
 - Kadut muodostavat kaksi ristikkäistä sarjaa (9 × 7 katua), joten jokaisessa risteyksessä käännytään 90 astetta:
-  - **Lounas–koillinen** (luoteesta kaakkoon, tarkistettu kartasta): Rantakatu, Aleksanterinkatu, Torikatu, Kirkkokatu, Isokatu, Uusikatu, Vaarankatu, Koulukatu, Rautatienkatu
-  - Kanava puistoineen (Otto Karhin puisto, Vaaranpuisto, Lyötynpuisto) kulkee Uusikadun ja Vaarankadun välissä.
+  - **Lounas–koillinen** (luoteesta kaakkoon, tarkistettu kartasta): Rantakatu, Aleksanterinkatu, Torikatu, Kirkkokatu, Isokatu, Uusikatu, Mäkelininkatu, Koulukatu, Rautatienkatu
+  - Kanava puistoineen (Otto Karhin puisto, Vaaranpuisto, Lyötynpuisto) kulkee Uusikadun ja Mäkelininkadun välissä. Vaarankatu on vain lyhyt katu kanavan varressa (ei vielä pelissä).
   - **Luode–kaakko** (koillisesta lounaaseen, tarkistettu kartasta): Asemakatu, Hallituskatu, Pakkahuoneenkatu, Kauppurienkatu (Rotuaari), Saaristonkatu, Albertinkatu, Sepänkatu
-  - Vain idässä, Isokadun/Uusikadun tienoilta alkaen: Linnankatu, Kajaaninkatu ja Heikinkatu (ei vielä pelissä)
+  - Vain idässä, Uusikadun itäpuolella: Kajaaninkatu, Linnankatu ja Heikinkatu (ei vielä pelissä)
 - **Kuvakulma kaduilla:** lounas–koillinen-kaduilla kamera katsoo luoteeseen (oikealle on koilliseen), luode–kaakko-kaduilla koilliseen (oikealle on kaakkoon). Risteyksessä ylös tarkoittaa poispäin kamerasta ja alas kohti kameraa. Siksi aurinko ja varjot kääntyvät kadun mukana.
 - **Rantakadun pohjoispuolella on meri**, ja kartan reunoilla katu päättyy.
-- Katujen järjestys on tiedostossa `scripts/city_map.gd`, jossa sitä on helppo korjata. *Avoinna:* Ojakadun ja Mäkelininkadun paikka sekä vain idässä olevat kadut.
+- Katujen järjestys on tiedostossa `scripts/city_map.gd`, jossa sitä on helppo korjata. *Avoinna:* Ojakadun paikka sekä osittaiset kadut (Vaarankatu, Linnankatu, Kajaaninkatu, Heikinkatu).
 - **Maamerkit:** Kauppatori, kauppahalli, Rotuaari, tuomiokirkko, poliisiasema, rautatieasema, puistot (Snellmanin, Otto Karhin, Franzénin, Vaaranpuisto, Mannerheimin) ja kanava. Meri on luoteessa.
 - Käytetään **oikeita kadunnimiä ja julkisia paikkoja**. **Yritysten nimet** (ravintolat, hotellit, kauppakeskukset) korvataan keksityillä nimillä.
 - **Autoja liikkuu kaduilla tosi harvoin.** Auto tönäisee ja vie healthia, ja humalassa sitä on vaikeampi väistää. **Kävelykadulla (Rotuaari) ei ole autoja lainkaan.**

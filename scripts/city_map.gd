@@ -11,9 +11,9 @@ extends RefCounted
 
 ## Streets running SW–NE, listed from the shore (NW) towards the railway (SE)
 ## (checked against a map). The canal and its parks run between Uusikatu
-## and Vaarankatu. TODO: Mäkelininkatu's place is not known yet.
+## and Mäkelininkatu; Vaarankatu is only a short street along the canal.
 const A_STREETS := ["Rantakatu", "Aleksanterinkatu", "Torikatu", "Kirkkokatu", "Isokatu",
-	"Uusikatu", "Vaarankatu", "Koulukatu", "Rautatienkatu"]
+	"Uusikatu", "Mäkelininkatu", "Koulukatu", "Rautatienkatu"]
 
 ## Streets running NW–SE, listed from SW to NE (checked against a map).
 ## Kauppurienkatu (Rotuaari) lies between Saaristonkatu and Pakkahuoneenkatu.
