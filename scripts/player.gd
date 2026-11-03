@@ -139,6 +139,9 @@ const WRONG_WAY_DIRS := [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0
 	Vector2(0.7071, 0.7071), Vector2(-0.7071, 0.7071), Vector2(0.7071, -0.7071), Vector2(-0.7071, -0.7071)]
 var wrong_way := Vector2.ZERO
 var _wrong_cd := 3.0
+## How long the current wrong way still lasts if the player does not
+## correct it (it wears off by itself).
+var _wrong_left := 0.0
 
 
 func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
@@ -153,6 +156,13 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 			var heavy := clampf((p - WRONG_WAY_PROMILLE) / 1.0, 0.0, 1.0)
 			_wrong_cd = lerpf(6.0, 2.0, heavy) * randf_range(0.7, 1.3)
 			return d
+		# Keep pressing the arrow and it wears off by itself after a while.
+		_wrong_left -= delta
+		if _wrong_left <= 0.0:
+			wrong_way = Vector2.ZERO
+			var heavy2 := clampf((p - WRONG_WAY_PROMILLE) / 1.0, 0.0, 1.0)
+			_wrong_cd = lerpf(6.0, 2.0, heavy2) * randf_range(0.7, 1.3)
+			return d
 		return wrong_way
 	# Running drunk makes it happen much more often.
 	_wrong_cd -= delta * (WRONG_WAY_RUN_MULT if running else 1.0)
@@ -165,6 +175,7 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 			if dd < 0.9 and dd > -0.9:
 				options.append(w)
 		wrong_way = options[randi() % options.size()]
+		_wrong_left = randf_range(1.5, 3.0)
 		return wrong_way
 	return d
 
