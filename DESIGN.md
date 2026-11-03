@@ -213,7 +213,8 @@ Hahmoideat:
 | Taskuvaras | satunnaisesti joko törmää ohimennen ja vie rahaa tai tavaran (esim. puhelimen; takaisin vain kiinni saamalla tai tyrmäämällä, muuten tavara hukkuu taas) tai yrittää näpistää samaan aikaan kuin pelaaja, jolloin syntyy koominen kollegakohtaus ja kumpikin saa jotain |
 | Portsari | seisoo baarin ovella ja arvioi kunnon: päästää sisään vain, jos alkoholia on sopivasti; liian humalaisen tai likaisen käännyttää; ilman kenkiä ei pääse sisään; rajatapauksissa rahalahjus auttaa; väkisin tunkeva heitetään kadulle (vie healthia) |
 | Pappi | auttaja: antaa joskus pullaa tai kahvia kylmissään tai nälkäiselle; paheksuu humalaa mutta auttaa silti; jos häntä lyö, poliisit tulevat erityisen nopeasti |
-| Muut kaupunkityypit | poliitikko, koira… (erikoisuudet keksitään) |
+| Poliitikko | tavallinen vaalityyppi, satunnaisesti jompikumpi: **vaalikoju** (jakaa ilmaista kahvia ja karkkia juttelijoille; lähellä ei saa näpistää tai tapella, koska kamerat ovat paikalla ja poliisit tulevat heti) tai **kättelijä** (ryntää kättelemään eikä hänestä pääse eroon; kättelyn aikana kleptomaani näpistää automaattisesti, usein lompakon sisältöä) |
+| Muut kaupunkityypit | koira… (erikoisuudet keksitään) |
 
 ## Pisteytys
 
