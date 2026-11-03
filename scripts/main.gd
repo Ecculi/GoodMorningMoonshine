@@ -253,7 +253,7 @@ func _check_lost_pickups() -> void:
 			ln.queue_free()
 
 
-## Street signs.
+## Street signs and shop signs.
 ## - Glasses lost: the text is blurry, sharp only right next to the sign.
 ## - Drunk enough: from far away the sign shows random letters; closer, the
 ##   right letters in the wrong order; right at the pole, the real name.

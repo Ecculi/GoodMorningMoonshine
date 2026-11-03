@@ -175,6 +175,7 @@ Krapula ei kovene päivien mukaan.
 - **Ilman silmälaseja** kadunnimikyltit ovat sumeita, ja niistä saa selvää vasta aivan vierestä.
 - **Humalassa** (yli 2 ‰) kyltin kirjaimet menevät sekaisin: kaukaa kyltissä on mitä sattuu kirjaimia, lähempänä oikeat kirjaimet väärässä järjestyksessä ja vasta tolpan vieressä oikea nimi.
 - Jos on humalassa ja lasit hukassa, molemmat efektit ovat voimassa.
+- Sama koskee kauppojen kylttejä (kioski, baari).
 
 ### Aurinko ja aurinkolasit
 

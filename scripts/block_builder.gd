@@ -133,8 +133,12 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 		var sign_col := Color(0.85, 0.15, 0.15) if shop == "kiosk" else Color(0.35, 0.12, 0.4)
 		_box(root, Vector3(base.x - w * 0.15, 2.8, base.z + 0.08), Vector3(w * 0.55, 0.6, 0.1), sign_col)
 		var key := "SIGN_KIOSK" if shop == "kiosk" else "SIGN_BAR"
-		var l := _label(TranslationServer.translate(key), 72, 0.006)
+		var shop_text := TranslationServer.translate(key)
+		var l := _label(shop_text, 72, 0.006)
 		l.position = Vector3(base.x - w * 0.15, 2.8, base.z + 0.15)
+		# Shop signs get blurry / scrambled just like street signs.
+		l.set_meta("real_text", shop_text)
+		l.add_to_group("street_sign")
 		root.add_child(l)
 		# Lit doorway so shops are easy to spot.
 		var lit := _box(root, Vector3(door_x, 1.1, base.z + 0.06), Vector3(1.1, 2.2, 0.1), Color(0.95, 0.8, 0.45))
