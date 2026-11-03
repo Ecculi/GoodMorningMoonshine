@@ -401,6 +401,23 @@ Hahmoideat:
 - Kieli: **GDScript**. Valittu, koska sillä peli voidaan viedä kaikille alustoille, myös selaimeen. Godot 4.7 ei tue C#-pelien vientiä selaimeen.
 - Kohdealustat: **kaikki mahdolliset** (PC, mobiili, selain).
 
+## Ensimmäinen prototyyppi
+
+Tavoite: nähdä nopeasti, tuntuuko peli hyvältä, myös puhelimella. Prototyypissä on:
+
+- **Yksi Oulun kortteli** 3D:nä (Kirkkokatu Pakkahuoneenkadun ja Hallituskadun välillä), risteykset näkymän reunoilla ja **tilt-shift-efekti**
+- **Hahmo**, joka kävelee ja juoksee (kaksoisnapautus tai suunnan pitäminen pohjassa)
+- **Toimintanappi** (lyhyt: lyö / juo / syö, pitkä: heitä)
+- **Muutama ohikulkija**: tappelu, tyrmäys ja pudotukset sekä automaattinen taskuvarkaus
+- **Tavarat**: pullo, tölkki, makkara ja kolikot; automaattinen poiminta ja käden tavaran vaihto
+- **Promillemittari** pulloikonissa, healthin sydän ja raha
+- Aika kulkee vain liikkuessa; aurinko liikkuu kellon mukaan
+- Kuolema lööppinä ja päivän vaihtuminen (herätään samasta korttelista)
+- Kosketusohjaimet puhelimelle, näppäimistö ja peliohjain muille alustoille
+- Tekstit käännöstiedostossa (suomi)
+
+Prototyypistä puuttuu vielä muun muassa kartta ja risteyksistä kääntyminen, koti, hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
+
 ## Avoimet kysymykset
 
 - Hukattujen tavaroiden haittavaikutukset
