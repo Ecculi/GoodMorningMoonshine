@@ -28,6 +28,7 @@ var camera: Camera3D
 var sun: DirectionalLight3D
 var env: Environment
 var tilt_mat: ShaderMaterial
+var _focus_y := 0.58
 var npcs: Array = []
 var items: Array = []
 var rng := RandomNumberGenerator.new()
@@ -63,12 +64,24 @@ func _process(delta: float) -> void:
 	var target_x := clampf(player.position.x, -10.0, 10.0)
 	camera.position.x = lerpf(camera.position.x, target_x, 1.0 - exp(-4.0 * delta))
 	_update_sun()
+	_update_focus(delta)
 	tilt_mat.set_shader_parameter("drunk",
 		clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
 	if hud.mode == "dead" and hud.card_time > 1.0 and Input.is_action_just_pressed("action"):
 		GameState.new_game()
 		_reset_world()
 		hud.hide_card()
+
+
+## The sharp tilt-shift band follows the player vertically on screen.
+func _update_focus(delta: float) -> void:
+	var p: Vector3 = player.global_position + Vector3(0, 0.9, 0)
+	if camera.is_position_behind(p):
+		return
+	var h := get_viewport().get_visible_rect().size.y
+	var target := clampf(camera.unproject_position(p).y / h, 0.15, 0.9)
+	_focus_y = lerpf(_focus_y, target, 1.0 - exp(-6.0 * delta))
+	tilt_mat.set_shader_parameter("focus_center", _focus_y)
 
 
 # --- Game flow -------------------------------------------------------------

@@ -16,6 +16,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 - **Grafiikka toteutetaan tilt-shift-tekniikalla**, jolloin kaupunki näyttää pienoismallilta.
 - Peli tehdään **3D:nä**, koska tilt-shift syntyy siinä luontevimmin kameran syväterävyydellä (ylä- ja alareuna sumenevat).
+- **Terävä alue seuraa pelaajaa pystysuunnassa.** Kun hahmo liikkuu kadun syvyyssuunnassa ylös tai alas, tarkennuskaista siirtyy hänen mukanaan, joten hahmo on aina terävänä.
 - Kuvakulma on viisto sivukuva (beat 'em up / belt scroller -tyyli).
 - Pelaaja etenee pääasiassa sivusuunnassa, mutta voi liikkua myös ylös ja alas kadun syvyyssuunnassa.
 
