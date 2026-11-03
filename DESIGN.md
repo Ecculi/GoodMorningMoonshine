@@ -108,6 +108,8 @@ Krapula ei kovene päivien mukaan.
 
 - **Taskujen kopelointi aamulla:** päivän alussa hahmo kopeloi taskujaan lyhyessä animaatiossa (pari sekuntia). Ruudulle ponnahtaa ikonirivi tavaroista, ja puuttuvat on vedetty yli punaisella.
 - Sen jälkeen **puuttuvat tavarat näkyvät pieninä harmaina ikoneina ruudun reunassa** koko päivän.
+- **Löydetty oma tavara menee suoraan omalle paikalleen**: lompakko taskuun, kengät jalkaan ja niin edelleen. Harmaa ikoni muuttuu värilliseksi. Käden tavara ja pussi pysyvät ennallaan.
+- **Humala vie muistin:** kun promillet nousevat tietyn rajan yli (esim. 2,0 ‰, tarkka raja säädetään testauksessa), hukkalistan ikoneita muuttuu yhtäkkiä tunnistamattomiksi harmaiksi läiskiksi. Pelaaja ei enää muista, mitä oli etsimässä. Kun promillet laskevat rajan alle, muisti palaa ja ikonit näkyvät taas.
 - Joka päivä hukkuu uusia tavaroita. Aiemmin hukatut pysyvät hukassa, kunnes ne löytyvät.
 - Jokaisen puuttuvan tavaran puute haittaa peliä jollain tavalla. Esimerkkejä:
   - **Lompakko:** ei voi ostaa mitään. Ensimmäisenä päivänä lompakko voi olla hukassa.
