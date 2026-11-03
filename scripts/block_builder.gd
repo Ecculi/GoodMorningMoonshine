@@ -208,24 +208,49 @@ static func _props(root: Node3D, rng: RandomNumberGenerator, sea: bool) -> void:
 		_cyl(root, Vector3(rng.randf_range(-14.0, 14.0), 0.5, -7.5), 0.3, 0.8, Color(0.2, 0.35, 0.25))
 
 
-## Blue street name signs on poles at both corners of the far sidewalk:
-## this street's name and the crossing street's name.
+## Blue street name signs on poles at both corners of the far sidewalk.
+## Upper plate: this street, with a left-right arrow (it continues to the
+## sides). Lower plate: the crossing street, with an up-down arrow (turn
+## onto it by going up or down).
 static func _signs(root: Node3D, seg: Vector3i) -> void:
 	for s in [-1, 1]:
 		var px: float = s * (BLOCK_HALF - 0.4)
 		_cyl(root, Vector3(px, 1.5, -5.4), 0.05, 3.0, Color(0.25, 0.27, 0.3))
-		_sign(root, CityMap.street_name(seg), Vector3(px - s * 1.1, 2.75, -5.36))
-		_sign(root, CityMap.cross_name(seg, s > 0), Vector3(px + s * 1.1, 2.3, -5.36))
+		_sign(root, CityMap.street_name(seg), Vector3(px - s * 1.3, 2.75, -5.36), false)
+		_sign(root, CityMap.cross_name(seg, s > 0), Vector3(px + s * 1.3, 2.3, -5.36), true)
 
 
-static func _sign(root: Node3D, text: String, pos: Vector3) -> void:
+static func _sign(root: Node3D, text: String, pos: Vector3, vertical: bool) -> void:
+	var text_w := text.length() * 0.25 + 0.3
+	var arrow_w := 0.45
+	var w := text_w + arrow_w
+	_box(root, pos, Vector3(w, 0.42, 0.05), Color(0.1, 0.3, 0.7))
 	var l := _label(text, 48, 0.008)
-	l.position = pos + Vector3(0, 0, 0.04)
+	l.position = pos + Vector3(-arrow_w * 0.5, 0, 0.04)
 	l.set_meta("real_text", text)
 	l.add_to_group("street_sign")
 	root.add_child(l)
-	var w := text.length() * 0.25 + 0.3
-	_box(root, pos, Vector3(w, 0.42, 0.05), Color(0.1, 0.3, 0.7))
+	_sign_arrow(root, pos + Vector3(w * 0.5 - arrow_w * 0.5, 0, 0.035), vertical)
+
+
+## A white double arrow made of thin boxes: up-down or left-right.
+static func _sign_arrow(root: Node3D, c: Vector3, vertical: bool) -> void:
+	var white := Color(0.95, 0.95, 0.95)
+	var half := 0.14
+	var t := 0.035
+	var shaft := Vector3(t, half * 2.0, 0.02) if vertical else Vector3(half * 2.0, t, 0.02)
+	_box(root, c, shaft, white)
+	for e in [-1.0, 1.0]:
+		var tip := c + (Vector3(0, e * half, 0) if vertical else Vector3(e * half, 0, 0))
+		for side in [-1.0, 1.0]:
+			var head := _box(root, Vector3.ZERO, Vector3(0.1, t, 0.02), white)
+			if vertical:
+				# Chevron pointing up (e = 1) or down (e = -1).
+				head.rotation.z = side * e * deg_to_rad(-45.0)
+				head.position = tip + Vector3(side * 0.033, -e * 0.033, 0)
+			else:
+				head.rotation.z = -side * e * deg_to_rad(45.0)
+				head.position = tip + Vector3(-e * 0.033, side * 0.033, 0)
 
 
 static func _label(text: String, size: int, pixel: float) -> Label3D:

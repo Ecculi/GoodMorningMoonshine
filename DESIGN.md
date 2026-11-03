@@ -59,6 +59,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
   - **Ojakatu** on Hallituskadun ja kanavan välissä, vain Aleksanterinkadun ja Torikadun välillä. Asemakatu alkaa vasta Torikadulta; sen länsipuolella on kanava ja Madetojan puisto (ei vielä pelissä).
   - Pelin ruudukko olettaa toistaiseksi, että jokainen katu kulkee koko alueen läpi. Osittaiset kadut, puistot ja kanava vaativat myöhemmin tuen puuttuville kortteleille.
 - **Kuvakulma kaduilla:** lounas–koillinen-kaduilla kamera katsoo luoteeseen (oikealle on koilliseen), luode–kaakko-kaduilla koilliseen (oikealle on kaakkoon). Risteyksessä ylös tarkoittaa poispäin kamerasta ja alas kohti kameraa. Siksi aurinko ja varjot kääntyvät kadun mukana.
+- **Katukyltit risteyksissä:** tolpassa on kaksi kylttiä. Ylempi on oma katu, ja siinä on nuoli vasemmalle ja oikealle (katu jatkuu sivuille). Alempi on poikkikatu, ja siinä on nuoli ylös ja alas (siihen käännytään ylös tai alas).
 - **Rantakadun pohjoispuolella on meri**, ja kartan reunoilla katu päättyy.
 - Katujen järjestys on tiedostossa `scripts/city_map.gd`, jossa sitä on helppo korjata. *Avoinna:* osittaisten katujen (Ojakatu, Vaarankatu, Kajaaninkatu, Linnankatu, Heikinkatu) ja puistojen toteutus.
 - **Maamerkit:** Kauppatori, kauppahalli, Rotuaari, tuomiokirkko, poliisiasema, rautatieasema, puistot (Snellmanin, Otto Karhin, Franzénin, Vaaranpuisto, Mannerheimin) ja kanava. Meri on luoteessa.
