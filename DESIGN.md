@@ -217,6 +217,27 @@ Krapula ei kovene päivien mukaan.
 | **Kylmä** | ei mittaria: hahmo tärisee | nälkä kasvaa nopeammin ja health kuluu |
 | **Nälkä** | ei mittaria: maha kurisee, hahmo näyttää nälkäiseltä | health kuluu; alkoholi nostaa alkoholimittaria tavallista enemmän (tyhjään mahaan) |
 
+### Promillerajat
+
+| Promillet | Tila |
+|---|---|
+| **0 ‰** | kuolema |
+| **alle 0,5 ‰** | krapula: hahmo tärisee, lyönnit ovat heikkoja ja health kuluu hitaasti. Varoitus, että juotavaa pitää löytää. |
+| **0,5–2,0 ‰** | sopiva alue, hahmo toimii normaalisti |
+| **2,0–3,5 ‰** | humalan haitat (horjuminen, sumea näkökenttä, rohkeus) voimistuvat vähitellen |
+| **yli 3,5 ‰** | hahmo sammuu |
+
+- Promillet laskevat tasaisesti, kun pelaaja liikkuu tai tekee jotain.
+
+### Uni ja aamun lähtötilanne
+
+- **Aamun promillet riippuvat siitä, kauanko hahmo ehti nukkua.** Lyhyt uni jättää enemmän promilleja vereen, pitkä uni vähemmän. Myös nukkumaan mennessä veressä olleet promillet vaikuttavat.
+- **Unen pituuteen ja laatuun vaikuttavat monet tekijät**, esimerkiksi:
+  - **Paikka:** kotona sängyssä nukkuu parhaiten. Pihalla, rappukäytävässä tai putkassa uni jää lyhyeksi.
+  - **Kylmä ja nälkä** heikentävät unta.
+  - **Nukkumaanmenoaika:** mitä myöhemmin, sitä myöhemmin herätään (ks. Aurinko).
+- Esimerkiksi pihalta herännyt on nukkunut lyhyesti, joten hänellä on aamulla enemmän promilleja veressä.
+
 ### Healthin palautuminen
 
 - **Uni:** yöunet palauttavat suurimman osan. Kotona nukkuminen palauttaa eniten.
