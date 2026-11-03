@@ -227,18 +227,36 @@ func _forgotten(id: String) -> bool:
 	return (LostItems.IDS.find(id) % 3) < level
 
 
+## Today's search list at the top centre: "Find:" and the item icons
+## (grey = still missing, coloured = found).
 func _draw_lost_list(vs: Vector2) -> void:
+	if _today.is_empty():
+		return
+	var font := get_theme_default_font()
 	var size := 44.0
-	var x := vs.x - 36.0
-	for i in range(_today.size() - 1, -1, -1):
-		var id: String = _today[i]
-		var c := Vector2(x, 40)
-		draw_circle(c, size * 0.55, Color(0, 0, 0, 0.25))
+	var gap := 12.0
+	var label := tr("FIND")
+	var label_w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
+	var icons_w := _today.size() * size + (_today.size() - 1) * gap
+	var w := label_w + 16.0 + icons_w + 36.0
+	var r := Rect2(Vector2((vs.x - w) * 0.5, 10), Vector2(w, size + 16))
+	draw_rect(r, Color(0, 0, 0, 0.45))
+	var ty := r.get_center().y + 9
+	draw_string_outline(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
+	draw_string(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(1, 0.9, 0.4))
+	var x := r.position.x + 18 + label_w + 16 + size * 0.5
+	for id in _today:
+		var c := Vector2(x, r.get_center().y)
+		draw_circle(c, size * 0.55, Color(1, 1, 1, 0.15))
 		var m := "own"
 		if GameState.is_lost(id):
 			m = "blob" if _forgotten(id) else "lost"
 		LostItems.draw_icon(self, id, c, size, m)
-		x -= size + 12.0
+		if m == "own":
+			# Found: a green tick.
+			draw_polyline(PackedVector2Array([c + Vector2(6, 10), c + Vector2(12, 16), c + Vector2(22, 2)]),
+				Color(0.3, 0.95, 0.3), 4.0, true)
+		x += size + gap
 
 
 ## Morning: a thought bubble above the character's head with the things

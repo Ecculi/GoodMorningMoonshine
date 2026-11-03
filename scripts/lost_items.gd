@@ -27,8 +27,8 @@ static func draw_icon(ci: CanvasItem, id: String, c: Vector2, s: float, mode: St
 		ci.draw_circle(c, s * 0.42, Color(0.55, 0.55, 0.58, 0.8))
 		ci.draw_circle(c + Vector2(s * 0.18, -s * 0.12), s * 0.22, Color(0.55, 0.55, 0.58, 0.8))
 		return
-	var col: Color = COLORS[id] if mode == "own" else Color(0.5, 0.5, 0.52, 0.75)
-	var light := col.lightened(0.5) if mode == "own" else Color(0.7, 0.7, 0.72, 0.75)
+	var col: Color = COLORS[id] if mode == "own" else Color(0.8, 0.8, 0.84, 0.95)
+	var light := col.lightened(0.5) if mode == "own" else Color(0.55, 0.55, 0.6, 0.95)
 	var w := maxf(2.0, s * 0.08)
 	match id:
 		"wallet":
