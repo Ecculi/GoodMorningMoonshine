@@ -20,6 +20,8 @@ var model
 var facing := 1
 var hand_item = null
 var running := false
+## Throw direction on the ground plane (x along the street, y = depth).
+var aim := Vector2.RIGHT
 
 var _press_time := -1.0
 var _last_tap_action := ""
@@ -48,6 +50,10 @@ func reset(pos: Vector3) -> void:
 	hand_item = null
 
 
+func is_aiming() -> bool:
+	return _press_time >= LONG_PRESS and hand_item != null
+
+
 ## 0..1 while the throw is being charged, otherwise -1.
 func throw_charge() -> float:
 	if _press_time < LONG_PRESS or hand_item == null:
@@ -63,6 +69,15 @@ func _process(delta: float) -> void:
 		return
 
 	var dir := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
+	# While a throw is being charged the arrows aim instead of moving.
+	if is_aiming():
+		if dir.length() > 0.2:
+			aim = dir.normalized()
+			if aim.x > 0.2:
+				facing = 1
+			elif aim.x < -0.2:
+				facing = -1
+		dir = Vector2.ZERO
 	var moving := dir.length() > 0.2
 	_update_run(dir, moving, delta)
 	var speed := RUN_SPEED if running else WALK_SPEED
@@ -121,6 +136,7 @@ func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
 func _handle_action(delta: float) -> void:
 	if Input.is_action_just_pressed("action"):
 		_press_time = 0.0
+		aim = Vector2(facing, 0)
 	if _press_time < 0.0:
 		return
 	_press_time += delta
@@ -163,8 +179,9 @@ func _throw(t: float) -> void:
 	var dist := clampf(2.0 + (t - LONG_PRESS) * 6.0, 2.0, 9.0)
 	var it = hand_item
 	hand_item = null
-	var start := global_position + Vector3(0.4 * facing, 1.1, 0.25)
-	it.throw_from(start, facing, dist)
+	var d3 := Vector3(aim.x, 0.0, aim.y)
+	var start := global_position + d3 * 0.4 + Vector3(0, 1.1, 0.25)
+	it.throw_from(start, d3, dist)
 	model.punch()
 	GameState.busy_time = maxf(GameState.busy_time, it.flight_time + 0.1)
 

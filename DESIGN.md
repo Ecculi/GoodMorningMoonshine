@@ -156,7 +156,7 @@ Krapula ei kovene päivien mukaan.
   | **Lyö** | lyhyt painallus |
   | **Syö / juo** käden tavara | lyhyt painallus, kun lähellä ei ole ketään |
   | **Mene sisään** | lyhyt painallus ovella |
-  | **Heitä** käden tavara katseen suuntaan | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää |
+  | **Heitä** käden tavara | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää. Latauksen aikana hahmo ei liiku, vaan nuolilla valitaan heiton suunta (myös ylös ja alas). Heitto lähtee, kun nappi päästetään. |
   | **Juokse** | kaksoisnapautus suuntanuolta tai saman suunnan pitäminen hetken pohjassa |
   | **Puhelin auki** | ylös + toimintanappi |
   | **Puhelimen selaus** | vasen / oikea |

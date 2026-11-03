@@ -107,11 +107,13 @@ func drop_at(pos: Vector3) -> void:
 	global_position = Vector3(pos.x, 0.0, pos.z)
 
 
-func throw_from(start: Vector3, facing: int, dist: float) -> void:
+func throw_from(start: Vector3, dir: Vector3, dist: float) -> void:
 	_to_world()
 	state = St.FLYING
 	_from = start
-	_to = Vector3(start.x + facing * dist, 0.0, start.z)
+	var land: Vector3 = main.clamp_walkable(start + dir.normalized() * dist)
+	_to = Vector3(land.x, 0.0, land.z)
+	dist = Vector2(_to.x - start.x, _to.z - start.z).length()
 	flight_time = maxf(dist / FLIGHT_SPEED, 0.2)
 	_t = 0.0
 	global_position = start

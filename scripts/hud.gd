@@ -141,6 +141,16 @@ func _draw_charge() -> void:
 		return
 	var sp: Vector2 = main.camera.unproject_position(p)
 	draw_arc(sp, 16.0, -PI * 0.5, -PI * 0.5 + TAU * c, 32, Color(1, 0.9, 0.3), 5.0, true)
+	# Aim arrow on the ground in the throw direction.
+	var a: Vector2 = main.player.aim
+	var base: Vector3 = main.player.global_position + Vector3(0, 0.15, 0)
+	var tip3 := base + Vector3(a.x, 0, a.y) * (1.2 + c * 1.5)
+	var b2: Vector2 = main.camera.unproject_position(base)
+	var t2: Vector2 = main.camera.unproject_position(tip3)
+	var dir2 := (t2 - b2).normalized()
+	draw_line(b2, t2, Color(1, 0.9, 0.3), 4.0, true)
+	draw_colored_polygon(PackedVector2Array([t2 + dir2 * 12.0, t2 + dir2.orthogonal() * 8.0,
+		t2 - dir2.orthogonal() * 8.0]), Color(1, 0.9, 0.3))
 
 
 func _draw_headline(vs: Vector2, font: Font) -> void:
