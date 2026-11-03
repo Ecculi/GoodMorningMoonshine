@@ -65,6 +65,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
   | **Kauppakeskus** | lämmittelyä, vartijoita, oikoteitä |
   | **Rautatieasema** | pistorasia, vartijat, lämmin odotussali |
   | **Kirkko** | rauhallinen lämmittelypaikka; pappi voi auttaa; sunnuntaisin ehtoollisviiniä |
+  | **Apteekki** | laastaria ja särkylääkettä rahalla; palauttaa vähän healthia |
   | **Kerrostalon rappu** | kodit, naapurit, varavaimet |
 
 - Sisätiloissa pelimekaniikka on sama kuin kadulla (liikkuminen, tappelu, hahmot, tavarat). Ne vain näyttävät erilaisilta.
@@ -213,6 +214,13 @@ Krapula ei kovene päivien mukaan.
 | **Väsymys** | mittari | nukahtaa, kun täynnä (ks. alla) |
 | **Kylmä** | ei mittaria: hahmo tärisee | nälkä kasvaa nopeammin ja health kuluu |
 | **Nälkä** | ei mittaria: maha kurisee, hahmo näyttää nälkäiseltä | health kuluu; alkoholi nostaa alkoholimittaria tavallista enemmän (tyhjään mahaan) |
+
+### Healthin palautuminen
+
+- **Uni:** yöunet palauttavat suurimman osan. Kotona nukkuminen palauttaa eniten.
+- **Ruoka:** syöminen palauttaa vähän.
+- **Apteekki:** laastaria tai särkylääkettä saa rahalla, mutta ne palauttavat vain vähän.
+- Päivän aikana health ei palaudu itsestään.
 
 ### Humala
 
