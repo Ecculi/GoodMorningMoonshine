@@ -13,6 +13,9 @@ const CityMap = preload("res://scripts/city_map.gd")
 const BlockBuilder = preload("res://scripts/block_builder.gd")
 const LostItemNode = preload("res://scripts/lost_item_node.gd")
 const TILT_SHIFT = preload("res://shaders/tilt_shift.gdshader")
+const CLOUD_SHADOW = preload("res://shaders/cloud_shadow.gdshader")
+## Cloud drift in map coordinates (metres per second of active time).
+const WIND := Vector2(1.6, 0.7)
 
 const BLOCK_HALF := BlockBuilder.BLOCK_HALF
 const CROSS_HALF := BlockBuilder.CROSS_HALF
@@ -34,6 +37,10 @@ var camera: Camera3D
 var sun: DirectionalLight3D
 var env: Environment
 var tilt_mat: ShaderMaterial
+var sky_mat: ProceduralSkyMaterial
+var cloud_mat: ShaderMaterial
+var clouds: Node3D
+var _cloud_offset := Vector2.ZERO
 var level: Node3D
 var segment: Vector3i = CityMap.START
 var npcs: Array = []
@@ -50,6 +57,7 @@ var _focus_y := 0.58
 func _ready() -> void:
 	rng.randomize()
 	_build_environment()
+	_build_clouds()
 	_build_camera()
 	_build_post_process()
 
@@ -383,7 +391,7 @@ func _build_environment() -> void:
 	env = Environment.new()
 	env.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
-	var sky_mat := ProceduralSkyMaterial.new()
+	sky_mat = ProceduralSkyMaterial.new()
 	sky_mat.sky_top_color = Color(0.2, 0.42, 0.8)
 	sky_mat.sky_horizon_color = Color(0.6, 0.72, 0.85)
 	sky_mat.ground_horizon_color = Color(0.6, 0.6, 0.6)
@@ -419,10 +427,59 @@ func _update_sun() -> void:
 	# Screen: forward (camera look) = -Z, right = +X.
 	var to_sun := Vector3(cos(elev) * sin(rel), sin(elev), -cos(elev) * cos(rel))
 	sun.basis = Basis.looking_at(-to_sun, Vector3.UP)
-	sun.light_energy = 1.0 * smoothstep(0.0, 0.25, day_light)
+	var cloudy := GameState.weather == "cloudy"
+	# Overcast: soft light, no sharp shadows.
+	sun.shadow_enabled = not cloudy
+	sun.light_energy = (0.25 if cloudy else 1.0) * smoothstep(0.0, 0.25, day_light)
 	sun.light_color = Color(1.0, 0.85, 0.7).lerp(Color(1, 0.98, 0.94), smoothstep(0.0, 0.5, day_light))
-	env.ambient_light_energy = 0.35 + 0.55 * smoothstep(0.0, 0.4, day_light)
+	env.ambient_light_energy = (0.35 + 0.55 * smoothstep(0.0, 0.4, day_light)) * (1.45 if cloudy else 1.0)
+	sky_mat.sky_top_color = Color(0.55, 0.58, 0.62) if cloudy else Color(0.2, 0.42, 0.8)
+	sky_mat.sky_horizon_color = Color(0.72, 0.74, 0.76) if cloudy else Color(0.6, 0.72, 0.85)
+	# Cloud shadows only on sunny days; they drift while time moves.
+	clouds.visible = not cloudy and day_light > 0.15
+	if clouds.visible:
+		var a := deg_to_rad(CityMap.VIEW_AZIMUTH[segment.x])
+		# Map wind (east, north) to screen axes (right = +x, forward = -z).
+		var right := Vector2(cos(a), -sin(a))
+		var fwd := Vector2(sin(a), cos(a))
+		var w := Vector2(WIND.dot(right), -WIND.dot(fwd))
+		_cloud_offset -= w * GameState.world_dt
+		cloud_mat.set_shader_parameter("offset", _cloud_offset)
+		cloud_mat.set_shader_parameter("to_sun", to_sun)
 	env.background_energy_multiplier = 0.15 + 0.85 * smoothstep(0.0, 0.4, day_light)
+
+
+func _build_clouds() -> void:
+	var noise := FastNoiseLite.new()
+	noise.seed = rng.randi()
+	noise.frequency = 0.012
+	noise.fractal_octaves = 3
+	var tex := NoiseTexture2D.new()
+	tex.width = 256
+	tex.height = 256
+	tex.seamless = true
+	tex.noise = noise
+	cloud_mat = ShaderMaterial.new()
+	cloud_mat.shader = CLOUD_SHADOW
+	cloud_mat.set_shader_parameter("noise_tex", tex)
+	clouds = Node3D.new()
+	add_child(clouds)
+	# Over the street and sidewalks...
+	var ground := MeshInstance3D.new()
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(120, 80)
+	ground.mesh = pm
+	ground.material_override = cloud_mat
+	ground.position = Vector3(0, 0.14, -14)
+	clouds.add_child(ground)
+	# ...and in front of the facades.
+	var wall := MeshInstance3D.new()
+	var wm := QuadMesh.new()
+	wm.size = Vector2(120, 22)
+	wall.mesh = wm
+	wall.material_override = cloud_mat
+	wall.position = Vector3(0, 11, -7.7)
+	clouds.add_child(wall)
 
 
 func _build_camera() -> void:

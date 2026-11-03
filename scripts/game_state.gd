@@ -52,6 +52,8 @@ var placements := {}
 ## Where the character slept: "home", "stairs" or "street".
 var sleep_place := "home"
 var bonus := 0
+## Today's weather: "sunny" or "cloudy" (rain and snow come later).
+var weather := "sunny"
 var rng := RandomNumberGenerator.new()
 
 
@@ -150,6 +152,7 @@ func new_game() -> void:
 		home_seg = CityMap.random_segment(rng)
 	home_x = rng.randf_range(-11.0, 11.0)
 	lost.clear()
+	_roll_weather()
 	_lose_items()
 	_place_lost_items()
 	over = false
@@ -171,9 +174,15 @@ func new_day() -> void:
 			health = minf(100.0, health + 35.0)
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
+	_roll_weather()
 	_lose_items()
 	_place_lost_items()
 	over = false
+
+
+## Every day has its own weather.
+func _roll_weather() -> void:
+	weather = "sunny" if rng.randf() < 0.6 else "cloudy"
 
 
 ## Every night new things get lost; earlier lost ones stay lost.

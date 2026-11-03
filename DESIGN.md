@@ -190,6 +190,7 @@ Krapula ei kovene päivien mukaan.
 ### Sää
 
 - **Joka päivä on eri sää**, ja se arvotaan satunnaisesti.
+- **Aurinkoisella säällä kaduilla ja seinillä liikkuu pilvien varjoja.** Ne liikkuvat tuulen mukana vain silloin, kun aika kulkee, ja osuvat samaan suuntaan kuin auringon varjot.
 
   | Sää | Vaikutus |
   |---|---|
@@ -431,6 +432,8 @@ Lisätty prototyyppiin:
 - Uusi peli alkaa satunnaisesta korttelista. Seuraava päivä alkaa siitä korttelista, johon hahmo nukahti.
 
 - **Koti ja hukatut tavarat:** kodin paikka (kerrostalo, vihreä ovi) arvotaan joka peliin, ja päivä alkaa kodin ovelta. Aamulla taskut kopeloidaan, ja hukatut tavarat näkyvät ikoneina ruudun reunassa; humalassa osa ikoneista muuttuu läiskiksi. Tavarat arvotaan kodin lähelle säteellä, joka kasvaa päivä päivältä. Kaukaa ne ovat harmaita möhkäleitä, ja ilman silmälaseja ne erottuvat vasta aivan läheltä. Kotiovella toimintanappi vie nukkumaan, ja kotona nukuttu yö on paras. Ilman avaimia hahmo nukkuu rappukäytävässä, ja ilman kenkiä vauhti on hitaampi. Kun kaikki tavarat löytyvät ennen kotiin menoa, saa 500 pisteen bonuksen.
+
+- **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot) tai pilvinen (pehmeä valo, ei teräviä varjoja). Sade ja lumi puuttuvat vielä.
 
 Prototyypistä puuttuu vielä muun muassa muut kotityypit, muiden tavaroiden haitat, hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
 
