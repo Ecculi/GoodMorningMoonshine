@@ -209,7 +209,8 @@ Hahmoideat:
   - **selvityistä päivistä** (antaa eniten pisteitä)
   - rahan määrästä
   - tavaroiden määrästä
-- *Avoinna:* tarkka pistekaava ja se, onko pelillä läpäisyä.
+- **Pelillä ei ole läpäisyä.** Peli jatkuu ja vaikeutuu, kunnes hahmo kuolee. Tavoitteena on selvitä mahdollisimman monta päivää ja saada parhaat pisteet.
+- *Avoinna:* tarkka pistekaava.
 
 ## Tekniikka
 
@@ -222,4 +223,3 @@ Hahmoideat:
 - Hukattujen tavaroiden haittavaikutukset
 - Hahmojen erikoisuudet tarkemmin
 - Lisää rakennuksia ja sisätiloja myöhemmin (aloituslista on päätetty)
-- Pelin läpäisy
