@@ -29,6 +29,15 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - Jokainen peli sijoittuu johonkin kaupunkiin. Kaupungin kartta on aina sama, mutta **kodin sijainti vaihtuu joka pelissä**, mikä lisää uudelleenpelattavuutta.
 - Kun pelaaja kuolee ja aloittaa uuden pelin, kaupunki ja kodin sijainti vaihtuvat.
 - **Aluksi toteutetaan vain Oulu.**
+
+### Oulu
+
+- Alue on **Oulun keskustan ruutukaava**: noin kauppatorin ja rannan (luoteessa) sekä rautatieaseman (idässä) välinen alue, etelässä suunnilleen Sepänkadulle asti.
+- Kadut muodostavat kaksi ristikkäistä sarjaa (noin 9 × 9 katua), joten jokaisessa risteyksessä käännytään 90 astetta:
+  - **Lounas–koillinen:** Rantakatu, Aleksanterinkatu, Torikatu, Kirkkokatu, Isokatu, Uusikatu, Mäkelininkatu, Koulukatu, Rautatienkatu
+  - **Luode–kaakko:** Ojakatu, Hallituskatu, Pakkahuoneenkatu, Saaristonkatu, Albertinkatu, Sepänkatu (sekä idässä Asemakatu, Kajaaninkatu, Kauppurienkatu)
+- **Maamerkit:** Kauppatori, kauppahalli, Rotuaari, tuomiokirkko, poliisiasema, rautatieasema, puistot (Snellmanin, Otto Karhin, Franzénin, Vaaranpuisto, Mannerheimin) ja kanava. Meri on luoteessa.
+- Käytetään **oikeita kadunnimiä ja julkisia paikkoja**. **Yritysten nimet** (ravintolat, hotellit, kauppakeskukset) korvataan keksityillä nimillä.
 - **Rakennuksiin pääsee sisälle**, esimerkiksi kioskiin ja rautatieasemalle.
 - Osassa rakennuksista on ovet kahdelle eri kadulle. Ne toimivat **oikoteinä**: yhdestä ovesta sisään, toisesta ulos eri kadulle.
 - Sisätiloissa pelimekaniikka on sama kuin kadulla (liikkuminen, tappelu, hahmot, tavarat). Ne vain näyttävät erilaisilta.
@@ -176,6 +185,6 @@ Hahmoideat:
 - Hukattujen tavaroiden haittavaikutukset
 - Muut tavat saada alkoholia, ruokaa ja rahaa
 - Hahmojen erikoisuudet tarkemmin
-- Oulun kartan laajuus ja tarkkuus (oikeat kadunnimet?)
+- Näytetäänkö katu kerrallaan kokonaan vai kortteli kerrallaan
 - Mitä rakennuksia ja sisätiloja kaupungissa on
 - Pelin läpäisy
