@@ -90,8 +90,15 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
     - **Lukkoseppä:** vaatii puhelimen (akkua) ja lompakon (rahaa). Kallis, mutta varma.
     - **Varavain:** joskus kuramaton alla tai kaverilla toisella kadulla, jonka luo pitää löytää.
     - **Rappukäytävä:** hahmo nukahtaa oman oven taakse. Lasketaan muualla nukahtamiseksi: uni on huonompi ja hahmo on aamulla kylmissään.
+  - **Henkilökortti:** ilman sitä baarissa ja kaupassa ei myydä alkoholia, ja poliisi pitää pidempään putkassa.
   - *(lisää myöhemmin)*
 - *Avoinna:* muiden tavaroiden tarkka haittavaikutus.
+
+### Tavara kädessä ja muovipussit
+
+- **Kontrollit ovat helpot.** Tavarat poimitaan automaattisesti kävelemällä niiden päälle.
+- Hahmolla on **yksi tavara kädessä**. Kun hän koskee uuteen tavaraan, käden tavara **vaihtuu automaattisesti** uuteen.
+- Kadulla voi olla **muovipusseja**, jotka hahmo nappaa käteen automaattisesti päälle kävellessään.
 
 ### Näkökenttä ja silmälasit
 
