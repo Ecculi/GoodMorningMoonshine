@@ -51,13 +51,14 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 ### Oulu
 
 - Alue on **Oulun keskustan ruutukaava**: noin kauppatorin ja rannan (luoteessa) sekä rautatieaseman (idässä) välinen alue, etelässä suunnilleen Sepänkadulle asti.
-- Kadut muodostavat kaksi ristikkäistä sarjaa (noin 9 × 9 katua), joten jokaisessa risteyksessä käännytään 90 astetta:
-  - **Lounas–koillinen:** Rantakatu, Aleksanterinkatu, Torikatu, Kirkkokatu, Isokatu, Uusikatu, Mäkelininkatu, Koulukatu, Rautatienkatu
+- Kadut muodostavat kaksi ristikkäistä sarjaa (9 × 7 katua), joten jokaisessa risteyksessä käännytään 90 astetta:
+  - **Lounas–koillinen** (luoteesta kaakkoon, tarkistettu kartasta): Rantakatu, Aleksanterinkatu, Torikatu, Kirkkokatu, Isokatu, Uusikatu, Vaarankatu, Koulukatu, Rautatienkatu
+  - Kanava puistoineen (Otto Karhin puisto, Vaaranpuisto, Lyötynpuisto) kulkee Uusikadun ja Vaarankadun välissä.
   - **Luode–kaakko** (koillisesta lounaaseen, tarkistettu kartasta): Asemakatu, Hallituskatu, Pakkahuoneenkatu, Kauppurienkatu (Rotuaari), Saaristonkatu, Albertinkatu, Sepänkatu
   - Vain idässä, Isokadun/Uusikadun tienoilta alkaen: Linnankatu, Kajaaninkatu ja Heikinkatu (ei vielä pelissä)
 - **Kuvakulma kaduilla:** lounas–koillinen-kaduilla kamera katsoo luoteeseen (oikealle on koilliseen), luode–kaakko-kaduilla koilliseen (oikealle on kaakkoon). Risteyksessä ylös tarkoittaa poispäin kamerasta ja alas kohti kameraa. Siksi aurinko ja varjot kääntyvät kadun mukana.
 - **Rantakadun pohjoispuolella on meri**, ja kartan reunoilla katu päättyy.
-- Katujen järjestys on tiedostossa `scripts/city_map.gd`, jossa sitä on helppo korjata. *Avoinna:* Ojakadun paikka sekä vain idässä olevat kadut.
+- Katujen järjestys on tiedostossa `scripts/city_map.gd`, jossa sitä on helppo korjata. *Avoinna:* Ojakadun ja Mäkelininkadun paikka sekä vain idässä olevat kadut.
 - **Maamerkit:** Kauppatori, kauppahalli, Rotuaari, tuomiokirkko, poliisiasema, rautatieasema, puistot (Snellmanin, Otto Karhin, Franzénin, Vaaranpuisto, Mannerheimin) ja kanava. Meri on luoteessa.
 - Käytetään **oikeita kadunnimiä ja julkisia paikkoja**. **Yritysten nimet** (ravintolat, hotellit, kauppakeskukset) korvataan keksityillä nimillä.
 - **Autoja liikkuu kaduilla tosi harvoin.** Auto tönäisee ja vie healthia, ja humalassa sitä on vaikeampi väistää. **Kävelykadulla (Rotuaari) ei ole autoja lainkaan.**
@@ -423,7 +424,7 @@ Tavoite: nähdä nopeasti, tuntuuko peli hyvältä, myös puhelimella. Prototyyp
 
 Lisätty prototyyppiin:
 
-- **Oulun keskustan kartta:** kaikki korttelit 9 × 6 kadun ruudukossa. Korttelin päästä jatketaan seuraavaan kortteliin, ja risteyksestä käännytään ylös tai alas poikkikadulle. Kadunnimikyltit ovat risteysten kulmissa. Korttelien ulkonäkö arvotaan, mutta sama kortteli näyttää aina samalta.
+- **Oulun keskustan kartta:** kaikki korttelit 9 × 7 kadun ruudukossa. Korttelin päästä jatketaan seuraavaan kortteliin, ja risteyksestä käännytään ylös tai alas poikkikadulle. Kadunnimikyltit ovat risteysten kulmissa. Korttelien ulkonäkö arvotaan, mutta sama kortteli näyttää aina samalta.
 - Kadulle jääneet tavarat pysyvät korttelissa saman päivän ajan. Seuraavana aamuna sisältö arvotaan uudelleen.
 - Uusi peli alkaa satunnaisesta korttelista. Seuraava päivä alkaa siitä korttelista, johon hahmo nukahti.
 

@@ -9,12 +9,15 @@ extends RefCounted
 ## Edit the lists below to fix the street order. Street names stay in
 ## Finnish in every language.
 
-## Streets running SW–NE, listed from the shore (NW) towards the railway (SE).
+## Streets running SW–NE, listed from the shore (NW) towards the railway (SE)
+## (checked against a map). The canal and its parks run between Uusikatu
+## and Vaarankatu. TODO: Mäkelininkatu's place is not known yet.
 const A_STREETS := ["Rantakatu", "Aleksanterinkatu", "Torikatu", "Kirkkokatu", "Isokatu",
-	"Uusikatu", "Mäkelininkatu", "Koulukatu", "Rautatienkatu"]
+	"Uusikatu", "Vaarankatu", "Koulukatu", "Rautatienkatu"]
 
 ## Streets running NW–SE, listed from SW to NE (checked against a map).
 ## Kauppurienkatu (Rotuaari) lies between Saaristonkatu and Pakkahuoneenkatu.
+## Nummikatu and Heinätorinkatu continue south-west of Sepänkatu (outside the area).
 ## TODO: Ojakatu's place is not known yet. Linnankatu, Kajaaninkatu and
 ## Heikinkatu only exist on the east side, which the full grid can't show yet.
 const B_STREETS := ["Sepänkatu", "Albertinkatu", "Saaristonkatu", "Kauppurienkatu",
