@@ -162,7 +162,7 @@ Krapula ei kovene päivien mukaan.
   | **Mene sisään** | lyhyt painallus ovella |
   | **Heitä** käden tavara | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää. Latauksen aikana hahmo ei liiku, vaan nuolilla valitaan heiton suunta (myös ylös ja alas). Heitto lähtee, kun nappi päästetään. |
   | **Juokse** | kaksoisnapautus suuntanuolta tai saman suunnan pitäminen hetken pohjassa |
-  | **Puhelin auki** | ylös + toimintanappi |
+  | **Puhelin auki** | ylös + toimintanappi (kummassa järjestyksessä tahansa); näppäimistöllä myös P tai Tab |
   | **Puhelimen selaus** | vasen / oikea |
   | **Puhelin kiinni** | alas + toimintanappi |
 

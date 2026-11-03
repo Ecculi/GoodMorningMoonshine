@@ -372,7 +372,10 @@ func _process_modal(delta: float) -> void:
 			elif Input.is_action_just_pressed("move_right"):
 				phone_page = (phone_page + 1) % 3
 			GameState.battery = maxf(0.0, GameState.battery - PHONE_DRAIN[phone_page] * delta)
-			var close := Input.is_action_just_pressed("action") and Input.is_action_pressed("move_down")
+			# Close: down + action in either order, or the phone key again.
+			var close := (Input.is_action_just_pressed("action") and Input.is_action_pressed("move_down")) \
+				or (Input.is_action_just_pressed("move_down") and Input.is_action_pressed("action")) \
+				or Input.is_action_just_pressed("phone")
 			if close or GameState.battery <= 0.0:
 				_close_modal()
 		"shop":

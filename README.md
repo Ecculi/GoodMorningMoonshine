@@ -16,3 +16,5 @@ Ohjaus:
 | Juokse | suunnan kaksoisnapautus tai pitäminen pohjassa | sama | sama |
 | Lyö / juo / syö | välilyönti, Z tai Enter (lyhyt painallus) | A | iso nappi |
 | Heitä käden tavara | sama nappi pohjassa | sama | sama |
+| Puhelin auki / kiinni | P tai Tab (tai ylös + toimintanappi, kiinni alas + toimintanappi) | Y | ylös + iso nappi, kiinni alas + iso nappi |
+| Selaa puhelinta | vasen / oikea | sama | sama |

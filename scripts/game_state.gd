@@ -360,6 +360,8 @@ func _setup_input() -> void:
 	_add_action("move_up", [KEY_UP, KEY_W], [JOY_BUTTON_DPAD_UP])
 	_add_action("move_down", [KEY_DOWN, KEY_S], [JOY_BUTTON_DPAD_DOWN])
 	_add_action("action", [KEY_SPACE, KEY_Z, KEY_ENTER], [JOY_BUTTON_A])
+	# Shortcut for keyboards and gamepads (on touch screens: up + action).
+	_add_action("phone", [KEY_P, KEY_TAB], [JOY_BUTTON_Y])
 	_add_axis("move_left", JOY_AXIS_LEFT_X, -1.0)
 	_add_axis("move_right", JOY_AXIS_LEFT_X, 1.0)
 	_add_axis("move_up", JOY_AXIS_LEFT_Y, -1.0)
