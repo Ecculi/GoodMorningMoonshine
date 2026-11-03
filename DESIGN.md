@@ -155,7 +155,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - **Roskiksen penkominen:** nopea toiminto. Sieltä voi löytyä ruokaa, tölkki tai ei mitään, ja lokit voivat hyökätä.
 - **Terassilta varastaminen:** pelaaja nappaa juoman pöydältä ohi kulkiessaan. Asiakas tai portsari voi suuttua.
 - **Hukatut pullot ja eväät:** kadulla on muiden hukkaamia pulloja ja eväitä. Ne näkyvät epäselvinä kuten muutkin esineet.
-- **Ilmaisia maistiaisia ei toteuteta.**
+- **Ilmaiset maistiaiset:** kauppahallissa tai kauppakeskuksessa, mutta **vain joskus** (satunnaista, ei joka päivä). Myyjä muistaa, jos käy hakemassa liian monta kertaa.
 
 ## Tappelu
 
