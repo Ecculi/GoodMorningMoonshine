@@ -186,7 +186,7 @@ Krapula ei kovene päivien mukaan.
 
 - Puhelin auttaa vain **tavaroiden löytämisessä** ja **oman sijainnin selvittämisessä**.
 - Käyttö on hyvin yksinkertaista: näkymiä selataan vain sivusuunnassa tässä järjestyksessä:
-  1. **Viestit:** näkyvät vain lauseiden alut, kuten WhatsAppin listassa. Niistä saa vihjeitä siitä, missä hahmo oli eilen.
+  1. **Viestit:** näkyvät listana kuten WhatsAppissa. Viestit ovat **enimmäkseen emojeja ja pieniä kuvia**, ja välissä on muutama sana, kuten kadunnimi (esim. 🍺➡️ Kirkkokatu 👟❓). Niistä saa vihjeitä siitä, missä hahmo oli eilen.
   2. **Viimeisin kuva:** kertoo, missä hahmo oli eilen. Kuvassa voi näkyä jokin hukattu tavara.
   3. **Kartta:** näyttää, missä hahmo on juuri nyt.
 - **Akku:** virtaa on aina todella vähän. Akku kuluu koko ajan, kun puhelinta käytetään, ja mitä pidempään sitä käyttää, sitä enemmän akkua kuluu. Kartta kuluttaa akkua nopeimmin.
