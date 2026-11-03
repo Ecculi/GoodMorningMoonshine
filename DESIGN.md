@@ -82,6 +82,8 @@ Päivät vaikeutuvat vähitellen kolmella tavalla:
 
 Krapula ei kovene päivien mukaan.
 
+**Ensimmäisenä päivänä** hukassa on **1–2 tavaraa**, jotta pelaaja oppii mekaniikat rauhassa. Yleensä ne ovat helppoja, kuten aurinkolasit, mutta joskus hukassa on lompakko.
+
 ### Hukatut tavarat
 
 - Joka päivä hukkuu uusia tavaroita. Aiemmin hukatut pysyvät hukassa, kunnes ne löytyvät.
