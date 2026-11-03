@@ -44,6 +44,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - Jokainen peli sijoittuu johonkin kaupunkiin. Kaupungin kartta on aina sama, mutta **kodin sijainti vaihtuu joka pelissä**, mikä lisää uudelleenpelattavuutta.
 - Kun pelaaja kuolee ja aloittaa uuden pelin, kaupunki ja kodin sijainti vaihtuvat.
 - **Aluksi toteutetaan vain Oulu.**
+- **Asiat eivät ole joka päivä samassa paikassa.** Kartta pysyy samana, mutta tavarat, ruoka, juomat, hahmot ja palvelut (esim. mistä saa kahvia) arvotaan joka päivä uudelleen. Eilen toimiva paikka ei välttämättä toimi tänään.
 
 ### Oulu
 
@@ -221,6 +222,11 @@ Krapula ei kovene päivien mukaan.
 - **Ruoka:** syöminen palauttaa vähän.
 - **Apteekki:** laastaria tai särkylääkettä saa rahalla, mutta ne palauttavat vain vähän.
 - Päivän aikana health ei palaudu itsestään.
+
+### Väsymyksen vähentäminen
+
+- **Kahvi ja energiajuoma** vähentävät väsymystä hetkeksi. Niitä löytää **harvoin**.
+- Liika kofeiini saa hahmon tärisemään, jolloin lyönnit menevät ohi.
 
 ### Humala
 
