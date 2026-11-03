@@ -70,6 +70,9 @@ var _block_items := {}
 var _lock_hits := 0
 ## Phone and shop state (GameState.modal says which is open).
 var phone_page := 0
+## > 0 while the phone shows the blinking empty battery before closing.
+var phone_dead_t := 0.0
+const PHONE_DEAD_TIME := 1.6
 var shop_type := ""
 var shop_sel := 0
 var shop_flash := ""
@@ -351,11 +354,9 @@ func open_phone() -> void:
 	if GameState.is_lost("phone"):
 		popup("?", player.position + Vector3(0, 2.2, 0), Color(1, 0.6, 0.5))
 		return
-	if GameState.battery <= 0.0:
-		popup("0 %", player.position + Vector3(0, 2.2, 0), Color(1, 0.4, 0.3))
-		return
 	GameState.modal = "phone"
 	phone_page = 0
+	phone_dead_t = PHONE_DEAD_TIME if GameState.battery <= 0.0 else 0.0
 
 
 func shop_options() -> Array:
@@ -369,6 +370,13 @@ func _process_modal(delta: float) -> void:
 	shop_flash_t = maxf(0.0, shop_flash_t - delta)
 	match GameState.modal:
 		"phone":
+			# Empty battery: show the blinking empty battery, then close.
+			if phone_dead_t > 0.0:
+				phone_dead_t -= delta
+				if phone_dead_t <= 0.0:
+					phone_dead_t = 0.0
+					_close_modal()
+				return
 			if Input.is_action_just_pressed("move_left"):
 				phone_page = (phone_page + 2) % 3
 			elif Input.is_action_just_pressed("move_right"):
@@ -378,8 +386,10 @@ func _process_modal(delta: float) -> void:
 			var close := (Input.is_action_just_pressed("action") and Input.is_action_pressed("move_down")) \
 				or (Input.is_action_just_pressed("move_down") and Input.is_action_pressed("action")) \
 				or Input.is_action_just_pressed("phone")
-			if close or GameState.battery <= 0.0:
+			if close:
 				_close_modal()
+			elif GameState.battery <= 0.0:
+				phone_dead_t = PHONE_DEAD_TIME
 		"shop":
 			var opts := shop_options()
 			if Input.is_action_just_pressed("move_left"):

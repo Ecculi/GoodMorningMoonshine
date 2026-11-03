@@ -45,6 +45,9 @@ func _draw_phone(vs: Vector2) -> void:
 	for i in 3:
 		var c := Vector2(scr.get_center().x + (i - 1) * 16, scr.end.y - 12)
 		draw_circle(c, 4.0, Color(0.2, 0.2, 0.25) if i == main.phone_page else Color(0.75, 0.75, 0.8))
+	if main.phone_dead_t > 0.0:
+		_draw_dead_battery(scr)
+		return
 	var content := Rect2(scr.position + Vector2(8, 30), scr.size - Vector2(16, 56))
 	match main.phone_page:
 		0:
@@ -57,6 +60,20 @@ func _draw_phone(vs: Vector2) -> void:
 	var mid := body.get_center().y
 	_arrow(Vector2(body.position.x - 22, mid), -1)
 	_arrow(Vector2(body.end.x + 22, mid), 1)
+
+
+## Dark screen with a big empty battery blinking in red.
+func _draw_dead_battery(scr: Rect2) -> void:
+	draw_rect(scr, Color(0.03, 0.03, 0.04))
+	if int(main.phone_dead_t * 4.0) % 2 == 1:
+		return
+	var c := scr.get_center()
+	var w := scr.size.x * 0.45
+	var h := w * 0.45
+	var red := Color(0.95, 0.15, 0.15)
+	draw_rect(Rect2(c - Vector2(w, h) * 0.5, Vector2(w, h)), red, false, 5.0)
+	draw_rect(Rect2(c + Vector2(w * 0.5, -h * 0.18), Vector2(w * 0.08, h * 0.36)), red)
+	draw_rect(Rect2(c + Vector2(-w * 0.5 + 8, -h * 0.5 + 8), Vector2(w * 0.08, h - 16)), red)
 
 
 func _draw_battery(p: Vector2, pct: float) -> void:

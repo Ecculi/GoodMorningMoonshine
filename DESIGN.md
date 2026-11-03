@@ -212,6 +212,7 @@ Krapula ei kovene päivien mukaan.
   3. **Kartta:** näyttää, missä hahmo on juuri nyt ja missä koti on (talon kuva).
 - **Akku:** virtaa on aina todella vähän. Akku kuluu koko ajan, kun puhelinta käytetään, ja mitä pidempään sitä käyttää, sitä enemmän akkua kuluu. Kartta kuluttaa akkua nopeimmin.
 - Puhelinta käytettäessä **maailma on pysähdyksissä**, mutta akku kuluu.
+- Kun akku loppuu, näytölle tulee hetkeksi vilkkuva tyhjän akun kuva, ja sitten puhelin sulkeutuu. Sama kuva näkyy, jos puhelimen yrittää avata tyhjällä akulla.
 - Akkua voi **ladata** esimerkiksi rautatieaseman pistorasiassa. Lataaminen on **vaihtokauppa**: aika harppaa hetken eteenpäin, puhelimeen tulee tietty määrä akkua (aina vain vähän), ja samalla alkoholi laskee ja nälkä kasvaa.
   - Muut hahmot liikkuvat harppauksen aikana, joten sen jälkeen tilanne on hieman eri. Muutos on realistinen eikä aina haasteellinen, koska pelaaja maksoi jo alkoholilla ja ruoalla.
 - Viestien ja kuvien olemassaolo on **satunnaista**. Joka päivä hahmo ei välttämättä ole saanut viestejä tai ottanut kuvia.
