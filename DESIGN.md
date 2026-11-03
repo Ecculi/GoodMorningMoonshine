@@ -72,6 +72,16 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 3. Kotiin päästyään hahmo rojahtaa sänkyyn, sohvalle tai lattialle alkoholimäärästä ja väsymyksestä riippuen ja nukahtaa. Joskus pääsee pieru.
 4. Seuraava päivä on uusi kenttä, ja se on aina edellistä vaikeampi.
 
+### Vaikeutuminen
+
+Päivät vaikeutuvat vähitellen kolmella tavalla:
+
+- **Etsintäsäde kasvaa:** koti ja hukatut tavarat ovat kauempana toisistaan.
+- **Enemmän hukattua:** joka päivä hukkuu useampi tavara.
+- **Vaarallisempi kaupunki:** poliiseja, vartijoita, vihaisia koiria ja punkkariporukoita on enemmän.
+
+Krapula ei kovene päivien mukaan.
+
 ### Hukatut tavarat
 
 - Joka päivä hukkuu uusia tavaroita. Aiemmin hukatut pysyvät hukassa, kunnes ne löytyvät.
