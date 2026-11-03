@@ -134,7 +134,7 @@ func _hunger_signs() -> void:
 	_growl_t += GameState.world_dt
 	if _growl_t > 4.0:
 		_growl_t = 0.0
-		main.popup("~", position + Vector3(0.2 * facing, 1.2, 0.3), Color(1, 0.8, 0.5))
+		main.popup_icon(main.stomach_texture(), position + Vector3(0.2 * facing, 1.3, 0.3))
 
 
 func _update_run(dir: Vector2, moving: bool, delta: float) -> void:

@@ -709,6 +709,57 @@ func popup(text: String, pos: Vector3, color: Color) -> void:
 	tw.tween_callback(l.queue_free)
 
 
+## Floating picture instead of text (e.g. the growling stomach).
+func popup_icon(tex: Texture2D, pos: Vector3) -> void:
+	var sp := Sprite3D.new()
+	sp.texture = tex
+	sp.pixel_size = 0.016
+	sp.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sp.no_depth_test = true
+	sp.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
+	add_child(sp)
+	sp.global_position = pos
+	var tw := create_tween()
+	tw.tween_property(sp, "position:y", sp.position.y + 1.0, 1.1)
+	tw.parallel().tween_property(sp, "modulate:a", 0.0, 1.1)
+	tw.tween_callback(sp.queue_free)
+
+
+var _stomach_tex: ImageTexture
+
+
+## A pink stomach with growl lines, drawn once into a texture.
+func stomach_texture() -> ImageTexture:
+	if _stomach_tex != null:
+		return _stomach_tex
+	var n := 64
+	var img := Image.create_empty(n, n, false, Image.FORMAT_RGBA8)
+	var pink := Color(0.95, 0.5, 0.55)
+	var dark := Color(0.35, 0.1, 0.12)
+	for y in n:
+		for x in n:
+			var p := Vector2(x + 0.5, y + 0.5)
+			# Bean-shaped stomach: a big ellipse with a bite taken out on the
+			# upper left, plus the gullet going up.
+			var body := pow((p.x - 34.0) / 20.0, 2) + pow((p.y - 36.0) / 16.0, 2)
+			var bite := pow((p.x - 20.0) / 10.0, 2) + pow((p.y - 26.0) / 9.0, 2)
+			var gullet := absf(p.x - 22.0) < 4.0 and p.y > 6.0 and p.y < 26.0
+			var inside := (body < 1.0 and bite > 1.0) or gullet
+			var edge := (body < 1.18 and bite > 0.8) or (absf(p.x - 22.0) < 6.0 and p.y > 4.0 and p.y < 27.0)
+			if inside:
+				img.set_pixel(x, y, pink)
+			elif edge:
+				img.set_pixel(x, y, dark)
+	# Growl lines: little zigzags inside.
+	for k in 3:
+		var y0 := 30 + k * 7
+		for x in range(28, 46):
+			var yy := y0 + (1 if (x / 3) % 2 == 0 else -1)
+			img.set_pixel(x, yy, dark)
+	_stomach_tex = ImageTexture.create_from_image(img)
+	return _stomach_tex
+
+
 func _spawn_npc(at_edge: bool) -> void:
 	var n = Npc.new()
 	n.main = self

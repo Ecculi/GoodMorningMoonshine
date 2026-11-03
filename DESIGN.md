@@ -448,7 +448,7 @@ Lisätty prototyyppiin:
 
 - **Puhelin:** ylös + toimintanappi avaa, vasen/oikea selaa, alas + toimintanappi sulkee. Viestit (tavaran ikoni ja kadunnimen alku), eilinen kuva (katukyltti ja hukattu tavara, hahmon edessä "sattumalta" sumea esine) ja kartta (pohjoinen ylhäällä, oma sijainti ja koti). Akkua on aamulla vähän, ja se kuluu reaaliajassa; kartta kuluttaa eniten. Maailma on pysähdyksissä puhelimen ollessa auki.
 - **Kioski ja baari:** joissain kortteleissa (valaistu ovi ja kyltti), auki tai kiinni päivästä riippuen. Kioskista pullo (3 €), makkara (2 €) ja puhelimen lataus (ilmainen, mutta aika harppaa ja promillet laskevat). Baarissa tuoppi (5 €), ja ovella on portsari. Ostaminen vaatii lompakon ja alkoholi henkilökortin.
-- **Nälkä:** kasvaa liikkuessa ja yöllä, kova nälkä kuluttaa healthia ja tyhjään mahaan alkoholi nousee 40 % enemmän. Ei mittaria: maha kurisee ja hahmo lysähtää. Makkara vie nälkää.
+- **Nälkä:** kasvaa liikkuessa ja yöllä, kova nälkä kuluttaa healthia ja tyhjään mahaan alkoholi nousee 40 % enemmän. Ei mittaria: hahmosta nousee välillä vatsan kuva (maha kurisee), ja hahmo lysähtää. Makkara vie nälkää.
 
 Prototyypistä puuttuu vielä muun muassa hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
 
