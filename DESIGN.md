@@ -282,6 +282,9 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - Jos samalla kadulla on poliiseja tai vartijoita, ne käyvät pelaajan kimppuun, kun tämä hakkaa jotakuta.
 - **Poliisit** yrittävät taltuttaa pelaajan. **Vartijat** yrittävät hakata hänet.
 - Jos poliisit saavat pelaajan kiinni niin, ettei hän pääse karkuun, hän herää **putkasta**. Seuraava päivä alkaa sieltä, ja se on vaikeampi: alkoholia on hyvin vähän ja nälkä on kova.
+  - **Takavarikko:** poliisi ottaa käden tavaran ja pussin, ja ne jäävät poliisiasemalle. Lompakon ja puhelimen saa vapautuessa takaisin.
+  - Ilman henkilökorttia putkassa pidetään pidempään, joten seuraava päivä alkaa myöhemmin.
+  - **Sellikaveri:** putkassa on joskus joku, joka satunnaisesti joko antaa vihjeen hukatusta tavarasta tai varastaa jotain.
 
 ## Hahmot
 
