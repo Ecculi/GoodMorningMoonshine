@@ -352,7 +352,8 @@ func open_phone() -> void:
 	if GameState.over or GameState.modal != "":
 		return
 	if GameState.is_lost("phone"):
-		popup("?", player.position + Vector3(0, 2.2, 0), Color(1, 0.6, 0.5))
+		# Thought bubble: the phone, crossed out.
+		hud.think(["phone"])
 		return
 	GameState.modal = "phone"
 	phone_page = 0

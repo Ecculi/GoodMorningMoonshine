@@ -16,7 +16,11 @@ var card_time := 0.0
 var _hurt := 0.0
 var _fade := 0.0
 var _bubble_on := false
+## Items shown in the thought bubble (morning: today's lost items).
+var _bubble_items: Array = []
 var _bubble_walked := 0.0
+## A short thought also disappears by itself after this many seconds.
+var _think_t := 0.0
 var _bubble_last := Vector3.ZERO
 ## Belongings that were missing this morning (found ones turn coloured).
 var _today: Array = []
@@ -45,10 +49,21 @@ func hide_card() -> void:
 ## Morning: the character pats their pockets; missing things are crossed out.
 func show_pocket_check() -> void:
 	_today = GameState.lost.duplicate()
+	_bubble_items = _today
 	_bubble_on = not _today.is_empty()
 	_bubble_walked = 0.0
 	if main != null and main.player != null:
 		_bubble_last = main.player.position
+
+
+## A short thought bubble, e.g. "my phone is missing" (gone after ~2 m).
+func think(items: Array) -> void:
+	_bubble_items = items
+	_bubble_on = true
+	_bubble_walked = BUBBLE_WALK - 2.0
+	if main != null and main.player != null:
+		_bubble_last = main.player.position
+	_think_t = 1.5
 
 
 ## Quick fade from black when the view changes to another block.
@@ -65,6 +80,10 @@ func _process(delta: float) -> void:
 		if d < 2.0:  # ignore jumps when the view changes
 			_bubble_walked += d
 		_bubble_last = p
+		if _think_t > 0.0:
+			_think_t -= delta
+			if _think_t <= 0.0:
+				_bubble_on = false
 		if _bubble_walked >= BUBBLE_WALK:
 			_bubble_on = false
 	card_time += delta
@@ -269,7 +288,7 @@ func _draw_pocket_check(vs: Vector2) -> void:
 	var anchor: Vector2 = main.camera.unproject_position(head)
 	var size := 46.0
 	var gap := 12.0
-	var w := _today.size() * size + (_today.size() - 1) * gap + 36.0
+	var w := _bubble_items.size() * size + (_bubble_items.size() - 1) * gap + 36.0
 	var h := size + 30.0
 	var center := anchor + Vector2(30, -h * 0.5 - 46)
 	center.x = clampf(center.x, w * 0.5 + 8, vs.x - w * 0.5 - 8)
@@ -292,8 +311,8 @@ func _draw_pocket_check(vs: Vector2) -> void:
 		draw_circle(Vector2(x, r.position.y + h * 0.3), h * 0.32 - 2.0, white)
 		draw_circle(Vector2(x, r.end.y - h * 0.3), h * 0.32 - 2.0, white)
 	draw_rect(r.grow(-4.0), white)
-	for i in _today.size():
-		var id: String = _today[i]
+	for i in _bubble_items.size():
+		var id: String = _bubble_items[i]
 		var c := Vector2(r.position.x + 18 + size * 0.5 + i * (size + gap), center.y)
 		LostItems.draw_icon(self, id, c, size, "own")
 		var red := Color(0.9, 0.1, 0.1, a)
