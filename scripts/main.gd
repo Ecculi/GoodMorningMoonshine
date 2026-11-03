@@ -260,17 +260,35 @@ func _check_lost_pickups() -> void:
 
 ## Street signs and shop signs.
 ## - Glasses lost: the text is blurry, sharp only right next to the sign.
-## - Drunk enough: from far away the sign shows random letters; closer, the
-##   right letters in the wrong order; right at the pole, the real name.
+## - Drunk enough:
+##   - further than 5 m: random letters
+##   - 5 m .. 1.8 m: the right letters, reshuffled on every step; the closer,
+##     the more of them sit in the right place
+##   - at the pole: the real name
 ## - Both: both effects at once.
-const SIGN_RANDOM_DIST := 8.0
+const SIGN_SHUFFLE_FAR := 5.0
 const SIGN_SHUFFLE_DIST := 1.8
 const SIGN_SHARP_DIST := 1.5
+## Walking this far counts as one step (the letters reshuffle).
+const SIGN_STEP_LEN := 0.6
 const SIGN_GHOSTS := [Vector3(0.05, 0.03, 0), Vector3(-0.05, -0.02, 0), Vector3(0.02, -0.05, 0),
 	Vector3(-0.03, 0.05, 0), Vector3(0.06, -0.01, 0), Vector3(-0.06, 0.01, 0)]
 
+var _sign_step := 0
+var _sign_walk := 0.0
+var _sign_last := Vector3.ZERO
+
 
 func _update_signs() -> void:
+	# Count steps.
+	var moved := Vector2(player.position.x - _sign_last.x, player.position.z - _sign_last.z).length()
+	if moved < 2.0:  # ignore jumps when the view changes
+		_sign_walk += moved
+	_sign_last = player.position
+	if _sign_walk >= SIGN_STEP_LEN:
+		_sign_walk = 0.0
+		_sign_step += 1
+
 	var blind := GameState.is_lost("glasses")
 	var drunk := GameState.promille > GameState.PROMILLE_DRUNK
 	for l in get_tree().get_nodes_in_group("street_sign"):
@@ -278,10 +296,11 @@ func _update_signs() -> void:
 		var d := Vector2(l.global_position.x - player.position.x, l.global_position.z - player.position.z).length()
 		var want := real
 		if drunk:
-			if d > SIGN_RANDOM_DIST:
+			if d > SIGN_SHUFFLE_FAR:
 				want = _random_letters(real)
 			elif d > SIGN_SHUFFLE_DIST:
-				want = _scramble(real)
+				var keep := 1.0 - (d - SIGN_SHUFFLE_DIST) / (SIGN_SHUFFLE_FAR - SIGN_SHUFFLE_DIST)
+				want = _scramble(real, _sign_step, keep)
 		if l.text != want:
 			l.text = want
 		var blur := clampf((d - SIGN_SHARP_DIST) / 6.0, 0.0, 1.0) if blind else 0.0
@@ -314,21 +333,28 @@ func _set_sign_blur(l: Label3D, blur: float) -> void:
 		g.modulate = Color(1, 1, 1, 0.22 * blur)
 
 
-func _scramble(text: String) -> String:
-	var key := "s:" + text
-	if _scrambled.has(key):
-		return _scrambled[key]
+## The right letters in a new random order for every step. `keep` (0..1)
+## is the share of letters that stay in their right place.
+func _scramble(text: String, step: int, keep: float) -> String:
 	var r := RandomNumberGenerator.new()
-	r.seed = hash(text)
+	r.seed = hash(text) + step * 7919
 	var chars := text.split("")
-	for i in range(chars.size() - 1, 0, -1):
-		var j := r.randi_range(0, i)
-		var t := chars[i]
-		chars[i] = chars[j]
-		chars[j] = t
-	var out := "".join(chars)
-	_scrambled[key] = out
-	return out
+	var free: Array = []
+	for i in chars.size():
+		if r.randf() >= keep:
+			free.append(i)
+	var letters: Array = []
+	for i in free:
+		letters.append(chars[i])
+	# Shuffle the free letters so none of them (if possible) stays put.
+	for i in range(letters.size() - 1, 0, -1):
+		var j := r.randi_range(0, i - 1)
+		var t = letters[i]
+		letters[i] = letters[j]
+		letters[j] = t
+	for k in free.size():
+		chars[free[k]] = letters[k]
+	return "".join(chars)
 
 
 func _random_letters(text: String) -> String:
