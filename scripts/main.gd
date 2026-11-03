@@ -253,31 +253,91 @@ func _check_lost_pickups() -> void:
 			ln.queue_free()
 
 
-## Without glasses street names can only be read right next to the sign;
-## from further away the letters get mixed up.
+## Street signs.
+## - Glasses lost: the text is blurry, sharp only right next to the sign.
+## - Drunk enough: from far away the sign shows random letters; closer, the
+##   right letters in the wrong order; right at the pole, the real name.
+## - Both: both effects at once.
+const SIGN_RANDOM_DIST := 8.0
+const SIGN_SHUFFLE_DIST := 1.8
+const SIGN_SHARP_DIST := 1.5
+const SIGN_GHOSTS := [Vector3(0.05, 0.03, 0), Vector3(-0.05, -0.02, 0), Vector3(0.02, -0.05, 0),
+	Vector3(-0.03, 0.05, 0), Vector3(0.06, -0.01, 0), Vector3(-0.06, 0.01, 0)]
+
+
 func _update_signs() -> void:
 	var blind := GameState.is_lost("glasses")
+	var drunk := GameState.promille > GameState.PROMILLE_DRUNK
 	for l in get_tree().get_nodes_in_group("street_sign"):
 		var real: String = l.get_meta("real_text")
 		var d := Vector2(l.global_position.x - player.position.x, l.global_position.z - player.position.z).length()
-		var want := real if (not blind or d < 3.5) else _scramble(real)
+		var want := real
+		if drunk:
+			if d > SIGN_RANDOM_DIST:
+				want = _random_letters(real)
+			elif d > SIGN_SHUFFLE_DIST:
+				want = _scramble(real)
 		if l.text != want:
 			l.text = want
+		var blur := clampf((d - SIGN_SHARP_DIST) / 6.0, 0.0, 1.0) if blind else 0.0
+		_set_sign_blur(l, blur)
+
+
+## Blur a Label3D by showing faint offset copies instead of the sharp text.
+func _set_sign_blur(l: Label3D, blur: float) -> void:
+	var ghosts: Array = l.get_meta("ghosts", [])
+	if blur <= 0.0:
+		l.modulate.a = 1.0
+		for g in ghosts:
+			g.visible = false
+		return
+	if ghosts.is_empty():
+		for off in SIGN_GHOSTS:
+			var g := Label3D.new()
+			g.font_size = l.font_size
+			g.pixel_size = l.pixel_size
+			g.outline_size = 0
+			l.add_child(g)
+			ghosts.append(g)
+		l.set_meta("ghosts", ghosts)
+	l.modulate.a = lerpf(1.0, 0.15, blur)
+	for i in ghosts.size():
+		var g: Label3D = ghosts[i]
+		g.visible = true
+		g.text = l.text
+		g.position = SIGN_GHOSTS[i] * (0.4 + blur * 1.6)
+		g.modulate = Color(1, 1, 1, 0.22 * blur)
 
 
 func _scramble(text: String) -> String:
-	if _scrambled.has(text):
-		return _scrambled[text]
+	var key := "s:" + text
+	if _scrambled.has(key):
+		return _scrambled[key]
 	var r := RandomNumberGenerator.new()
 	r.seed = hash(text)
 	var chars := text.split("")
-	for i in range(1, chars.size() - 1):
-		var j := r.randi_range(1, chars.size() - 2)
+	for i in range(chars.size() - 1, 0, -1):
+		var j := r.randi_range(0, i)
 		var t := chars[i]
 		chars[i] = chars[j]
 		chars[j] = t
 	var out := "".join(chars)
-	_scrambled[text] = out
+	_scrambled[key] = out
+	return out
+
+
+func _random_letters(text: String) -> String:
+	var key := "r:" + text
+	if _scrambled.has(key):
+		return _scrambled[key]
+	var r := RandomNumberGenerator.new()
+	r.seed = hash(text) + 7
+	var letters := "ABDEHIJKLMNOPRSTUVYÄÖ"
+	var out := ""
+	for i in text.length():
+		var c := letters[r.randi() % letters.length()]
+		out += c if i == 0 else c.to_lower()
+	_scrambled[key] = out
 	return out
 
 

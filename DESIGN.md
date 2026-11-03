@@ -172,7 +172,9 @@ Krapula ei kovene päivien mukaan.
 - Kaukaa esineen **muoto vihjaa**, mitä se voi olla. Esimerkiksi kenkämäinen möykky voi olla omat kengät tai vanha saapas.
 - **Omat tavarat eivät hehku eivätkä erotu muista** ennen kuin ne ovat lähellä. Pelaajan pitää tutkia epäilyttäviä möykkyjä.
 - **Ilman silmälaseja** tämä näkökenttä on lyhyempi.
-- Ilman silmälaseja kadunnimistä ei saa selvää kuin aivan vierestä. Kirjaimet voivat jopa mennä sekaisin.
+- **Ilman silmälaseja** kadunnimikyltit ovat sumeita, ja niistä saa selvää vasta aivan vierestä.
+- **Humalassa** (yli 2 ‰) kyltin kirjaimet menevät sekaisin: kaukaa kyltissä on mitä sattuu kirjaimia, lähempänä oikeat kirjaimet väärässä järjestyksessä ja vasta tolpan vieressä oikea nimi.
+- Jos on humalassa ja lasit hukassa, molemmat efektit ovat voimassa.
 
 ### Aurinko ja aurinkolasit
 
@@ -438,7 +440,7 @@ Lisätty prototyyppiin:
 - **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot) tai pilvinen (pehmeä valo, ei teräviä varjoja). Sade ja lumi puuttuvat vielä.
 
 - **Kotityypit:** kerrostaloasunto (ilman avaimia rappukäytävä), kellarikomero (ilman avaimia riippulukko rikotaan kolmella lyönnillä; kylmä yö) ja kaverin sohva (ovikello; juoma kädessä pääsee aina sisään, muuten kaveri nukkuu joskus eikä avaa sinä päivänä).
-- **Tavaroiden haitat:** ilman silmälaseja kadunnimien kirjaimet menevät sekaisin kauempaa, ilman aurinkolaseja aurinko häikäisee aurinkoisella säällä, ilman takkia lyönnit sattuvat 30 % enemmän ja paljain jaloin taskuvarkaus onnistuu paremmin.
+- **Tavaroiden haitat:** ilman silmälaseja kadunnimikyltit ovat sumeita (humalassa kirjaimet myös menevät sekaisin), ilman aurinkolaseja aurinko häikäisee aurinkoisella säällä, ilman takkia lyönnit sattuvat 30 % enemmän ja paljain jaloin taskuvarkaus onnistuu paremmin.
 
 - **Puhelin:** ylös + toimintanappi avaa, vasen/oikea selaa, alas + toimintanappi sulkee. Viestit (tavaran ikoni ja kadunnimen alku), eilinen kuva (katukyltti ja hukattu tavara, hahmon edessä "sattumalta" sumea esine) ja kartta (pohjoinen ylhäällä, oma sijainti). Akkua on aamulla vähän, ja se kuluu reaaliajassa; kartta kuluttaa eniten. Maailma on pysähdyksissä puhelimen ollessa auki.
 - **Kioski ja baari:** joissain kortteleissa (valaistu ovi ja kyltti), auki tai kiinni päivästä riippuen. Kioskista pullo (3 €), makkara (2 €) ja puhelimen lataus (ilmainen, mutta aika harppaa ja promillet laskevat). Baarissa tuoppi (5 €), ja ovella on portsari. Ostaminen vaatii lompakon ja alkoholi henkilökortin.
