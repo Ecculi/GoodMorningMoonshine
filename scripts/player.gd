@@ -229,4 +229,7 @@ func take_hit(dmg: float, from_x: float) -> void:
 		return
 	_knock = Vector3(signf(position.x - from_x) * 4.0, 0.0, 0.0)
 	main.hud.flash_hurt()
+	# The jacket softens blows.
+	if GameState.is_lost("jacket"):
+		dmg *= 1.3
 	GameState.damage(dmg)

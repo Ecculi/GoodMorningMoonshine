@@ -175,7 +175,9 @@ func check_pickpocket(p: Node3D) -> void:
 	pickpocketed = true
 	GameState.busy_time = maxf(GameState.busy_time, 0.3)
 	p.model.punch()
-	if main.rng.randf() < PICKPOCKET_CHANCE:
+	# Barefoot the player sneaks quietly, so pickpocketing works better.
+	var chance := 0.85 if GameState.is_lost("shoes") else PICKPOCKET_CHANCE
+	if main.rng.randf() < chance:
 		var amount: int = main.rng.randi_range(1, 6)
 		GameState.money += amount
 		main.popup("+%d €" % amount, position + Vector3(0, 2.0, 0), Color(1, 0.85, 0.3))

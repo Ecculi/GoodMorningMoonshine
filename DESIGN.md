@@ -435,7 +435,10 @@ Lisätty prototyyppiin:
 
 - **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot) tai pilvinen (pehmeä valo, ei teräviä varjoja). Sade ja lumi puuttuvat vielä.
 
-Prototyypistä puuttuu vielä muun muassa muut kotityypit, muiden tavaroiden haitat, hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
+- **Kotityypit:** kerrostaloasunto (ilman avaimia rappukäytävä), kellarikomero (ilman avaimia riippulukko rikotaan kolmella lyönnillä; kylmä yö) ja kaverin sohva (ovikello; juoma kädessä pääsee aina sisään, muuten kaveri nukkuu joskus eikä avaa sinä päivänä).
+- **Tavaroiden haitat:** ilman silmälaseja kadunnimien kirjaimet menevät sekaisin kauempaa, ilman aurinkolaseja aurinko häikäisee aurinkoisella säällä, ilman takkia lyönnit sattuvat 30 % enemmän ja paljain jaloin taskuvarkaus onnistuu paremmin.
+
+Prototyypistä puuttuu vielä muun muassa lompakon ja henkilökortin haitat (kauppoja ei vielä ole), hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
 
 ## Avoimet kysymykset
 

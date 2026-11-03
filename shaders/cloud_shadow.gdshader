@@ -8,9 +8,9 @@ render_mode unshaded, blend_mul, depth_draw_never, cull_disabled, shadows_disabl
 uniform sampler2D noise_tex : repeat_enable, filter_linear;
 uniform vec3 to_sun = vec3(0.0, 1.0, 0.0);
 uniform vec2 offset = vec2(0.0);
-uniform float strength = 0.4;
+uniform float strength = 0.32;
 uniform float scale = 0.018;
-uniform float coverage = 0.55;
+uniform float coverage = 0.62;
 
 varying vec3 world_pos;
 

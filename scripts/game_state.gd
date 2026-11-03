@@ -45,6 +45,10 @@ var over := false
 ## Home for this game: block and the door's x position in it.
 var home_seg := CityMap.START
 var home_x := 0.0
+## "flat" (apartment), "basement" (storage room, padlock) or "friend" (sofa).
+var home_type := "flat"
+## The basement padlock has been smashed open (stays broken for the game).
+var lock_broken := false
 ## Ids of belongings that are lost (see lost_items.gd).
 var lost: Array = []
 ## Where each lost item lies today: id -> [segment, position].
@@ -126,11 +130,13 @@ func find_item(id: String) -> void:
 
 ## Entering the home door ends the day. Without keys the character sleeps
 ## in the stairwell outside the door.
-func go_home() -> void:
+## `place`: "home", "stairs", "basement" or "friend".
+func go_home(place: String) -> void:
 	if lost.is_empty():
 		bonus += 500
-	sleep_place = "stairs" if is_lost("keys") else "home"
-	_end_day("SLEEP_STAIRS" if sleep_place == "stairs" else "SLEEP_HOME")
+	sleep_place = place
+	var causes := {"home": "SLEEP_HOME", "stairs": "SLEEP_STAIRS", "basement": "SLEEP_BASEMENT", "friend": "SLEEP_FRIEND"}
+	_end_day(causes[place])
 
 
 ## Search radius in grid units around home; grows every day.
@@ -151,6 +157,8 @@ func new_game() -> void:
 	while CityMap.far_side_is_sea(home_seg):
 		home_seg = CityMap.random_segment(rng)
 	home_x = rng.randf_range(-11.0, 11.0)
+	home_type = ["flat", "basement", "friend"][rng.randi() % 3]
+	lock_broken = false
 	lost.clear()
 	_roll_weather()
 	_lose_items()
@@ -166,6 +174,13 @@ func new_day() -> void:
 		"home":
 			promille = clampf(0.4 + maxf(at_sleep - 1.5, 0.0) * 0.3, 0.3, 1.5)
 			health = minf(100.0, health + 60.0)
+		"friend":
+			promille = clampf(0.45 + maxf(at_sleep - 1.4, 0.0) * 0.35, 0.3, 1.6)
+			health = minf(100.0, health + 55.0)
+		"basement":
+			# Cold room: worse sleep.
+			promille = clampf(0.5 + maxf(at_sleep - 1.2, 0.0) * 0.4, 0.3, 1.8)
+			health = minf(100.0, health + 45.0)
 		"stairs":
 			promille = clampf(0.5 + maxf(at_sleep - 1.2, 0.0) * 0.4, 0.3, 1.8)
 			health = minf(100.0, health + 40.0)
@@ -178,6 +193,11 @@ func new_day() -> void:
 	_lose_items()
 	_place_lost_items()
 	over = false
+
+
+## The player sleeps somewhere other than the street.
+func slept_at_home() -> bool:
+	return sleep_place != "street"
 
 
 ## Every day has its own weather.

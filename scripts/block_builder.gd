@@ -20,7 +20,7 @@ const FACADE_COLORS := [Color(0.93, 0.83, 0.55), Color(0.85, 0.6, 0.45), Color(0
 
 
 ## `home_x` is the x of the player's home door if home is in this block.
-static func build(seg: Vector3i, home_x := INF) -> Node3D:
+static func build(seg: Vector3i, home_x := INF, home_type := "flat") -> Node3D:
 	var root := Node3D.new()
 	root.name = "Block"
 	var rng := RandomNumberGenerator.new()
@@ -32,7 +32,7 @@ static func build(seg: Vector3i, home_x := INF) -> Node3D:
 	else:
 		_buildings(root, rng)
 		if home_x != INF:
-			_home_door(root, home_x)
+			_home_door(root, home_x, home_type)
 	_props(root, rng, sea)
 	_signs(root, seg)
 	return root
@@ -119,8 +119,25 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 		root.add_child(l)
 
 
-## Home: a green door with a doormat and a warm lamp above it.
-static func _home_door(root: Node3D, x: float) -> void:
+## Home door. Flat: green door, doormat, warm lamp. Basement: low grey
+## metal door down a few steps, with a padlock. Friend: blue door with a
+## doorbell.
+static func _home_door(root: Node3D, x: float, home_type: String) -> void:
+	if home_type == "basement":
+		_box(root, Vector3(x, 0.13, -7.25), Vector3(1.3, 0.04, 1.0), Color(0.18, 0.18, 0.2))
+		_box(root, Vector3(x, 0.75, -7.88), Vector3(1.0, 1.5, 0.12), Color(0.45, 0.47, 0.5))
+		_box(root, Vector3(x + 0.3, 0.8, -7.8), Vector3(0.12, 0.16, 0.06), Color(0.9, 0.75, 0.25))
+		var bulb := _sphere(root, Vector3(x, 1.75, -7.78), 0.08, Color(1.0, 0.9, 0.6))
+		var bm: StandardMaterial3D = bulb.material_override
+		bm.emission_enabled = true
+		bm.emission = Color(1.0, 0.85, 0.5)
+		return
+	if home_type == "friend":
+		_box(root, Vector3(x, 1.15, -7.9), Vector3(1.3, 2.3, 0.14), Color(0.85, 0.85, 0.85))
+		_box(root, Vector3(x, 1.1, -7.84), Vector3(1.0, 2.1, 0.12), Color(0.2, 0.35, 0.7))
+		_box(root, Vector3(x + 0.75, 1.3, -7.82), Vector3(0.12, 0.18, 0.06), Color(0.95, 0.95, 0.9))
+		_box(root, Vector3(x + 0.75, 1.3, -7.78), Vector3(0.05, 0.05, 0.04), Color(0.9, 0.2, 0.2))
+		return
 	_box(root, Vector3(x, 1.15, -7.9), Vector3(1.3, 2.3, 0.14), Color(0.92, 0.9, 0.82))
 	_box(root, Vector3(x, 1.1, -7.84), Vector3(1.0, 2.1, 0.12), Color(0.15, 0.55, 0.3))
 	_box(root, Vector3(x + 0.35, 1.1, -7.76), Vector3(0.08, 0.08, 0.06), Color(0.9, 0.8, 0.3))
@@ -167,6 +184,8 @@ static func _signs(root: Node3D, seg: Vector3i) -> void:
 static func _sign(root: Node3D, text: String, pos: Vector3) -> void:
 	var l := _label(text, 48, 0.008)
 	l.position = pos + Vector3(0, 0, 0.04)
+	l.set_meta("real_text", text)
+	l.add_to_group("street_sign")
 	root.add_child(l)
 	var w := text.length() * 0.25 + 0.3
 	_box(root, pos, Vector3(w, 0.42, 0.05), Color(0.1, 0.3, 0.7))

@@ -11,6 +11,8 @@ uniform float max_blur = 7.0;
 uniform float saturation = 1.25;
 uniform float contrast = 1.12;
 uniform float drunk = 0.0;
+// Sun glare without sunglasses (0..1), strongest towards the top.
+uniform float glare = 0.0;
 
 void fragment() {
 	vec2 uv = SCREEN_UV;
@@ -33,5 +35,6 @@ void fragment() {
 	float l = dot(col, vec3(0.299, 0.587, 0.114));
 	col = mix(vec3(l), col, saturation);
 	col = (col - 0.5) * contrast + 0.5;
+	col = mix(col, vec3(1.0, 0.97, 0.88), glare * (0.45 + 0.55 * (1.0 - SCREEN_UV.y)));
 	COLOR = vec4(col, 1.0);
 }

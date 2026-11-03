@@ -41,6 +41,9 @@ var sky_mat: ProceduralSkyMaterial
 var cloud_mat: ShaderMaterial
 var clouds: Node3D
 var _cloud_offset := Vector2.ZERO
+## Sun direction used for projecting cloud shadows; fixed when entering a
+## block so the shadows only drift with the wind.
+var _cloud_sun_set := false
 var level: Node3D
 var segment: Vector3i = CityMap.START
 var npcs: Array = []
@@ -51,6 +54,10 @@ var rng := RandomNumberGenerator.new()
 ## Items left on the ground in blocks visited today: key -> [[kind, pos, value], ...].
 ## Cleared every morning, so the content changes daily.
 var _block_items := {}
+var _lock_hits := 0
+var _glare := 0.0
+var _scrambled := {}
+var _friend_refused := false
 var _focus_y := 0.58
 
 
@@ -87,6 +94,7 @@ func _process(delta: float) -> void:
 	tilt_mat.set_shader_parameter("drunk",
 		clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
 	_check_lost_pickups()
+	_update_signs()
 	if hud.mode == "dead" and hud.card_time > 1.0 and Input.is_action_just_pressed("action"):
 		_new_game()
 		hud.hide_card()
@@ -107,7 +115,9 @@ func clamp_walkable(p: Vector3) -> Vector3:
 	var z_max := TURN_DOWN_Z + 0.5 if in_cross and CityMap.can_turn(segment, right, false) else Z_MAX
 	p.z = clampf(p.z, z_min, z_max)
 	# Off the street band only inside the crossing street.
-	if p.z < Z_MIN or p.z > Z_MAX:
+	# (Small margin: positions are 32-bit floats, so a clamped -7.4 can read as
+	# slightly below -7.4.)
+	if p.z < Z_MIN - 0.05 or p.z > Z_MAX + 0.05:
 		p.x = signf(p.x) * clampf(ax, BLOCK_HALF + 0.4, CROSS_HALF - 0.4)
 	return p
 
@@ -146,7 +156,8 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	segment = seg
 	if level != null:
 		level.queue_free()
-	level = BlockBuilder.build(seg, GameState.home_x if seg == GameState.home_seg else INF)
+	_cloud_sun_set = false
+	level = BlockBuilder.build(seg, GameState.home_x if seg == GameState.home_seg else INF, GameState.home_type)
 	add_child(level)
 	player.position = pos
 	player.facing = facing
@@ -220,13 +231,71 @@ func _check_lost_pickups() -> void:
 			ln.queue_free()
 
 
+## Without glasses street names can only be read right next to the sign;
+## from further away the letters get mixed up.
+func _update_signs() -> void:
+	var blind := GameState.is_lost("glasses")
+	for l in get_tree().get_nodes_in_group("street_sign"):
+		var real: String = l.get_meta("real_text")
+		var d := Vector2(l.global_position.x - player.position.x, l.global_position.z - player.position.z).length()
+		var want := real if (not blind or d < 3.5) else _scramble(real)
+		if l.text != want:
+			l.text = want
+
+
+func _scramble(text: String) -> String:
+	if _scrambled.has(text):
+		return _scrambled[text]
+	var r := RandomNumberGenerator.new()
+	r.seed = hash(text)
+	var chars := text.split("")
+	for i in range(1, chars.size() - 1):
+		var j := r.randi_range(1, chars.size() - 2)
+		var t := chars[i]
+		chars[i] = chars[j]
+		chars[j] = t
+	var out := "".join(chars)
+	_scrambled[text] = out
+	return out
+
+
 ## Short action at the home door goes inside and ends the day.
 func try_enter_door(pos: Vector3) -> bool:
 	if segment != GameState.home_seg or GameState.over:
 		return false
 	if absf(pos.x - GameState.home_x) > 0.9 or pos.z > -6.0:
 		return false
-	GameState.go_home()
+	var door := Vector3(GameState.home_x, 2.2, -7.4)
+	match GameState.home_type:
+		"flat":
+			GameState.go_home("stairs" if GameState.is_lost("keys") else "home")
+		"basement":
+			if GameState.is_lost("keys") and not GameState.lock_broken:
+				# No keys: smash the padlock (three hits).
+				player.model.punch()
+				GameState.busy_time = maxf(GameState.busy_time, 0.35)
+				_lock_hits += 1
+				popup("*", door, Color(1, 0.9, 0.4))
+				if _lock_hits >= 3:
+					GameState.lock_broken = true
+					popup("!", door + Vector3(0, 0.4, 0), Color(1, 0.4, 0.3))
+				return true
+			GameState.go_home("basement")
+		"friend":
+			# Ring the bell. A drink in hand always gets you in; otherwise the
+			# friend may be asleep and not open (for the rest of the day).
+			var hand = player.hand_item
+			if hand != null and hand.kind == Item.Kind.BOTTLE:
+				items.erase(hand)
+				hand.queue_free()
+				player.hand_item = null
+				GameState.go_home("friend")
+			elif not _friend_refused and rng.randf() < 0.5:
+				GameState.go_home("friend")
+			else:
+				_friend_refused = true
+				GameState.busy_time = maxf(GameState.busy_time, 0.35)
+				popup("Zzz", door, Color(0.8, 0.85, 1.0))
 	return true
 
 
@@ -253,6 +322,8 @@ func _random_z() -> float:
 ## A new game starts at the home door, after checking the pockets.
 func _new_game() -> void:
 	GameState.new_game()
+	_lock_hits = 0
+	_friend_refused = false
 	_block_items.clear()
 	player.reset(Vector3.ZERO)
 	_enter_block(GameState.home_seg, _home_door_pos(), 1)
@@ -263,6 +334,7 @@ func _new_game() -> void:
 ## stairwell outside the door), or on the street.
 func _new_day() -> void:
 	_block_items.clear()
+	_friend_refused = false
 	if GameState.sleep_place == "street":
 		var p: Vector3 = player.position
 		p.x = clampf(p.x, -BLOCK_HALF + 1.0, BLOCK_HALF - 1.0)
@@ -435,6 +507,14 @@ func _update_sun() -> void:
 	env.ambient_light_energy = (0.35 + 0.55 * smoothstep(0.0, 0.4, day_light)) * (1.45 if cloudy else 1.0)
 	sky_mat.sky_top_color = Color(0.55, 0.58, 0.62) if cloudy else Color(0.2, 0.42, 0.8)
 	sky_mat.sky_horizon_color = Color(0.72, 0.74, 0.76) if cloudy else Color(0.6, 0.72, 0.85)
+	# Without sunglasses, facing the sun on a sunny day dazzles; a low sun
+	# is the worst.
+	var want_glare := 0.0
+	if not cloudy and GameState.is_lost("sunglasses") and day_light > 0.1:
+		var low := 1.0 - clampf(rad_to_deg(elev) / 45.0, 0.0, 1.0) * 0.5
+		want_glare = clampf(player.facing * to_sun.x * 1.2 + maxf(0.0, -to_sun.z) * 0.5, 0.0, 1.0) * low * 0.8
+	_glare = lerpf(_glare, want_glare, 0.05)
+	tilt_mat.set_shader_parameter("glare", _glare)
 	# Cloud shadows only on sunny days; they drift while time moves.
 	clouds.visible = not cloudy and day_light > 0.15
 	if clouds.visible:
@@ -445,15 +525,17 @@ func _update_sun() -> void:
 		var w := Vector2(WIND.dot(right), -WIND.dot(fwd))
 		_cloud_offset -= w * GameState.world_dt
 		cloud_mat.set_shader_parameter("offset", _cloud_offset)
-		cloud_mat.set_shader_parameter("to_sun", to_sun)
+		if not _cloud_sun_set:
+			cloud_mat.set_shader_parameter("to_sun", to_sun)
+			_cloud_sun_set = true
 	env.background_energy_multiplier = 0.15 + 0.85 * smoothstep(0.0, 0.4, day_light)
 
 
 func _build_clouds() -> void:
 	var noise := FastNoiseLite.new()
 	noise.seed = rng.randi()
-	noise.frequency = 0.012
-	noise.fractal_octaves = 3
+	noise.frequency = 0.008
+	noise.fractal_octaves = 2
 	var tex := NoiseTexture2D.new()
 	tex.width = 256
 	tex.height = 256
