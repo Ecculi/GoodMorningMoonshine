@@ -18,8 +18,10 @@ const A_STREETS := ["Rantakatu", "Aleksanterinkatu", "Torikatu", "Kirkkokatu", "
 ## Streets running NW–SE, listed from SW to NE (checked against a map).
 ## Kauppurienkatu (Rotuaari) lies between Saaristonkatu and Pakkahuoneenkatu.
 ## Nummikatu and Heinätorinkatu continue south-west of Sepänkatu (outside the area).
-## TODO: Ojakatu's place is not known yet. Linnankatu, Kajaaninkatu and
-## Heikinkatu only exist on the east side, which the full grid can't show yet.
+## Partial streets the full grid can't show yet: Ojakatu (between Hallituskatu
+## and the canal, only Aleksanterinkatu–Torikatu), Asemakatu really starts at
+## Torikatu (the canal and Madetojan puisto are west of it), and Kajaaninkatu,
+## Linnankatu and Heikinkatu exist only east of Uusikatu.
 const B_STREETS := ["Sepänkatu", "Albertinkatu", "Saaristonkatu", "Kauppurienkatu",
 	"Pakkahuoneenkatu", "Hallituskatu", "Asemakatu"]
 
