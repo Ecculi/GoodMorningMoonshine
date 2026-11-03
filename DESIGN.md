@@ -237,6 +237,9 @@ Krapula ei kovene päivien mukaan.
   - **Kylmä ja nälkä** heikentävät unta.
   - **Nukkumaanmenoaika:** mitä myöhemmin, sitä myöhemmin herätään (ks. Aurinko).
 - Esimerkiksi pihalta herännyt on nukkunut lyhyesti, joten hänellä on aamulla enemmän promilleja veressä.
+- **Unen laatu vaikuttaa kaikkeen:**
+  - **Health:** hyvä yö kotona palauttaa healthin lähes täyteen, huono yö vähemmän.
+  - **Väsymys** nollautuu yön aikana **lähes kokonaan** aina. Huonon yön jälkeen jää vain pieni jäännös.
 
 ### Healthin palautuminen
 
