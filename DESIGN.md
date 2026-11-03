@@ -56,6 +56,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - **Maamerkit:** Kauppatori, kauppahalli, Rotuaari, tuomiokirkko, poliisiasema, rautatieasema, puistot (Snellmanin, Otto Karhin, Franzénin, Vaaranpuisto, Mannerheimin) ja kanava. Meri on luoteessa.
 - Käytetään **oikeita kadunnimiä ja julkisia paikkoja**. **Yritysten nimet** (ravintolat, hotellit, kauppakeskukset) korvataan keksityillä nimillä.
 - **Autoja liikkuu kaduilla tosi harvoin.** Auto tönäisee ja vie healthia, ja humalassa sitä on vaikeampi väistää. **Kävelykadulla (Rotuaari) ei ole autoja lainkaan.**
+- **Veteen voi pudota:** humalassa horjuva hahmo voi pudota rannasta, laiturilta tai kanavaan. Hän pääsee ylös, mutta on läpimärkä: kylmä on kova, ja vaatteet toimivat kuin ne olisivat hukassa, kunnes ne kuivuvat sisätiloissa. Joskus jokin tavara uppoaa.
 - **Rakennuksiin pääsee sisälle**, esimerkiksi kioskiin ja rautatieasemalle.
 - Osassa rakennuksista on ovet kahdelle eri kadulle. Ne toimivat **oikoteinä**: yhdestä ovesta sisään, toisesta ulos eri kadulle.
 - Aluksi toteutettavat sisätilat:
