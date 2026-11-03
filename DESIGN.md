@@ -317,6 +317,12 @@ Hahmoideat:
 | Koira | noin **20 eri rotua**. **Irtokoira** on haistaja: seuraa pelaajaa, jos tällä on ruokaa; joskus vie ruoan, joskus johdattaa hukatun tavaran luo hajun perusteella. Irtokoira voi olla **vihainen** (hyökkää) tai **kiltti**. **Hihnassa oleva koira** on vahtikoira: haukkuu, kun pelaaja yrittää näpistää omistajalta, jolloin kiinni jäämisen riski kasvaa. **Rotu vaikuttaa käytökseen:** kokoon, nopeuteen ja siihen, kuinka todennäköisesti koira on vihainen tai kiltti (pieni koira on nopea mutta vaaraton, iso hidas mutta lyö kovaa). Pelaaja oppii tunnistamaan vaaralliset rodut ulkonäöstä |
 | Muut kaupunkityypit | (lisätään myöhemmin) |
 
+## Kuolema
+
+- Kuolema esitetään **paikallislehden lööppinä**, jossa on hahmon kuva ja humoristinen otsikko kuolinsyystä, esimerkiksi "Lokki vei viimeisen makkaran – nälkä voitti". Lehden nimi on keksitty.
+- Sen jälkeen näytetään **pisteet ja ennätyslista**.
+- Uusi peli alkaa **heti napin painalluksella**, jotta tahti pysyy nopeana.
+
 ## Pisteytys
 
 - Peli jatkuu päivästä toiseen, kunnes hahmo kuolee.
