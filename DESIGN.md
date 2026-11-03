@@ -211,9 +211,9 @@ Krapula ei kovene päivien mukaan.
 
 | Tila | Näyttötapa | Seuraus |
 |---|---|---|
-| **Health** | mittari | kuolema, kun nollassa |
-| **Alkoholi** | mittari | kuolema, kun nollassa |
-| **Väsymys** | mittari | nukahtaa, kun täynnä (ks. alla) |
+| **Health** | sydän, josta väri valuu pois; ei tarkkaa lukemaa | kuolema, kun nollassa |
+| **Alkoholi** | **tarkka lukema**, koska alkoholi on pelin tärkein muuttuja | kuolema, kun nollassa |
+| **Väsymys** | ei mittaria: silmät alkavat painua kiinni, ryhti lysähtää, hahmo haukottelee ja päästä nousee välillä Zzz-ikoni | nukahtaa, kun täynnä (ks. alla) |
 | **Kylmä** | ei mittaria: hahmo tärisee | nälkä kasvaa nopeammin ja health kuluu |
 | **Nälkä** | ei mittaria: maha kurisee, hahmo näyttää nälkäiseltä | health kuluu; alkoholi nostaa alkoholimittaria tavallista enemmän (tyhjään mahaan) |
 
