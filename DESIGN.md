@@ -159,6 +159,8 @@ Krapula ei kovene päivien mukaan.
 ### Näkökenttä ja silmälasit
 
 - Kentillä on kaikenlaista tavaraa, joka näkyy epäselvänä ja **selkenee vasta, kun sen lähelle menee**. Joskus se on hukattu tavara, joskus vain sitä muistuttava roska tai muu esine.
+- Kaukaa esineen **muoto vihjaa**, mitä se voi olla. Esimerkiksi kenkämäinen möykky voi olla omat kengät tai vanha saapas.
+- **Omat tavarat eivät hehku eivätkä erotu muista** ennen kuin ne ovat lähellä. Pelaajan pitää tutkia epäilyttäviä möykkyjä.
 - **Ilman silmälaseja** tämä näkökenttä on lyhyempi.
 - Ilman silmälaseja kadunnimistä ei saa selvää kuin aivan vierestä. Kirjaimet voivat jopa mennä sekaisin.
 
