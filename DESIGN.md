@@ -321,6 +321,7 @@ Hahmoideat:
 
 - Kuolema esitetään **paikallislehden lööppinä**, jossa on hahmon kuva ja humoristinen otsikko kuolinsyystä, esimerkiksi "Lokki vei viimeisen makkaran – nälkä voitti". Lehden nimi on keksitty.
 - Sen jälkeen näytetään **pisteet ja ennätyslista**.
+  - Ennätyslista on aluksi **vain omalla laitteella**. **Yhteinen maailmanlaajuinen lista** lisätään myöhemmin; se vaatii palvelimen ja huijauksen eston.
 - Uusi peli alkaa **heti napin painalluksella**, jotta tahti pysyy nopeana.
 
 ## Pisteytys
