@@ -10,6 +10,7 @@ extends RefCounted
 ## The crossing streets are at x = ±16 .. ±23.
 
 const CityMap = preload("res://scripts/city_map.gd")
+const PersonModel = preload("res://scripts/person_model.gd")
 
 const BLOCK_HALF := 16.0
 const CROSS_HALF := 23.0
@@ -30,7 +31,7 @@ static func build(seg: Vector3i, home_x := INF, home_type := "flat") -> Node3D:
 	if sea:
 		_sea(root)
 	else:
-		_buildings(root, rng)
+		_buildings(root, rng, home_x)
 		if home_x != INF:
 			_home_door(root, home_x, home_type)
 	_props(root, rng, sea)
@@ -81,24 +82,39 @@ static func _sea(root: Node3D) -> void:
 		x += 2.0
 
 
-static func _buildings(root: Node3D, rng: RandomNumberGenerator) -> void:
+## Shops in this block are listed in the root's "shops" meta:
+## [{"type": "kiosk" or "bar", "x": door x}].
+static func _buildings(root: Node3D, rng: RandomNumberGenerator, home_x: float) -> void:
+	root.set_meta("shops", [])
 	var x := -BLOCK_HALF
 	var kiosk_idx := rng.randi() % 4 if rng.randf() < 0.5 else -1
+	var bar_idx := rng.randi() % 4 if rng.randf() < 0.4 else -1
+	if bar_idx == kiosk_idx:
+		bar_idx = -1
 	var idx := 0
 	while x < BLOCK_HALF - 0.5:
 		var w := minf(rng.randf_range(5.0, 8.0), BLOCK_HALF - x)
 		var h := rng.randf_range(9.0, 16.0)
-		_building(root, Vector3(x + w * 0.5, 0, -8.0), w, h, FACADE_COLORS[rng.randi() % FACADE_COLORS.size()], idx == kiosk_idx)
+		var shop := ""
+		if idx == kiosk_idx:
+			shop = "kiosk"
+		elif idx == bar_idx:
+			shop = "bar"
+		# Never a shop door right next to the home door.
+		var door_x := x + w * 0.5 + w * 0.3
+		if home_x != INF and absf(door_x - home_x) < 2.5:
+			shop = ""
+		_building(root, Vector3(x + w * 0.5, 0, -8.0), w, h, FACADE_COLORS[rng.randi() % FACADE_COLORS.size()], shop)
 		x += w
 		idx += 1
 	for s in [-1, 1]:
 		_building(root, Vector3(s * (CROSS_HALF + 9.0), 0, -8.0), 18.0, rng.randf_range(10.0, 15.0),
-			FACADE_COLORS[rng.randi() % FACADE_COLORS.size()], false)
+			FACADE_COLORS[rng.randi() % FACADE_COLORS.size()], "")
 	for i in 8:
 		_box(root, Vector3(-42.0 + i * 12.0, 9.0, -34.0), Vector3(11.0, 18.0 + rng.randf_range(-3, 4), 8.0), Color(0.62, 0.64, 0.68))
 
 
-static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Color, kiosk: bool) -> void:
+static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Color, shop: String) -> void:
 	var depth := 12.0
 	_box(root, base + Vector3(0, h * 0.5, -depth * 0.5), Vector3(w, h, depth), col)
 	_box(root, base + Vector3(0, h + 0.15, -depth * 0.5), Vector3(w + 0.2, 0.3, depth + 0.2), col.darkened(0.35))
@@ -112,11 +128,28 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 			_box(root, Vector3(wx, 4.8 + f * 3.0, base.z + 0.03), Vector3(0.9, 1.4, 0.08), glass)
 	_box(root, Vector3(base.x - w * 0.15, 1.5, base.z + 0.03), Vector3(w * 0.5, 1.8, 0.08), Color(0.3, 0.38, 0.45))
 	_box(root, Vector3(base.x + w * 0.3, 1.1, base.z + 0.04), Vector3(1.1, 2.2, 0.1), Color(0.35, 0.22, 0.15))
-	if kiosk:
-		_box(root, Vector3(base.x - w * 0.15, 2.8, base.z + 0.08), Vector3(w * 0.55, 0.6, 0.1), Color(0.85, 0.15, 0.15))
-		var l := _label(TranslationServer.translate("SIGN_KIOSK"), 72, 0.006)
+	if shop != "":
+		var door_x := base.x + w * 0.3
+		var sign_col := Color(0.85, 0.15, 0.15) if shop == "kiosk" else Color(0.35, 0.12, 0.4)
+		_box(root, Vector3(base.x - w * 0.15, 2.8, base.z + 0.08), Vector3(w * 0.55, 0.6, 0.1), sign_col)
+		var key := "SIGN_KIOSK" if shop == "kiosk" else "SIGN_BAR"
+		var l := _label(TranslationServer.translate(key), 72, 0.006)
 		l.position = Vector3(base.x - w * 0.15, 2.8, base.z + 0.15)
 		root.add_child(l)
+		# Lit doorway so shops are easy to spot.
+		var lit := _box(root, Vector3(door_x, 1.1, base.z + 0.06), Vector3(1.1, 2.2, 0.1), Color(0.95, 0.8, 0.45))
+		var lm: StandardMaterial3D = lit.material_override
+		lm.emission_enabled = true
+		lm.emission = Color(0.9, 0.7, 0.35)
+		lm.emission_energy_multiplier = 0.6
+		if shop == "bar":
+			# The bouncer stands next to the bar door, facing the street.
+			var b = PersonModel.new(Color(0.08, 0.08, 0.09), Color(0.08, 0.08, 0.09), Color(0.85, 0.68, 0.55), Color(0.1, 0.1, 0.1), 1.12)
+			b.position = Vector3(door_x + 1.0, 0.12, -7.3)
+			b.rotation.y = -PI * 0.5
+			root.add_child(b)
+		var shops: Array = root.get_meta("shops")
+		shops.append({"type": shop, "x": door_x})
 
 
 ## Home door. Flat: green door, doormat, warm lamp. Basement: low grey

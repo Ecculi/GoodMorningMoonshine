@@ -24,10 +24,24 @@ const RUN_DECAY_MULT := 1.6
 const DRINK_AMOUNT := 0.4
 const FOOD_HEALTH := 12.0
 
+## Sleep always burns at least this much alcohol...
+const SLEEP_MIN_DROP := 0.6
+## ...but the day never starts below this, or it would be over at once.
+const MORNING_MIN_PROMILLE := 0.25
+
+## Hunger 0..100 (no meter: the stomach growls and the character looks
+## hungry). Grows with activity and overnight.
+const HUNGER_RATE := 0.25
+const HUNGER_SLEEP := 25.0
+const HUNGER_HURTS := 70.0
+const HUNGER_EMPTY_STOMACH := 60.0
+const FOOD_HUNGER := 40.0
+
 var day := 1
 var promille := PROMILLE_START
 var health := 100.0
 var money := 0
+var hunger := 20.0
 var clock_min := float(DAY_START_MIN)
 
 ## Set by the player every frame.
@@ -58,6 +72,15 @@ var sleep_place := "home"
 var bonus := 0
 ## Today's weather: "sunny" or "cloudy" (rain and snow come later).
 var weather := "sunny"
+
+## Phone: battery 0..100 (always low), today's hints.
+var battery := 20.0
+## Messages: [{"icon": lost item id or "", "street": String}]
+var phone_msgs: Array = []
+## Yesterday's photo: {"id": item id, "seg": Vector3i, "street": String} or {}.
+var phone_photo := {}
+## Open full-screen thing that freezes the world: "", "phone" or "shop".
+var modal := ""
 var rng := RandomNumberGenerator.new()
 
 
@@ -73,6 +96,10 @@ func _process(delta: float) -> void:
 		world_dt = 0.0
 		active = false
 		return
+	if modal != "":
+		world_dt = 0.0
+		active = false
+		return
 	busy_time = maxf(0.0, busy_time - delta)
 	active = moving or busy_time > 0.0
 	world_dt = delta if active else 0.0
@@ -84,6 +111,9 @@ func _process(delta: float) -> void:
 	clock_min += float(DAY_END_MIN - DAY_START_MIN) / DAY_ACTIVE_SECONDS * world_dt
 	if promille < PROMILLE_HANGOVER:
 		health -= 1.5 * world_dt
+	hunger = minf(100.0, hunger + HUNGER_RATE * world_dt * mult)
+	if hunger >= HUNGER_HURTS:
+		health -= 1.0 * world_dt
 
 	if promille <= 0.0:
 		_die("HEADLINE_SOBER")
@@ -97,12 +127,17 @@ func _process(delta: float) -> void:
 		_end_day("SLEEP_NIGHT")
 
 
-func drink() -> void:
-	promille += DRINK_AMOUNT
+## Returns how much the per mille went up: more on an empty stomach.
+func drink(amount := DRINK_AMOUNT) -> float:
+	if hunger >= HUNGER_EMPTY_STOMACH:
+		amount *= 1.4
+	promille += amount
+	return amount
 
 
 func eat() -> void:
 	health = minf(100.0, health + FOOD_HEALTH)
+	hunger = maxf(0.0, hunger - FOOD_HUNGER)
 
 
 func damage(amount: float) -> void:
@@ -149,6 +184,7 @@ func new_game() -> void:
 	promille = PROMILLE_START
 	health = 100.0
 	money = 0
+	hunger = 20.0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	bonus = 0
@@ -163,6 +199,8 @@ func new_game() -> void:
 	_roll_weather()
 	_lose_items()
 	_place_lost_items()
+	_make_phone_hints()
+	modal = ""
 	over = false
 
 
@@ -187,11 +225,17 @@ func new_day() -> void:
 		_:
 			promille = clampf(0.5 + maxf(at_sleep - 1.0, 0.0) * 0.5, 0.3, 2.0)
 			health = minf(100.0, health + 35.0)
+	# Sleeping always burns alcohol and makes you hungry.
+	promille = maxf(minf(promille, at_sleep - SLEEP_MIN_DROP), MORNING_MIN_PROMILLE)
+	var cold_night := sleep_place == "street" or sleep_place == "basement" or sleep_place == "stairs"
+	hunger = minf(100.0, hunger + HUNGER_SLEEP + (8.0 if cold_night else 0.0))
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	_roll_weather()
 	_lose_items()
 	_place_lost_items()
+	_make_phone_hints()
+	modal = ""
 	over = false
 
 
@@ -233,6 +277,35 @@ func _place_lost_items() -> void:
 				break
 		var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
 		placements[id] = [seg, Vector3(rng.randf_range(-14.0, 14.0), 0.0, z)]
+
+
+## Each morning the phone has a little battery and maybe some hints about
+## where things were yesterday (messages and a photo). Not every day.
+func _make_phone_hints() -> void:
+	battery = rng.randf_range(8.0, 25.0)
+	phone_msgs.clear()
+	phone_photo = {}
+	var candidates: Array = []
+	for id in lost:
+		if id != "phone":
+			candidates.append(id)
+	if rng.randf() < 0.8:
+		for id in candidates:
+			if rng.randf() < 0.6:
+				phone_msgs.append({"icon": id, "street": _hint_street(placements[id][0])})
+		for i in rng.randi_range(0, 2):
+			phone_msgs.append({"icon": "", "street": _hint_street(CityMap.random_segment(rng))})
+		phone_msgs.shuffle()
+	if not candidates.is_empty() and rng.randf() < 0.6:
+		var id: String = candidates[rng.randi() % candidates.size()]
+		var seg: Vector3i = placements[id][0]
+		phone_photo = {"id": id, "seg": seg, "street": _hint_street(seg)}
+
+
+func _hint_street(seg: Vector3i) -> String:
+	if rng.randf() < 0.6:
+		return CityMap.street_name(seg)
+	return CityMap.cross_name(seg, rng.randf() < 0.5)
 
 
 func _seg_center(seg: Vector3i) -> Vector2:

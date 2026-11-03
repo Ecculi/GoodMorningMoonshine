@@ -66,9 +66,10 @@ func throw_charge() -> float:
 
 func _process(delta: float) -> void:
 	_clock += delta
-	if GameState.over:
+	if GameState.over or GameState.modal != "":
 		GameState.moving = false
 		_press_time = -1.0
+		model.animate(0.0, 0.0)
 		return
 
 	var dir := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
@@ -115,8 +116,25 @@ func _process(delta: float) -> void:
 
 	_handle_action(delta)
 	_check_pickups()
+	_hunger_signs()
 	for n in main.npcs:
 		n.check_pickpocket(self)
+
+
+## No hunger meter: when hungry the stomach growls now and then and the
+## character slumps a little.
+var _growl_t := 0.0
+
+
+func _hunger_signs() -> void:
+	var hungry := GameState.hunger >= GameState.HUNGER_EMPTY_STOMACH
+	model.rotation.z = -0.12 if hungry else 0.0
+	if not hungry:
+		return
+	_growl_t += GameState.world_dt
+	if _growl_t > 4.0:
+		_growl_t = 0.0
+		main.popup("~", position + Vector3(0.2 * facing, 1.2, 0.3), Color(1, 0.8, 0.5))
 
 
 func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
@@ -145,6 +163,11 @@ func _handle_action(delta: float) -> void:
 			_block_action = false
 		return
 	if Input.is_action_just_pressed("action"):
+		# Up + action opens the phone.
+		if Input.is_action_pressed("move_up"):
+			main.open_phone()
+			_press_time = -1.0
+			return
 		_press_time = 0.0
 		aim = Vector2(facing, 0)
 	if _press_time < 0.0:
@@ -166,8 +189,8 @@ func _short_action() -> void:
 	var target = main.find_npc_in_front(position, facing, PUNCH_RANGE)
 	if target == null and hand_item != null and main.nearest_npc_distance(position) > 2.5:
 		if hand_item.kind == Item.Kind.BOTTLE:
-			GameState.drink()
-			main.popup("+" + GameState.format_promille(GameState.DRINK_AMOUNT),
+			var amount := GameState.drink()
+			main.popup("+" + GameState.format_promille(amount),
 				position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
 			_consume_hand_item()
 			return

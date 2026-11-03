@@ -254,6 +254,8 @@ Krapula ei kovene päivien mukaan.
   - **Kylmä ja nälkä** heikentävät unta.
   - **Nukkumaanmenoaika:** mitä myöhemmin, sitä myöhemmin herätään (ks. Aurinko).
 - Esimerkiksi pihalta herännyt on nukkunut lyhyesti, joten hänellä on aamulla enemmän promilleja veressä.
+- **Uni laskee promilleja aina vähintään 0,6 ‰**, mutta aamu ei ala alle 0,25 promillesta (muuten päivä päättyisi heti).
+- **Uni aiheuttaa nälkää.** Kylmä yö (katu, rappu, kellari) kasvattaa nälkää enemmän.
 - **Unen laatu vaikuttaa kaikkeen:**
   - **Health:** hyvä yö kotona palauttaa healthin lähes täyteen, huono yö vähemmän.
   - **Väsymys** nollautuu yön aikana **lähes kokonaan** aina. Huonon yön jälkeen jää vain pieni jäännös.
@@ -438,7 +440,11 @@ Lisätty prototyyppiin:
 - **Kotityypit:** kerrostaloasunto (ilman avaimia rappukäytävä), kellarikomero (ilman avaimia riippulukko rikotaan kolmella lyönnillä; kylmä yö) ja kaverin sohva (ovikello; juoma kädessä pääsee aina sisään, muuten kaveri nukkuu joskus eikä avaa sinä päivänä).
 - **Tavaroiden haitat:** ilman silmälaseja kadunnimien kirjaimet menevät sekaisin kauempaa, ilman aurinkolaseja aurinko häikäisee aurinkoisella säällä, ilman takkia lyönnit sattuvat 30 % enemmän ja paljain jaloin taskuvarkaus onnistuu paremmin.
 
-Prototyypistä puuttuu vielä muun muassa lompakon ja henkilökortin haitat (kauppoja ei vielä ole), hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
+- **Puhelin:** ylös + toimintanappi avaa, vasen/oikea selaa, alas + toimintanappi sulkee. Viestit (tavaran ikoni ja kadunnimen alku), eilinen kuva (katukyltti ja hukattu tavara, hahmon edessä "sattumalta" sumea esine) ja kartta (pohjoinen ylhäällä, oma sijainti). Akkua on aamulla vähän, ja se kuluu reaaliajassa; kartta kuluttaa eniten. Maailma on pysähdyksissä puhelimen ollessa auki.
+- **Kioski ja baari:** joissain kortteleissa (valaistu ovi ja kyltti), auki tai kiinni päivästä riippuen. Kioskista pullo (3 €), makkara (2 €) ja puhelimen lataus (ilmainen, mutta aika harppaa ja promillet laskevat). Baarissa tuoppi (5 €), ja ovella on portsari. Ostaminen vaatii lompakon ja alkoholi henkilökortin.
+- **Nälkä:** kasvaa liikkuessa ja yöllä, kova nälkä kuluttaa healthia ja tyhjään mahaan alkoholi nousee 40 % enemmän. Ei mittaria: maha kurisee ja hahmo lysähtää. Makkara vie nälkää.
+
+Prototyypistä puuttuu vielä muun muassa hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
 
 ## Avoimet kysymykset
 

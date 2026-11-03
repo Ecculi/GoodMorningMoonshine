@@ -7,6 +7,7 @@ SLEEP_NIGHT,Nukahti kadulle
 DAY_N,Päivä %d
 SCORE,Pisteet %d
 SIGN_KIOSK,KIOSKI
+SIGN_BAR,BAARI
 SLEEP_HOME,Kotona omassa sängyssä
 SLEEP_STAIRS,Avaimet hukassa – nukkui rappukäytävässä
 SLEEP_BASEMENT,Kellarikomerossa – kylmä yö

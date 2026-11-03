@@ -12,6 +12,18 @@ const TouchControls = preload("res://scripts/touch_controls.gd")
 const CityMap = preload("res://scripts/city_map.gd")
 const BlockBuilder = preload("res://scripts/block_builder.gd")
 const LostItemNode = preload("res://scripts/lost_item_node.gd")
+const ModalUI = preload("res://scripts/modal_ui.gd")
+
+## Battery use per second while the phone is open, by page.
+const PHONE_DRAIN := [1.2, 1.8, 3.5]
+const KIOSK_OPTIONS := [
+	{"kind": "bottle", "price": 3, "alcohol": true},
+	{"kind": "food", "price": 2, "alcohol": false},
+	{"kind": "charge", "price": 0, "alcohol": false},
+]
+const BAR_OPTIONS := [
+	{"kind": "pint", "price": 5, "alcohol": true},
+]
 const TILT_SHIFT = preload("res://shaders/tilt_shift.gdshader")
 const CLOUD_SHADOW = preload("res://shaders/cloud_shadow.gdshader")
 ## Cloud drift in map coordinates (metres per second of active time).
@@ -55,6 +67,12 @@ var rng := RandomNumberGenerator.new()
 ## Cleared every morning, so the content changes daily.
 var _block_items := {}
 var _lock_hits := 0
+## Phone and shop state (GameState.modal says which is open).
+var phone_page := 0
+var shop_type := ""
+var shop_sel := 0
+var shop_flash := ""
+var shop_flash_t := 0.0
 var _glare := 0.0
 var _scrambled := {}
 var _friend_refused := false
@@ -78,6 +96,9 @@ func _ready() -> void:
 	hud = Hud.new()
 	hud.main = self
 	hud_layer.add_child(hud)
+	var modal_ui = ModalUI.new()
+	modal_ui.main = self
+	hud_layer.add_child(modal_ui)
 	add_child(TouchControls.new())
 
 	GameState.day_ended.connect(_on_day_ended)
@@ -86,6 +107,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_process_modal(delta)
 	_check_transitions()
 	var target_x := clampf(player.position.x, -10.0, 10.0)
 	camera.position.x = lerpf(camera.position.x, target_x, 1.0 - exp(-4.0 * delta))
@@ -259,9 +281,139 @@ func _scramble(text: String) -> String:
 	return out
 
 
-## Short action at the home door goes inside and ends the day.
+# --- Phone and shops -----------------------------------------------------------
+
+func open_phone() -> void:
+	if GameState.over or GameState.modal != "":
+		return
+	if GameState.is_lost("phone"):
+		popup("?", player.position + Vector3(0, 2.2, 0), Color(1, 0.6, 0.5))
+		return
+	if GameState.battery <= 0.0:
+		popup("0 %", player.position + Vector3(0, 2.2, 0), Color(1, 0.4, 0.3))
+		return
+	GameState.modal = "phone"
+	phone_page = 0
+
+
+func shop_options() -> Array:
+	return KIOSK_OPTIONS if shop_type == "kiosk" else BAR_OPTIONS
+
+
+## Phone: left/right browse, down + action closes; the battery drains in
+## real time (the world is frozen). Shop: left/right choose, action buys,
+## down leaves.
+func _process_modal(delta: float) -> void:
+	shop_flash_t = maxf(0.0, shop_flash_t - delta)
+	match GameState.modal:
+		"phone":
+			if Input.is_action_just_pressed("move_left"):
+				phone_page = (phone_page + 2) % 3
+			elif Input.is_action_just_pressed("move_right"):
+				phone_page = (phone_page + 1) % 3
+			GameState.battery = maxf(0.0, GameState.battery - PHONE_DRAIN[phone_page] * delta)
+			var close := Input.is_action_just_pressed("action") and Input.is_action_pressed("move_down")
+			if close or GameState.battery <= 0.0:
+				_close_modal()
+		"shop":
+			var opts := shop_options()
+			if Input.is_action_just_pressed("move_left"):
+				shop_sel = (shop_sel + opts.size() - 1) % opts.size()
+			elif Input.is_action_just_pressed("move_right"):
+				shop_sel = (shop_sel + 1) % opts.size()
+			elif Input.is_action_just_pressed("move_down"):
+				_close_modal()
+			elif Input.is_action_just_pressed("action"):
+				_buy(opts[shop_sel])
+
+
+## The button press that closed the overlay must not also punch.
+func _close_modal() -> void:
+	GameState.modal = ""
+	player._block_action = true
+
+
+func _buy(o: Dictionary) -> void:
+	var price: int = o["price"]
+	if price > 0 and GameState.is_lost("wallet"):
+		_shop_fail("wallet")
+		return
+	if o["alcohol"] and GameState.is_lost("idcard"):
+		_shop_fail("idcard")
+		return
+	if GameState.money < price:
+		_shop_fail("money")
+		return
+	GameState.money -= price
+	match o["kind"]:
+		"bottle":
+			player._pickup(spawn_item(Item.Kind.BOTTLE, player.position))
+		"food":
+			player._pickup(spawn_item(Item.Kind.FOOD, player.position))
+		"pint":
+			GameState.drink(0.5)
+		"charge":
+			# Charging is a trade: time jumps ahead, alcohol goes down.
+			GameState.battery = minf(100.0, GameState.battery + 15.0)
+			GameState.clock_min += 30.0
+			GameState.promille = maxf(0.05, GameState.promille - 0.12)
+	shop_flash = ""
+
+
+func _shop_fail(what: String) -> void:
+	shop_flash = what
+	shop_flash_t = 1.2
+
+
+func _shop_at(pos: Vector3):
+	if level == null or not level.has_meta("shops") or pos.z > -6.0:
+		return null
+	for sh in level.get_meta("shops"):
+		if absf(pos.x - sh["x"]) < 0.9:
+			return sh
+	return null
+
+
+## Shops are open or closed for the whole day (random per day and shop).
+func _shop_open(sh: Dictionary) -> bool:
+	var h := hash([GameState.day, segment, int(sh["x"] * 10.0), GameState.home_seg])
+	return absi(h) % 10 < 8
+
+
+func _try_shop(sh: Dictionary) -> bool:
+	var door := Vector3(sh["x"], 2.2, -7.4)
+	if not _shop_open(sh):
+		popup("X", door, Color(0.9, 0.3, 0.3))
+		return true
+	if sh["type"] == "bar":
+		# The bouncer: no shoes, no entry; too drunk is turned away, but a
+		# borderline case can be fixed with a fiver.
+		var p := GameState.promille
+		var ok := not GameState.is_lost("shoes") and p <= 2.5
+		if not ok and not GameState.is_lost("shoes") and p <= 3.0 and GameState.money >= 5:
+			GameState.money -= 5
+			popup("-5 €", door, Color(1, 0.85, 0.3))
+			ok = true
+		if not ok:
+			popup("X", door + Vector3(1.0, 0, 0), Color(0.9, 0.3, 0.3))
+			player.take_hit(3.0, sh["x"] + 2.0)
+			return true
+	shop_type = sh["type"]
+	shop_sel = 0
+	shop_flash = ""
+	GameState.modal = "shop"
+	return true
+
+
+## Short action at a door: the home door ends the day, shop doors open the
+## counter.
 func try_enter_door(pos: Vector3) -> bool:
-	if segment != GameState.home_seg or GameState.over:
+	if GameState.over:
+		return false
+	var sh = _shop_at(pos)
+	if sh != null:
+		return _try_shop(sh)
+	if segment != GameState.home_seg:
 		return false
 	if absf(pos.x - GameState.home_x) > 0.9 or pos.z > -6.0:
 		return false
