@@ -105,9 +105,17 @@ func _process(delta: float) -> void:
 		v.z += sin(_sway * 2.3) * 1.6 * drunk
 		v.x += sin(_sway * 1.3) * 0.8 * drunk
 
+	var before := position
 	position += (v + _knock) * delta
 	_knock = _knock.move_toward(Vector3.ZERO, 12.0 * delta)
 	position = main.clamp_walkable(position)
+	# A wrong way that runs into a wall or the curb would leave the
+	# character silly-walking on the spot: drop it instead.
+	if wrong_way != Vector2.ZERO and moving:
+		var wanted := v.length() * delta
+		if wanted > 0.0 and (position - before).length() < wanted * 0.3:
+			wrong_way = Vector2.ZERO
+			_wrong_cd = 1.0
 
 	GameState.moving = moving
 	GameState.running = running and moving
