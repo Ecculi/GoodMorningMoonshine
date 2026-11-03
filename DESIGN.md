@@ -151,6 +151,17 @@ Krapula ei kovene päivien mukaan.
   - **Pelipäivän pituus on noin 3 minuuttia** oikeaa aikaa, jos pelaaja liikkuu koko ajan. Peli on nopea, ja yksi pelin tunti vastaa siis vain muutamaa sekuntia liikettä.
 - Aurinkoisella säällä pelaaja **ei juuri näe aurinkoa vasten kulkiessaan, jos aurinkolasit ovat hukassa**.
 
+### Sää
+
+- **Joka päivä on eri sää**, ja se arvotaan satunnaisesti.
+
+  | Sää | Vaikutus |
+  |---|---|
+  | **Aurinkoinen** | häikäisee aurinkoa vasten kuljettaessa, jos aurinkolasit ovat hukassa |
+  | **Pilvinen** | neutraali; aurinkolaseja ei tarvita |
+  | **Sade** | kylmettyy nopeammin ilman takkia; lätäköitä, joista pyöräilijät roiskivat; näkyvyys hieman huonompi |
+  | **Lumi ja pakkanen** | kova kylmä; liukkaat kadut, joten juostessa voi kaatua ja menettää healthia; kengättä erityisen vaikeaa |
+
 ### Puhelin
 
 - Puhelin auttaa vain **tavaroiden löytämisessä** ja **oman sijainnin selvittämisessä**.
