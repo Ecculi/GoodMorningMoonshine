@@ -72,6 +72,11 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 3. Kotiin päästyään hahmo rojahtaa sänkyyn, sohvalle tai lattialle alkoholimäärästä ja väsymyksestä riippuen ja nukahtaa. Joskus pääsee pieru.
 4. Seuraava päivä on uusi kenttä, ja se on aina edellistä vaikeampi.
 
+### Koti
+
+- **Kodin tyyppi vaihtelee** pelistä toiseen: esimerkiksi kerrostaloasunto (kerros arvotaan), kellarikomero tai kaverin sohva.
+- *Avoinna:* miten kodin tyypit eroavat toisistaan.
+
 ### Vaikeutuminen
 
 Päivät vaikeutuvat vähitellen kolmella tavalla:
