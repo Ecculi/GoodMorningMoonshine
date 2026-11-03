@@ -126,7 +126,9 @@ func _process(delta: float) -> void:
 ## actually going puts them back on track, until it happens again.
 const WRONG_WAY_PROMILLE := 2.5
 const WRONG_WAY_RUN_MULT := 2.5
-const WRONG_WAY_DIRS := [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]
+## Eight directions (arrows can steer diagonally).
+const WRONG_WAY_DIRS := [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1),
+	Vector2(0.7071, 0.7071), Vector2(-0.7071, 0.7071), Vector2(0.7071, -0.7071), Vector2(-0.7071, -0.7071)]
 var wrong_way := Vector2.ZERO
 var _wrong_cd := 3.0
 
@@ -137,7 +139,7 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 		wrong_way = Vector2.ZERO
 		return d
 	if wrong_way != Vector2.ZERO:
-		if d.dot(wrong_way) > 0.7:
+		if d.dot(wrong_way) > 0.65:
 			# Corrected: the player steers the way the character was going.
 			wrong_way = Vector2.ZERO
 			var heavy := clampf((p - WRONG_WAY_PROMILLE) / 1.0, 0.0, 1.0)
@@ -147,19 +149,13 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 	# Running drunk makes it happen much more often.
 	_wrong_cd -= delta * (WRONG_WAY_RUN_MULT if running else 1.0)
 	if _wrong_cd <= 0.0:
-		# Only sideways relative to the arrow, never straight back.
+		# Any of the eight directions except the arrow's own and the exact
+		# opposite.
 		var options: Array = []
 		for w in WRONG_WAY_DIRS:
-			if absf(d.dot(w)) < 0.3:
+			var dd: float = d.dot(w)
+			if dd < 0.9 and dd > -0.9:
 				options.append(w)
-		if options.is_empty():
-			# Diagonal input: pick a side direction that is not backwards.
-			for w in WRONG_WAY_DIRS:
-				if d.dot(w) > -0.3 and d.dot(w) < 0.9:
-					options.append(w)
-		if options.is_empty():
-			_wrong_cd = 1.0
-			return d
 		wrong_way = options[randi() % options.size()]
 		return wrong_way
 	return d
