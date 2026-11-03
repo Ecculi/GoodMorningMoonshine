@@ -13,17 +13,19 @@ extends RefCounted
 const A_STREETS := ["Rantakatu", "Aleksanterinkatu", "Torikatu", "Kirkkokatu", "Isokatu",
 	"Uusikatu", "Mäkelininkatu", "Koulukatu", "Rautatienkatu"]
 
-## Streets running NW–SE, listed from SW to NE.
-## TODO: place Asemakatu, Kajaaninkatu and Kauppurienkatu (east side).
-const B_STREETS := ["Sepänkatu", "Albertinkatu", "Saaristonkatu", "Pakkahuoneenkatu",
-	"Hallituskatu", "Ojakatu"]
+## Streets running NW–SE, listed from SW to NE (checked against a map).
+## Kauppurienkatu (Rotuaari) lies between Saaristonkatu and Pakkahuoneenkatu.
+## TODO: Ojakatu's place is not known yet. Linnankatu, Kajaaninkatu and
+## Heikinkatu only exist on the east side, which the full grid can't show yet.
+const B_STREETS := ["Sepänkatu", "Albertinkatu", "Saaristonkatu", "Kauppurienkatu",
+	"Pakkahuoneenkatu", "Hallituskatu", "Asemakatu"]
 
 ## Compass direction the camera looks at on each street family.
 ## A streets: camera looks NW, +x on screen points NE.
 ## B streets: camera looks NE, +x on screen points SE.
 const VIEW_AZIMUTH := [315.0, 45.0]
 
-const START := Vector3i(0, 3, 3)  # Kirkkokatu, Pakkahuoneenkatu–Hallituskatu
+const START := Vector3i(0, 3, 4)  # Kirkkokatu, Pakkahuoneenkatu–Hallituskatu
 
 
 static func streets(family: int) -> Array:
