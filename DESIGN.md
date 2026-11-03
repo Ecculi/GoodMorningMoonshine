@@ -106,6 +106,8 @@ Krapula ei kovene päivien mukaan.
 
 ### Hukatut tavarat
 
+- **Taskujen kopelointi aamulla:** päivän alussa hahmo kopeloi taskujaan lyhyessä animaatiossa (pari sekuntia). Ruudulle ponnahtaa ikonirivi tavaroista, ja puuttuvat on vedetty yli punaisella.
+- Sen jälkeen **puuttuvat tavarat näkyvät pieninä harmaina ikoneina ruudun reunassa** koko päivän.
 - Joka päivä hukkuu uusia tavaroita. Aiemmin hukatut pysyvät hukassa, kunnes ne löytyvät.
 - Jokaisen puuttuvan tavaran puute haittaa peliä jollain tavalla. Esimerkkejä:
   - **Lompakko:** ei voi ostaa mitään. Ensimmäisenä päivänä lompakko voi olla hukassa.
