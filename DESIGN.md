@@ -301,6 +301,10 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - Pelissä on tappelua. Pelaaja voi lyödä muita, ja muut voivat hyökätä pelaajan kimppuun.
 - **Erillistä torjuntaa ei ole.** Iskuja voi väistää liikkumalla, esimerkiksi ylös tai alas kadun syvyyssuunnassa.
 - Osalla hahmoista isku näkyy hetkeä ennen osumaa (esim. käsi nousee), mutta **kaikista hahmoista ei näe, milloin ne ovat lyömässä**.
+- **Heittäminen:** heitetyn esineen vaikutus riippuu esineestä:
+  - **Kevyt esine** (tölkki, tyhjä muovipussi) ärsyttää kohdetta mutta ei juuri satuta.
+  - **Raskas esine** (pullo, täysi pussi) tainnuttaa kohteen hetkeksi.
+  - **Ruoka** houkuttelee lokit ja koirat paikalle. Sillä voi harhauttaa vihaisen koiran.
 
 ### Ryöstely
 
