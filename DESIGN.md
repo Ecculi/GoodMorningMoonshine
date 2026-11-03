@@ -8,6 +8,8 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 **Perusidea:** pelihahmo herää krapulassa ja huomaa hukanneensa tavaroitaan. Hänen pitää lähteä etsimään niitä kaupungilta, selvitä hengissä ja löytää takaisin kotiin.
 
+**Peli on nopeatempoinen.** Mekaniikat, joissa vain odotetaan tai istutaan paikallaan, jätetään pois.
+
 ## Kuvakulma ja grafiikka
 
 - **Grafiikka toteutetaan tilt-shift-tekniikalla**, jolloin kaupunki näyttää pienoismallilta.
@@ -136,6 +138,15 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - Hän herää seuraavana aamuna, eli seuraavasta kentästä.
 - Joskus hän herää samasta paikasta. Jos veressä oli tarpeeksi alkoholia, hän voi herätä aivan muualta, esimerkiksi toisesta asunnosta.
 
+## Rahan hankinta
+
+- **Taskuvarkaus:** hahmo on kleptomaani ja näpistää automaattisesti (ks. Ryöstely).
+- **Ryöstely:** tyrmätty ohikulkija voi pudottaa rahaa (ks. Ryöstely).
+- **Pullonpalautus:** pantillisia tölkkejä ja pulloja kerätään kadulta ja palautetaan kioskissa tai kauppakeskuksessa. Tölkinkerääjä kilpailee samoista tölkeistä.
+- **Kolikoita maasta:** näkyvät epäselvinä kuten muutkin esineet ja selkenevät lähelle mentäessä.
+- **Katusoitto:** onnistuu, jos löytää soittimen tai pahvimukin.
+- **Kerjäämistä ei toteuteta**, koska se on hidasta eikä sovi nopeatempoiseen peliin.
+
 ## Tappelu
 
 - Pelissä on tappelua. Pelaaja voi lyödä muita, ja muut voivat hyökätä pelaajan kimppuun.
@@ -197,7 +208,7 @@ Hahmoideat:
 ## Avoimet kysymykset
 
 - Hukattujen tavaroiden haittavaikutukset
-- Muut tavat saada alkoholia, ruokaa ja rahaa
+- Muut tavat saada alkoholia ja ruokaa (rahan hankinta on päätetty)
 - Hahmojen erikoisuudet tarkemmin
 - Lisää rakennuksia ja sisätiloja myöhemmin (aloituslista on päätetty)
 - Pelin läpäisy
