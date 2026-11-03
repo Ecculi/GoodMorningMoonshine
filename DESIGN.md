@@ -376,6 +376,11 @@ Hahmoideat:
   - **Tavarat:** 100 pistettä jokaisesta tavarasta, joka on mukana kuollessa.
   - **Bonus:** 500 pistettä, jos pääsee kotiin ja kaikki sen päivän hukatut tavarat on löydetty.
 
+## Pelin opettaminen
+
+- Erillistä opetusosiota ei ole.
+- **Vihjeet näkyvät vain pelin ensimmäisenä päivänä**: pieniä ikonivihjeitä oikealla hetkellä, esimerkiksi oven kohdalla napin kuva ja nuoli sisään tai ensimmäisen esineen kohdalla kävelevä jalka. Kukin vihje näkyy kerran.
+
 ## Kieli ja teksti
 
 - Pelissä on **mahdollisimman vähän tekstiä**. Tapahtumat ja tilat selitetään **ikoneilla ja muodoilla**.
