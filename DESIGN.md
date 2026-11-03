@@ -30,6 +30,8 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - **Yksi pelinäkymä on yksi kortteli**, eli kadun pätkä kahden risteyksen välillä. Risteykset ovat näkymän reunoilla.
   - Risteyksestä jatketaan suoraan samaa katua seuraavaan kortteliin (näkymä vaihtuu) tai käännytään ylös tai alas poikkikadulle (näyttö vaihtuu ja tulee uusi katu).
   - Lyhyet näkymät ovat kevyitä ladata myös mobiilissa ja selaimessa, ja jokaisella korttelilla voi olla oma tunnelmansa.
+- **Korttelin ylittää noin 5 sekunnissa**, jos juoksee koko ajan. Kävellen siihen menee kauemmin.
+- **Tavarat ovat lähellä kotia:** koko keskusta on käytössä, mutta koti ja hukatut tavarat arvotaan joka päivä muutaman korttelin säteelle toisistaan. **Säde kasvaa päivä päivältä**, mikä on yksi tapa, jolla peli vaikeutuu.
 - Jokainen peli sijoittuu johonkin kaupunkiin. Kaupungin kartta on aina sama, mutta **kodin sijainti vaihtuu joka pelissä**, mikä lisää uudelleenpelattavuutta.
 - Kun pelaaja kuolee ja aloittaa uuden pelin, kaupunki ja kodin sijainti vaihtuvat.
 - **Aluksi toteutetaan vain Oulu.**
