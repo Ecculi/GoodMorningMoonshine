@@ -252,7 +252,11 @@ Hahmoideat:
   - rahan määrästä
   - tavaroiden määrästä
 - **Pelillä ei ole läpäisyä.** Peli jatkuu ja vaikeutuu, kunnes hahmo kuolee. Tavoitteena on selvitä mahdollisimman monta päivää ja saada parhaat pisteet.
-- *Avoinna:* tarkka pistekaava.
+- **Pistekaava:**
+  - **Selvitty päivä:** päivän numero × 1000. Esimerkiksi päivä 5 antaa 5000 pistettä, koska myöhemmät päivät ovat vaikeampia.
+  - **Raha:** 100 pistettä jokaisesta eurosta.
+  - **Tavarat:** 100 pistettä jokaisesta tavarasta, joka on mukana kuollessa.
+  - **Bonus:** 500 pistettä, jos pääsee kotiin ja kaikki sen päivän hukatut tavarat on löydetty.
 
 ## Tekniikka
 
