@@ -174,7 +174,7 @@ Krapula ei kovene päivien mukaan.
 - **Omat tavarat eivät hehku eivätkä erotu muista** ennen kuin ne ovat lähellä. Pelaajan pitää tutkia epäilyttäviä möykkyjä.
 - **Ilman silmälaseja** tämä näkökenttä on lyhyempi.
 - **Ilman silmälaseja** kadunnimikyltit ovat sumeita, ja niistä saa selvää vasta aivan vierestä.
-- **Humalassa** (yli 2 ‰) kyltin kirjaimet menevät sekaisin: yli 5 metrin päästä kyltissä on mitä sattuu kirjaimia. Lähempänä kuin 5 metriä kirjaimet ovat oikeat, mutta ne pyörivät uuteen järjestykseen jokaisella askeleella, ja mitä lähemmäs tullaan, sitä useampi kirjain on oikealla paikallaan. Tolpan vieressä näkyy oikea nimi.
+- **Humalassa** (yli 2 ‰) kyltin kirjaimet menevät sekaisin: yli 5 metrin päästä kyltissä on mitä sattuu kirjaimia. Lähempänä kuin 5 metriä kirjaimet ovat oikeat, mutta ne pyörivät uuteen järjestykseen jokaisella askeleella. **Jokaisella kyltillä on oma kohta** (eri kyltillä eri paikassa) kyltin lähellä: mitä lähempänä sitä kohtaa ollaan, sitä useampi kirjain on oikealla paikallaan, ja oikea nimi näkyy vasta aivan siinä kohdassa.
 - Jos on humalassa ja lasit hukassa, molemmat efektit ovat voimassa.
 - Sama koskee kauppojen kylttejä (kioski, baari).
 

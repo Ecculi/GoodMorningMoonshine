@@ -262,12 +262,16 @@ func _check_lost_pickups() -> void:
 ## - Glasses lost: the text is blurry, sharp only right next to the sign.
 ## - Drunk enough:
 ##   - further than 5 m: random letters
-##   - 5 m .. 1.8 m: the right letters, reshuffled on every step; the closer,
-##     the more of them sit in the right place
-##   - at the pole: the real name
+##   - within 5 m: the right letters, reshuffled on every step
+##   - every sign has its own "sweet spot" near it (different for each
+##     sign); the closer to that spot, the more letters sit in the right
+##     place, and only right at the spot the real name shows
 ## - Both: both effects at once.
 const SIGN_SHUFFLE_FAR := 5.0
-const SIGN_SHUFFLE_DIST := 1.8
+## Sweet spot: how far from it letters start falling into place, and how
+## close you must be to read the real name.
+const SIGN_SPOT_RANGE := 3.0
+const SIGN_SPOT_EXACT := 0.6
 const SIGN_SHARP_DIST := 1.5
 ## Walking this far counts as one step (the letters reshuffle).
 const SIGN_STEP_LEN := 0.6
@@ -298,9 +302,12 @@ func _update_signs() -> void:
 		if drunk:
 			if d > SIGN_SHUFFLE_FAR:
 				want = _random_letters(real)
-			elif d > SIGN_SHUFFLE_DIST:
-				var keep := 1.0 - (d - SIGN_SHUFFLE_DIST) / (SIGN_SHUFFLE_FAR - SIGN_SHUFFLE_DIST)
-				want = _scramble(real, _sign_step, keep)
+			else:
+				var spot := _sign_spot(l)
+				var ds := Vector2(spot.x - player.position.x, spot.z - player.position.z).length()
+				if ds > SIGN_SPOT_EXACT:
+					var keep := clampf(1.0 - (ds - SIGN_SPOT_EXACT) / SIGN_SPOT_RANGE, 0.0, 0.85)
+					want = _scramble(real, _sign_step, keep)
 		if l.text != want:
 			l.text = want
 		var blur := clampf((d - SIGN_SHARP_DIST) / 6.0, 0.0, 1.0) if blind else 0.0
@@ -331,6 +338,19 @@ func _set_sign_blur(l: Label3D, blur: float) -> void:
 		g.text = l.text
 		g.position = SIGN_GHOSTS[i] * (0.4 + blur * 1.6)
 		g.modulate = Color(1, 1, 1, 0.22 * blur)
+
+
+## Each sign's sweet spot: a fixed random point near the sign on the
+## walkable street (seeded by the sign, so it stays put).
+func _sign_spot(l: Label3D) -> Vector3:
+	if l.has_meta("spot"):
+		return l.get_meta("spot")
+	var r := RandomNumberGenerator.new()
+	r.seed = hash([l.get_meta("real_text"), int(l.global_position.x * 10.0), segment])
+	var spot := Vector3(l.global_position.x + r.randf_range(-2.5, 2.5), 0.0, r.randf_range(-7.2, -2.0))
+	spot = clamp_walkable(spot)
+	l.set_meta("spot", spot)
+	return spot
 
 
 ## The right letters in a new random order for every step. `keep` (0..1)
