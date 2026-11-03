@@ -19,4 +19,4 @@ Ohjaus:
 | Puhelin auki / kiinni | P tai Tab (tai ylös + toimintanappi, kiinni alas + toimintanappi) | Y | ylös + iso nappi, kiinni alas + iso nappi |
 | Selaa puhelinta | vasen / oikea | sama | sama |
 
-Debug (vain kehitysversiossa, esim. editorista ajettaessa): F1 health täyteen, F2 alkoholi 2,8 ‰:iin (selvästi humalassa, ei vielä sammu), F3 rahaa +100 €. Samat napit näkyvät ruudun vasemmassa reunassa.
+Debug (vain kehitysversiossa, esim. editorista ajettaessa): F1 health täyteen, F2 alkoholia +0,5 ‰ joka painalluksella (ei ylärajaa; yli 3,5 ‰:ssä hahmo sammuu), F3 rahaa +100 €. Samat napit näkyvät ruudun vasemmassa reunassa.

@@ -1,9 +1,9 @@
 extends CanvasLayer
 ## Debug helpers (only in debug builds, e.g. when run from the editor):
-## F1 = health full, F2 = alcohol 2.8 per mille (drunk, below passing out),
+## F1 = health full, F2 = alcohol +0.5 per mille per press (no limit),
 ## F3 = money +100 €. The same as small on-screen buttons for touch screens.
 
-const DEBUG_PROMILLE := 2.8
+const DEBUG_PROMILLE_STEP := 0.5
 
 
 func _ready() -> void:
@@ -15,7 +15,7 @@ func _ready() -> void:
 	box.position = Vector2(12, 130)
 	add_child(box)
 	_button(box, "F1 HP", _fill_health)
-	_button(box, "F2 ‰", _fill_alcohol)
+	_button(box, "F2 +‰", _fill_alcohol)
 	_button(box, "F3 €", _add_money)
 
 
@@ -45,7 +45,7 @@ func _fill_health() -> void:
 
 
 func _fill_alcohol() -> void:
-	GameState.promille = DEBUG_PROMILLE
+	GameState.promille += DEBUG_PROMILLE_STEP
 
 
 func _add_money() -> void:
