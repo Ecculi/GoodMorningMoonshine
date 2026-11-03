@@ -87,7 +87,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 ### Päivä = kenttä
 
-1. Päivä alkaa kotoa. Pelaaja lähtee liikkeelle, joten hän tietää, missä koti on.
+1. **Ensimmäinen päivä alkaa kotoa**, joten pelaaja tietää, missä koti on. **Seuraavina päivinä hahmo herää aina jostain muualta** (juoppo on lähtenyt yöllä vielä liikkeelle), ja herätyspaikka on päivä päivältä kauempana kotoa. Näin jokainen päivä vaatii matkan kotiin, eikä pisteitä saa menemällä heti nukkumaan.
 2. Osa tavaroista on hukassa, ja niitä etsitään kaupungilta.
 3. Kotiin päästyään hahmo rojahtaa sänkyyn, sohvalle tai lattialle alkoholimäärästä ja väsymyksestä riippuen ja nukahtaa. Joskus pääsee pieru.
 4. Seuraava päivä on uusi kenttä, ja se on aina edellistä vaikeampi.
@@ -288,7 +288,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 
 - Kun väsymys on täynnä, pelaaja nukahtaa siihen paikkaan, missä on.
 - Hän herää seuraavana aamuna, eli seuraavasta kentästä.
-- Joskus hän herää samasta paikasta. Jos veressä oli tarpeeksi alkoholia, hän voi herätä aivan muualta, esimerkiksi toisesta asunnosta.
+- Hän herää aina jostain muualta kuin kotoa (ks. Päivä = kenttä). Nukahtamispaikka vaikuttaa silti aamun promilleihin, healthiin ja nälkään.
 
 ## Rahan hankinta
 
@@ -436,7 +436,7 @@ Lisätty prototyyppiin:
 - Kadulle jääneet tavarat pysyvät korttelissa saman päivän ajan. Seuraavana aamuna sisältö arvotaan uudelleen.
 - Uusi peli alkaa satunnaisesta korttelista. Seuraava päivä alkaa siitä korttelista, johon hahmo nukahti.
 
-- **Koti ja hukatut tavarat:** kodin paikka (kerrostalo, vihreä ovi) arvotaan joka peliin, ja päivä alkaa kodin ovelta. Aamulla hukatut tavarat näkyvät hahmon ajatuskuplassa ensimmäisten 5 metrin ajan ja sen jälkeen ikoneina ruudun reunassa; humalassa osa ikoneista muuttuu läiskiksi. Tavarat arvotaan kodin lähelle säteellä, joka kasvaa päivä päivältä. Kaukaa ne ovat harmaita möhkäleitä, ja ilman silmälaseja ne erottuvat vasta aivan läheltä. Kotiovella toimintanappi vie nukkumaan, ja kotona nukuttu yö on paras. Ilman avaimia hahmo nukkuu rappukäytävässä, ja ilman kenkiä vauhti on hitaampi. Kun kaikki tavarat löytyvät ennen kotiin menoa, saa 500 pisteen bonuksen.
+- **Koti ja hukatut tavarat:** kodin paikka (kerrostalo, vihreä ovi) arvotaan joka peliin, ja ensimmäinen päivä alkaa kodin ovelta (myöhemmin herätään muualta). Aamulla hukatut tavarat näkyvät hahmon ajatuskuplassa ensimmäisten 5 metrin ajan ja sen jälkeen ikoneina ruudun reunassa; humalassa osa ikoneista muuttuu läiskiksi. Tavarat arvotaan kodin lähelle säteellä, joka kasvaa päivä päivältä. Kaukaa ne ovat harmaita möhkäleitä, ja ilman silmälaseja ne erottuvat vasta aivan läheltä. Kotiovella toimintanappi vie nukkumaan, ja kotona nukuttu yö on paras. Ilman avaimia hahmo nukkuu rappukäytävässä, ja ilman kenkiä vauhti on hitaampi. Kun kaikki tavarat löytyvät ennen kotiin menoa, saa 500 pisteen bonuksen.
 
 - **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot) tai pilvinen (pehmeä valo, ei teräviä varjoja). Sade ja lumi puuttuvat vielä.
 

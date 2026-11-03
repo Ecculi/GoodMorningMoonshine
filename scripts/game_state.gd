@@ -70,6 +70,9 @@ var placements := {}
 ## Where the character slept: "home", "stairs" or "street".
 var sleep_place := "home"
 var bonus := 0
+## Where the character wakes up (from day 2 on: never at home).
+var wake_seg := CityMap.START
+var wake_pos := Vector3.ZERO
 ## Today's weather: "sunny" or "cloudy" (rain and snow come later).
 var weather := "sunny"
 
@@ -232,6 +235,7 @@ func new_day() -> void:
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	_roll_weather()
+	_choose_wake_place()
 	_lose_items()
 	_place_lost_items()
 	_make_phone_hints()
@@ -242,6 +246,25 @@ func new_day() -> void:
 ## The player sleeps somewhere other than the street.
 func slept_at_home() -> bool:
 	return sleep_place != "street"
+
+
+## The character went out again during the night, so from day 2 on the
+## morning starts somewhere else, further from home every day.
+func _choose_wake_place() -> void:
+	var max_d := 1.0 + float(day)
+	var min_d := minf(maxf(1.5, max_d * 0.5), max_d)
+	var home_c := _seg_center(home_seg)
+	var best := home_seg
+	for attempt in 400:
+		var cand := CityMap.random_segment(rng)
+		var c := _seg_center(cand)
+		var d := absf(c.x - home_c.x) + absf(c.y - home_c.y)
+		if cand != home_seg and d >= min_d and d <= max_d:
+			best = cand
+			break
+	wake_seg = best
+	var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
+	wake_pos = Vector3(rng.randf_range(-12.0, 12.0), 0.0, z)
 
 
 ## Every day has its own weather.

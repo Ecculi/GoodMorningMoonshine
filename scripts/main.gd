@@ -542,18 +542,12 @@ func _new_game() -> void:
 	hud.show_pocket_check()
 
 
-## The next day starts where the character fell asleep: at home (or in the
-## stairwell outside the door), or on the street.
+## From day 2 on the character wakes up somewhere other than home (they
+## went out again during the night); further away every day.
 func _new_day() -> void:
 	_block_items.clear()
 	_friend_refused = false
-	if GameState.sleep_place == "street":
-		var p: Vector3 = player.position
-		p.x = clampf(p.x, -BLOCK_HALF + 1.0, BLOCK_HALF - 1.0)
-		p.z = clampf(p.z, Z_MIN, Z_MAX)
-		_enter_block(segment, p, player.facing)
-	else:
-		_enter_block(GameState.home_seg, _home_door_pos(), 1)
+	_enter_block(GameState.wake_seg, GameState.wake_pos, 1 if rng.randf() < 0.5 else -1)
 	hud.show_pocket_check()
 
 
