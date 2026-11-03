@@ -147,6 +147,16 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - **Katusoitto:** onnistuu, jos löytää soittimen tai pahvimukin.
 - **Kerjäämistä ei toteuteta**, koska se on hidasta eikä sovi nopeatempoiseen peliin.
 
+## Ruoan ja alkoholin hankinta
+
+- **Ostaminen:** kioskista, baarista ja kauppahallista (vaatii lompakon ja rahaa).
+- **Ryöstely ja taskuvarkaus:** ohikulkija voi pudottaa ruokaa tai alkoholia.
+- **Kadun juoppo:** voi tarjota huikan vaihtokauppana.
+- **Roskiksen penkominen:** nopea toiminto. Sieltä voi löytyä ruokaa, tölkki tai ei mitään, ja lokit voivat hyökätä.
+- **Terassilta varastaminen:** pelaaja nappaa juoman pöydältä ohi kulkiessaan. Asiakas tai portsari voi suuttua.
+- **Hukatut pullot ja eväät:** kadulla on muiden hukkaamia pulloja ja eväitä. Ne näkyvät epäselvinä kuten muutkin esineet.
+- **Ilmaisia maistiaisia ei toteuteta.**
+
 ## Tappelu
 
 - Pelissä on tappelua. Pelaaja voi lyödä muita, ja muut voivat hyökätä pelaajan kimppuun.
@@ -208,7 +218,6 @@ Hahmoideat:
 ## Avoimet kysymykset
 
 - Hukattujen tavaroiden haittavaikutukset
-- Muut tavat saada alkoholia ja ruokaa (rahan hankinta on päätetty)
 - Hahmojen erikoisuudet tarkemmin
 - Lisää rakennuksia ja sisätiloja myöhemmin (aloituslista on päätetty)
 - Pelin läpäisy
