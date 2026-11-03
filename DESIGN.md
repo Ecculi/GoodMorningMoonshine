@@ -116,7 +116,7 @@ Krapula ei kovene päivien mukaan.
 
 ### Hukatut tavarat
 
-- **Taskujen kopelointi aamulla:** päivän alussa hahmo kopeloi taskujaan lyhyessä animaatiossa (pari sekuntia). Ruudulle ponnahtaa ikonirivi tavaroista, ja puuttuvat on vedetty yli punaisella.
+- **Ajatuskupla aamulla:** päivän alussa hahmon pään yläpuolelle tulee ajatuskupla, jossa näkyvät vain hukassa olevat tavarat (yliviivattuina). Kupla pysyy näkyvissä, kunnes pelaaja on kävellyt noin 5 metriä.
 - Sen jälkeen **puuttuvat tavarat näkyvät pieninä harmaina ikoneina ruudun reunassa** koko päivän.
 - **Löydetty oma tavara menee suoraan omalle paikalleen**: lompakko taskuun, kengät jalkaan ja niin edelleen. Harmaa ikoni muuttuu värilliseksi. Käden tavara ja pussi pysyvät ennallaan.
 - **Humala vie muistin:** kun promillet nousevat tietyn rajan yli (esim. 2,0 ‰, tarkka raja säädetään testauksessa), hukkalistan ikoneita muuttuu yhtäkkiä tunnistamattomiksi harmaiksi läiskiksi. Pelaaja ei enää muista, mitä oli etsimässä. Kun promillet laskevat rajan alle, muisti palaa ja ikonit näkyvät taas.
@@ -435,7 +435,7 @@ Lisätty prototyyppiin:
 - Kadulle jääneet tavarat pysyvät korttelissa saman päivän ajan. Seuraavana aamuna sisältö arvotaan uudelleen.
 - Uusi peli alkaa satunnaisesta korttelista. Seuraava päivä alkaa siitä korttelista, johon hahmo nukahti.
 
-- **Koti ja hukatut tavarat:** kodin paikka (kerrostalo, vihreä ovi) arvotaan joka peliin, ja päivä alkaa kodin ovelta. Aamulla taskut kopeloidaan, ja hukatut tavarat näkyvät ikoneina ruudun reunassa; humalassa osa ikoneista muuttuu läiskiksi. Tavarat arvotaan kodin lähelle säteellä, joka kasvaa päivä päivältä. Kaukaa ne ovat harmaita möhkäleitä, ja ilman silmälaseja ne erottuvat vasta aivan läheltä. Kotiovella toimintanappi vie nukkumaan, ja kotona nukuttu yö on paras. Ilman avaimia hahmo nukkuu rappukäytävässä, ja ilman kenkiä vauhti on hitaampi. Kun kaikki tavarat löytyvät ennen kotiin menoa, saa 500 pisteen bonuksen.
+- **Koti ja hukatut tavarat:** kodin paikka (kerrostalo, vihreä ovi) arvotaan joka peliin, ja päivä alkaa kodin ovelta. Aamulla hukatut tavarat näkyvät hahmon ajatuskuplassa ensimmäisten 5 metrin ajan ja sen jälkeen ikoneina ruudun reunassa; humalassa osa ikoneista muuttuu läiskiksi. Tavarat arvotaan kodin lähelle säteellä, joka kasvaa päivä päivältä. Kaukaa ne ovat harmaita möhkäleitä, ja ilman silmälaseja ne erottuvat vasta aivan läheltä. Kotiovella toimintanappi vie nukkumaan, ja kotona nukuttu yö on paras. Ilman avaimia hahmo nukkuu rappukäytävässä, ja ilman kenkiä vauhti on hitaampi. Kun kaikki tavarat löytyvät ennen kotiin menoa, saa 500 pisteen bonuksen.
 
 - **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot) tai pilvinen (pehmeä valo, ei teräviä varjoja). Sade ja lumi puuttuvat vielä.
 

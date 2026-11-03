@@ -1,7 +1,8 @@
 extends Control
 
 const LostItems = preload("res://scripts/lost_items.gd")
-const POCKET_TIME := 2.4
+## The morning thought bubble stays until the player has walked this far.
+const BUBBLE_WALK := 5.0
 ## Health heart (colour drains away, no number), alcohol in per mille
 ## inside a bottle icon, money, throw charge, and the full-screen cards
 ## for day changes and death (newspaper headline).
@@ -14,7 +15,9 @@ var card_time := 0.0
 
 var _hurt := 0.0
 var _fade := 0.0
-var _pocket_t := 0.0
+var _bubble_on := false
+var _bubble_walked := 0.0
+var _bubble_last := Vector3.ZERO
 ## Belongings that were missing this morning (found ones turn coloured).
 var _today: Array = []
 
@@ -42,7 +45,10 @@ func hide_card() -> void:
 ## Morning: the character pats their pockets; missing things are crossed out.
 func show_pocket_check() -> void:
 	_today = GameState.lost.duplicate()
-	_pocket_t = POCKET_TIME
+	_bubble_on = not _today.is_empty()
+	_bubble_walked = 0.0
+	if main != null and main.player != null:
+		_bubble_last = main.player.position
 
 
 ## Quick fade from black when the view changes to another block.
@@ -53,7 +59,14 @@ func fade_in() -> void:
 func _process(delta: float) -> void:
 	_hurt = maxf(0.0, _hurt - delta)
 	_fade = maxf(0.0, _fade - delta * 4.0)
-	_pocket_t = maxf(0.0, _pocket_t - delta)
+	if _bubble_on and main != null and main.player != null:
+		var p: Vector3 = main.player.position
+		var d := Vector2(p.x - _bubble_last.x, p.z - _bubble_last.z).length()
+		if d < 2.0:  # ignore jumps when the view changes
+			_bubble_walked += d
+		_bubble_last = p
+		if _bubble_walked >= BUBBLE_WALK:
+			_bubble_on = false
 	card_time += delta
 	queue_redraw()
 
@@ -71,7 +84,7 @@ func _draw() -> void:
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_charge()
 	_draw_lost_list(vs)
-	if _pocket_t > 0.0 and mode == "" and GameState.modal == "":
+	if _bubble_on and mode == "" and GameState.modal == "":
 		_draw_pocket_check(vs)
 
 	if mode == "day":
@@ -228,20 +241,43 @@ func _draw_lost_list(vs: Vector2) -> void:
 		x -= size + 12.0
 
 
+## Morning: a thought bubble above the character's head with the things
+## that are missing (crossed out). Fades during the last metre of walking.
 func _draw_pocket_check(vs: Vector2) -> void:
-	var a := clampf(_pocket_t / 0.4, 0.0, 1.0)
-	var ids: Array = LostItems.IDS
-	var size := 70.0
-	var gap := 18.0
-	var total := ids.size() * size + (ids.size() - 1) * gap
-	var r := Rect2(Vector2((vs.x - total) * 0.5 - 24, vs.y * 0.3 - 60), Vector2(total + 48, 120))
-	draw_rect(r, Color(0, 0, 0, 0.55 * a))
-	for i in ids.size():
-		var id: String = ids[i]
-		var c := Vector2(r.position.x + 24 + size * 0.5 + i * (size + gap), r.get_center().y)
-		var missing := _today.has(id)
-		LostItems.draw_icon(self, id, c, size, "lost" if missing else "own")
-		if missing:
-			var red := Color(0.9, 0.1, 0.1, a)
-			draw_line(c - Vector2(size, size) * 0.4, c + Vector2(size, size) * 0.4, red, 6.0, true)
-			draw_line(c + Vector2(-size, size) * 0.4, c + Vector2(size, -size) * 0.4, red, 6.0, true)
+	var head: Vector3 = main.player.global_position + Vector3(0, 2.3, 0)
+	if main.camera.is_position_behind(head):
+		return
+	var a := clampf((BUBBLE_WALK - _bubble_walked) / 1.0, 0.0, 1.0)
+	var anchor: Vector2 = main.camera.unproject_position(head)
+	var size := 46.0
+	var gap := 12.0
+	var w := _today.size() * size + (_today.size() - 1) * gap + 36.0
+	var h := size + 30.0
+	var center := anchor + Vector2(30, -h * 0.5 - 46)
+	center.x = clampf(center.x, w * 0.5 + 8, vs.x - w * 0.5 - 8)
+	center.y = maxf(center.y, h * 0.5 + 8)
+	var white := Color(1, 1, 1, 0.92 * a)
+	var edge := Color(0.2, 0.2, 0.25, 0.8 * a)
+	# Small trailing bubbles from the head.
+	draw_circle(anchor + Vector2(6, -10), 5.0, white)
+	draw_circle(anchor + Vector2(14, -26), 8.0, white)
+	# Cloud: rounded body made of overlapping circles.
+	var r := Rect2(center - Vector2(w, h) * 0.5, Vector2(w, h))
+	var bumps := maxi(3, int(w / 34.0))
+	for i in bumps + 1:
+		var x := lerpf(r.position.x + h * 0.3, r.end.x - h * 0.3, float(i) / bumps)
+		draw_circle(Vector2(x, r.position.y + h * 0.3), h * 0.32, edge)
+		draw_circle(Vector2(x, r.end.y - h * 0.3), h * 0.32, edge)
+	draw_rect(r.grow(-2.0), edge)
+	for i in bumps + 1:
+		var x := lerpf(r.position.x + h * 0.3, r.end.x - h * 0.3, float(i) / bumps)
+		draw_circle(Vector2(x, r.position.y + h * 0.3), h * 0.32 - 2.0, white)
+		draw_circle(Vector2(x, r.end.y - h * 0.3), h * 0.32 - 2.0, white)
+	draw_rect(r.grow(-4.0), white)
+	for i in _today.size():
+		var id: String = _today[i]
+		var c := Vector2(r.position.x + 18 + size * 0.5 + i * (size + gap), center.y)
+		LostItems.draw_icon(self, id, c, size, "own")
+		var red := Color(0.9, 0.1, 0.1, a)
+		draw_line(c - Vector2(size, size) * 0.38, c + Vector2(size, size) * 0.38, red, 4.0, true)
+		draw_line(c + Vector2(-size, size) * 0.38, c + Vector2(size, -size) * 0.38, red, 4.0, true)
