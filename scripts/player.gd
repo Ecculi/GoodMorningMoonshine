@@ -125,6 +125,7 @@ func _process(delta: float) -> void:
 ## direction whatever arrow is pressed. Pressing the direction they are
 ## actually going puts them back on track, until it happens again.
 const WRONG_WAY_PROMILLE := 2.5
+const WRONG_WAY_RUN_MULT := 2.5
 const WRONG_WAY_DIRS := [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]
 var wrong_way := Vector2.ZERO
 var _wrong_cd := 3.0
@@ -143,12 +144,22 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 			_wrong_cd = lerpf(6.0, 2.0, heavy) * randf_range(0.7, 1.3)
 			return d
 		return wrong_way
-	_wrong_cd -= delta
+	# Running drunk makes it happen much more often.
+	_wrong_cd -= delta * (WRONG_WAY_RUN_MULT if running else 1.0)
 	if _wrong_cd <= 0.0:
+		# Only sideways relative to the arrow, never straight back.
 		var options: Array = []
 		for w in WRONG_WAY_DIRS:
-			if d.dot(w) < 0.3:
+			if absf(d.dot(w)) < 0.3:
 				options.append(w)
+		if options.is_empty():
+			# Diagonal input: pick a side direction that is not backwards.
+			for w in WRONG_WAY_DIRS:
+				if d.dot(w) > -0.3 and d.dot(w) < 0.9:
+					options.append(w)
+		if options.is_empty():
+			_wrong_cd = 1.0
+			return d
 		wrong_way = options[randi() % options.size()]
 		return wrong_way
 	return d
