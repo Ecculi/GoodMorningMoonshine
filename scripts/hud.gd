@@ -1,4 +1,7 @@
 extends Control
+
+const LostItems = preload("res://scripts/lost_items.gd")
+const POCKET_TIME := 2.4
 ## Health heart (colour drains away, no number), alcohol in per mille
 ## inside a bottle icon, money, throw charge, and the full-screen cards
 ## for day changes and death (newspaper headline).
@@ -11,6 +14,9 @@ var card_time := 0.0
 
 var _hurt := 0.0
 var _fade := 0.0
+var _pocket_t := 0.0
+## Belongings that were missing this morning (found ones turn coloured).
+var _today: Array = []
 
 
 func _ready() -> void:
@@ -33,6 +39,12 @@ func hide_card() -> void:
 	mode = ""
 
 
+## Morning: the character pats their pockets; missing things are crossed out.
+func show_pocket_check() -> void:
+	_today = GameState.lost.duplicate()
+	_pocket_t = POCKET_TIME
+
+
 ## Quick fade from black when the view changes to another block.
 func fade_in() -> void:
 	_fade = 1.0
@@ -41,6 +53,7 @@ func fade_in() -> void:
 func _process(delta: float) -> void:
 	_hurt = maxf(0.0, _hurt - delta)
 	_fade = maxf(0.0, _fade - delta * 4.0)
+	_pocket_t = maxf(0.0, _pocket_t - delta)
 	card_time += delta
 	queue_redraw()
 
@@ -57,6 +70,9 @@ func _draw() -> void:
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_charge()
+	_draw_lost_list(vs)
+	if _pocket_t > 0.0 and mode == "":
+		_draw_pocket_check(vs)
 
 	if mode == "day":
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, clampf(card_time * 2.0, 0.0, 0.9)))
@@ -187,3 +203,45 @@ func _draw_photo(r: Rect2) -> void:
 	draw_rect(Rect2(c + Vector2(4, 36) * s, Vector2(16, 40) * s), Color(0.2, 0.2, 0.22))
 	# Bottle in hand.
 	draw_rect(Rect2(c + Vector2(28, -6) * s, Vector2(10, 26) * s), Color(0.18, 0.42, 0.2))
+
+
+## Heavy drinking makes the character forget what they were looking for.
+func _forgotten(id: String) -> bool:
+	var p := GameState.promille
+	if p <= GameState.PROMILLE_DRUNK:
+		return false
+	var level := 1 if p < 2.6 else (2 if p < 3.1 else 3)
+	return (LostItems.IDS.find(id) % 3) < level
+
+
+func _draw_lost_list(vs: Vector2) -> void:
+	var size := 44.0
+	var x := vs.x - 36.0
+	for i in range(_today.size() - 1, -1, -1):
+		var id: String = _today[i]
+		var c := Vector2(x, 40)
+		draw_circle(c, size * 0.55, Color(0, 0, 0, 0.25))
+		var m := "own"
+		if GameState.is_lost(id):
+			m = "blob" if _forgotten(id) else "lost"
+		LostItems.draw_icon(self, id, c, size, m)
+		x -= size + 12.0
+
+
+func _draw_pocket_check(vs: Vector2) -> void:
+	var a := clampf(_pocket_t / 0.4, 0.0, 1.0)
+	var ids: Array = LostItems.IDS
+	var size := 70.0
+	var gap := 18.0
+	var total := ids.size() * size + (ids.size() - 1) * gap
+	var r := Rect2(Vector2((vs.x - total) * 0.5 - 24, vs.y * 0.3 - 60), Vector2(total + 48, 120))
+	draw_rect(r, Color(0, 0, 0, 0.55 * a))
+	for i in ids.size():
+		var id: String = ids[i]
+		var c := Vector2(r.position.x + 24 + size * 0.5 + i * (size + gap), r.get_center().y)
+		var missing := _today.has(id)
+		LostItems.draw_icon(self, id, c, size, "lost" if missing else "own")
+		if missing:
+			var red := Color(0.9, 0.1, 0.1, a)
+			draw_line(c - Vector2(size, size) * 0.4, c + Vector2(size, size) * 0.4, red, 6.0, true)
+			draw_line(c + Vector2(-size, size) * 0.4, c + Vector2(size, -size) * 0.4, red, 6.0, true)

@@ -11,6 +11,7 @@ const Hud = preload("res://scripts/hud.gd")
 const TouchControls = preload("res://scripts/touch_controls.gd")
 const CityMap = preload("res://scripts/city_map.gd")
 const BlockBuilder = preload("res://scripts/block_builder.gd")
+const LostItemNode = preload("res://scripts/lost_item_node.gd")
 const TILT_SHIFT = preload("res://shaders/tilt_shift.gdshader")
 
 const BLOCK_HALF := BlockBuilder.BLOCK_HALF
@@ -37,6 +38,7 @@ var level: Node3D
 var segment: Vector3i = CityMap.START
 var npcs: Array = []
 var items: Array = []
+var lost_nodes: Array = []
 var rng := RandomNumberGenerator.new()
 
 ## Items left on the ground in blocks visited today: key -> [[kind, pos, value], ...].
@@ -76,8 +78,8 @@ func _process(delta: float) -> void:
 	_update_focus(delta)
 	tilt_mat.set_shader_parameter("drunk",
 		clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
+	_check_lost_pickups()
 	if hud.mode == "dead" and hud.card_time > 1.0 and Input.is_action_just_pressed("action"):
-		GameState.new_game()
 		_new_game()
 		hud.hide_card()
 
@@ -136,7 +138,7 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	segment = seg
 	if level != null:
 		level.queue_free()
-	level = BlockBuilder.build(seg)
+	level = BlockBuilder.build(seg, GameState.home_x if seg == GameState.home_seg else INF)
 	add_child(level)
 	player.position = pos
 	player.facing = facing
@@ -145,6 +147,9 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 
 
 func _clear_block_content() -> void:
+	for ln in lost_nodes:
+		ln.queue_free()
+	lost_nodes.clear()
 	for n in npcs:
 		n.queue_free()
 	npcs.clear()
@@ -183,6 +188,43 @@ func _populate_block() -> void:
 			spawn_item(kind, Vector3(rng.randf_range(-15.0, 15.0), 0, _random_z()), rng.randi_range(1, 3))
 	for i in rng.randi_range(2, 5):
 		_spawn_npc(false)
+	for id in GameState.placements:
+		var pl: Array = GameState.placements[id]
+		if pl[0] == segment:
+			var ln = LostItemNode.new()
+			ln.main = self
+			ln.setup(id)
+			add_child(ln)
+			ln.position = pl[1]
+			lost_nodes.append(ln)
+
+
+## Walking over one of your own lost things puts it straight back in place.
+func _check_lost_pickups() -> void:
+	if GameState.over:
+		return
+	for ln in lost_nodes.duplicate():
+		var d := Vector2(ln.position.x - player.position.x, ln.position.z - player.position.z).length()
+		if d < 0.7:
+			GameState.find_item(ln.id)
+			popup("+", ln.position + Vector3(0, 1.2, 0), Color(0.5, 1.0, 0.5))
+			lost_nodes.erase(ln)
+			ln.queue_free()
+
+
+## Short action at the home door goes inside and ends the day.
+func try_enter_door(pos: Vector3) -> bool:
+	if segment != GameState.home_seg or GameState.over:
+		return false
+	if absf(pos.x - GameState.home_x) > 0.9 or pos.z > -6.0:
+		return false
+	GameState.go_home()
+	return true
+
+
+## Where the day starts: one step out from the home door.
+func _home_door_pos() -> Vector3:
+	return Vector3(GameState.home_x, 0, -5.4)
 
 
 func _key(seg: Vector3i) -> String:
@@ -200,19 +242,27 @@ func _random_z() -> float:
 
 # --- Game flow -------------------------------------------------------------------
 
+## A new game starts at the home door, after checking the pockets.
 func _new_game() -> void:
+	GameState.new_game()
 	_block_items.clear()
 	player.reset(Vector3.ZERO)
-	_enter_block(CityMap.random_segment(rng), Vector3(-12.0, 0, 3.8), 1)
+	_enter_block(GameState.home_seg, _home_door_pos(), 1)
+	hud.show_pocket_check()
 
 
-## The next day starts where the character fell asleep.
+## The next day starts where the character fell asleep: at home (or in the
+## stairwell outside the door), or on the street.
 func _new_day() -> void:
 	_block_items.clear()
-	var p: Vector3 = player.position
-	p.x = clampf(p.x, -BLOCK_HALF + 1.0, BLOCK_HALF - 1.0)
-	p.z = clampf(p.z, Z_MIN, Z_MAX)
-	_enter_block(segment, p, player.facing)
+	if GameState.sleep_place == "street":
+		var p: Vector3 = player.position
+		p.x = clampf(p.x, -BLOCK_HALF + 1.0, BLOCK_HALF - 1.0)
+		p.z = clampf(p.z, Z_MIN, Z_MAX)
+		_enter_block(segment, p, player.facing)
+	else:
+		_enter_block(GameState.home_seg, _home_door_pos(), 1)
+	hud.show_pocket_check()
 
 
 func _on_day_ended(cause: String) -> void:

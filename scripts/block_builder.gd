@@ -19,7 +19,8 @@ const FACADE_COLORS := [Color(0.93, 0.83, 0.55), Color(0.85, 0.6, 0.45), Color(0
 	Color(0.72, 0.45, 0.36), Color(0.9, 0.9, 0.85), Color(0.62, 0.7, 0.72), Color(0.88, 0.72, 0.5)]
 
 
-static func build(seg: Vector3i) -> Node3D:
+## `home_x` is the x of the player's home door if home is in this block.
+static func build(seg: Vector3i, home_x := INF) -> Node3D:
 	var root := Node3D.new()
 	root.name = "Block"
 	var rng := RandomNumberGenerator.new()
@@ -30,6 +31,8 @@ static func build(seg: Vector3i) -> Node3D:
 		_sea(root)
 	else:
 		_buildings(root, rng)
+		if home_x != INF:
+			_home_door(root, home_x)
 	_props(root, rng, sea)
 	_signs(root, seg)
 	return root
@@ -114,6 +117,19 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 		var l := _label(TranslationServer.translate("SIGN_KIOSK"), 72, 0.006)
 		l.position = Vector3(base.x - w * 0.15, 2.8, base.z + 0.15)
 		root.add_child(l)
+
+
+## Home: a green door with a doormat and a warm lamp above it.
+static func _home_door(root: Node3D, x: float) -> void:
+	_box(root, Vector3(x, 1.15, -7.9), Vector3(1.3, 2.3, 0.14), Color(0.92, 0.9, 0.82))
+	_box(root, Vector3(x, 1.1, -7.84), Vector3(1.0, 2.1, 0.12), Color(0.15, 0.55, 0.3))
+	_box(root, Vector3(x + 0.35, 1.1, -7.76), Vector3(0.08, 0.08, 0.06), Color(0.9, 0.8, 0.3))
+	_box(root, Vector3(x, 0.14, -7.3), Vector3(1.0, 0.03, 0.6), Color(0.55, 0.35, 0.2))
+	var lamp := _sphere(root, Vector3(x, 2.55, -7.75), 0.12, Color(1.0, 0.85, 0.4))
+	var m: StandardMaterial3D = lamp.material_override
+	m.emission_enabled = true
+	m.emission = Color(1.0, 0.8, 0.4)
+	m.emission_energy_multiplier = 2.0
 
 
 static func _props(root: Node3D, rng: RandomNumberGenerator, sea: bool) -> void:

@@ -31,6 +31,8 @@ var _last_dir := Vector2.ZERO
 var _clock := 0.0
 var _knock := Vector3.ZERO
 var _sway := 0.0
+## Ignore a press that was already down when the game (re)started.
+var _block_action := false
 
 
 func _ready() -> void:
@@ -44,6 +46,7 @@ func reset(pos: Vector3) -> void:
 	facing = 1
 	running = false
 	_press_time = -1.0
+	_block_action = true
 	_knock = Vector3.ZERO
 	if hand_item != null and is_instance_valid(hand_item):
 		hand_item.queue_free()
@@ -81,6 +84,9 @@ func _process(delta: float) -> void:
 	var moving := dir.length() > 0.2
 	_update_run(dir, moving, delta)
 	var speed := RUN_SPEED if running else WALK_SPEED
+	# Without shoes walking is slower and running much harder.
+	if GameState.is_lost("shoes"):
+		speed *= 0.65 if running else 0.8
 
 	var v := Vector3.ZERO
 	if moving:
@@ -134,6 +140,10 @@ func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
 
 
 func _handle_action(delta: float) -> void:
+	if _block_action:
+		if not Input.is_action_pressed("action"):
+			_block_action = false
+		return
 	if Input.is_action_just_pressed("action"):
 		_press_time = 0.0
 		aim = Vector2(facing, 0)
@@ -150,6 +160,8 @@ func _handle_action(delta: float) -> void:
 
 
 func _short_action() -> void:
+	if main.try_enter_door(position):
+		return
 	GameState.busy_time = maxf(GameState.busy_time, 0.35)
 	var target = main.find_npc_in_front(position, facing, PUNCH_RANGE)
 	if target == null and hand_item != null and main.nearest_npc_distance(position) > 2.5:

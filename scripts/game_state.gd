@@ -2,6 +2,9 @@ extends Node
 ## Global game state: the character's condition, the clock and the
 ## "time only moves when the player does something" rule.
 
+const CityMap = preload("res://scripts/city_map.gd")
+const LostItems = preload("res://scripts/lost_items.gd")
+
 signal day_ended(cause: String)
 signal player_died(cause: String)
 
@@ -39,9 +42,22 @@ var world_dt := 0.0
 ## True during death and day-change screens.
 var over := false
 
+## Home for this game: block and the door's x position in it.
+var home_seg := CityMap.START
+var home_x := 0.0
+## Ids of belongings that are lost (see lost_items.gd).
+var lost: Array = []
+## Where each lost item lies today: id -> [segment, position].
+var placements := {}
+## Where the character slept: "home", "stairs" or "street".
+var sleep_place := "home"
+var bonus := 0
+var rng := RandomNumberGenerator.new()
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	rng.randomize()
 	_setup_input()
 	TranslationServer.set_locale("fi")
 
@@ -68,8 +84,10 @@ func _process(delta: float) -> void:
 	elif health <= 0.0:
 		_die("HEADLINE_BEATEN")
 	elif promille > PROMILLE_PASS_OUT:
+		sleep_place = "street"
 		_end_day("SLEEP_PASSOUT")
 	elif clock_min >= DAY_END_MIN:
+		sleep_place = "street"
 		_end_day("SLEEP_NIGHT")
 
 
@@ -91,7 +109,31 @@ func score() -> int:
 	var total := 0
 	for d in range(1, day):
 		total += d * 1000
-	return total + money * 100
+	var owned := LostItems.IDS.size() - lost.size()
+	return total + money * 100 + owned * 100 + bonus
+
+
+func is_lost(id: String) -> bool:
+	return lost.has(id)
+
+
+func find_item(id: String) -> void:
+	lost.erase(id)
+	placements.erase(id)
+
+
+## Entering the home door ends the day. Without keys the character sleeps
+## in the stairwell outside the door.
+func go_home() -> void:
+	if lost.is_empty():
+		bonus += 500
+	sleep_place = "stairs" if is_lost("keys") else "home"
+	_end_day("SLEEP_STAIRS" if sleep_place == "stairs" else "SLEEP_HOME")
+
+
+## Search radius in grid units around home; grows every day.
+func search_radius() -> float:
+	return 1.0 + float(day)
 
 
 func new_game() -> void:
@@ -101,18 +143,73 @@ func new_game() -> void:
 	money = 0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
+	bonus = 0
+	sleep_place = "home"
+	home_seg = CityMap.random_segment(rng)
+	while CityMap.far_side_is_sea(home_seg):
+		home_seg = CityMap.random_segment(rng)
+	home_x = rng.randf_range(-11.0, 11.0)
+	lost.clear()
+	_lose_items()
+	_place_lost_items()
 	over = false
 
 
-## Sleeping on the street is short, so more alcohol is left in the blood.
+## A short or bad sleep leaves more alcohol in the blood and heals less.
 func new_day() -> void:
 	var at_sleep := promille
 	day += 1
-	promille = clampf(0.5 + maxf(at_sleep - 1.0, 0.0) * 0.5, 0.3, 2.0)
-	health = minf(100.0, health + 35.0)
+	match sleep_place:
+		"home":
+			promille = clampf(0.4 + maxf(at_sleep - 1.5, 0.0) * 0.3, 0.3, 1.5)
+			health = minf(100.0, health + 60.0)
+		"stairs":
+			promille = clampf(0.5 + maxf(at_sleep - 1.2, 0.0) * 0.4, 0.3, 1.8)
+			health = minf(100.0, health + 40.0)
+		_:
+			promille = clampf(0.5 + maxf(at_sleep - 1.0, 0.0) * 0.5, 0.3, 2.0)
+			health = minf(100.0, health + 35.0)
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
+	_lose_items()
+	_place_lost_items()
 	over = false
+
+
+## Every night new things get lost; earlier lost ones stay lost.
+func _lose_items() -> void:
+	var count := rng.randi_range(1, 2) if day == 1 else 1 + (1 if day >= 4 and rng.randf() < 0.5 else 0)
+	var pool: Array = []
+	for id in LostItems.IDS:
+		if not lost.has(id):
+			pool.append(id)
+	pool.shuffle()
+	for i in mini(count, pool.size()):
+		lost.append(pool[i])
+
+
+## Lost items lie in blocks near home; the area grows day by day.
+## They are placed anew every morning.
+func _place_lost_items() -> void:
+	placements.clear()
+	var radius := search_radius()
+	var home_c := _seg_center(home_seg)
+	for id in lost:
+		var seg := home_seg
+		for attempt in 300:
+			var cand := CityMap.random_segment(rng)
+			var d := absf(_seg_center(cand).x - home_c.x) + absf(_seg_center(cand).y - home_c.y)
+			if d <= radius and cand != home_seg:
+				seg = cand
+				break
+		var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
+		placements[id] = [seg, Vector3(rng.randf_range(-14.0, 14.0), 0.0, z)]
+
+
+func _seg_center(seg: Vector3i) -> Vector2:
+	if seg.x == 0:
+		return Vector2(seg.z + 0.5, seg.y)
+	return Vector2(seg.y, seg.z + 0.5)
 
 
 func format_promille(p: float) -> String:
