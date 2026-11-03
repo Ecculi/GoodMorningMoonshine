@@ -75,7 +75,12 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 ### Koti
 
 - **Kodin tyyppi vaihtelee** pelistä toiseen: esimerkiksi kerrostaloasunto (kerros arvotaan), kellarikomero tai kaverin sohva.
-- *Avoinna:* miten kodin tyypit eroavat toisistaan.
+
+  | Koti | Erikoisuus |
+  |---|---|
+  | **Kerrostaloasunto** | tavallinen koti, paras uni. Ilman avaimia keinot ovat naapuri, ikkuna, lukkoseppä, varavain tai rappukäytävä (ks. Hukatut tavarat). |
+  | **Kellarikomero** | kylmä: uni on huonompi ja aamulla ollaan vähän kylmissään. Ovessa on riippulukko, jonka voi rikkoa lyömällä, mutta se on meluisaa ja joku voi hälyttää poliisit. |
+  | **Kaverin sohva** | avaimia ei tarvita, mutta ovikelloa pitää soittaa. Kaveri päästää sisään, jos tuo hänelle jotain (esim. juotavaa); muuten hän on joskus nukkumassa eikä avaa. |
 
 ### Vaikeutuminen
 
