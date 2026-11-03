@@ -91,7 +91,7 @@ func _process(delta: float) -> void:
 
 	var v := Vector3.ZERO
 	if moving:
-		var d := dir.normalized()
+		var d := _apply_wrong_way(dir.normalized(), delta)
 		v = Vector3(d.x, 0.0, d.y) * speed
 		if d.x > 0.2:
 			facing = 1
@@ -119,6 +119,39 @@ func _process(delta: float) -> void:
 	_hunger_signs()
 	for n in main.npcs:
 		n.check_pickpocket(self)
+
+
+## Very drunk: every now and then the character heads off in a wrong
+## direction whatever arrow is pressed. Pressing the direction they are
+## actually going puts them back on track, until it happens again.
+const WRONG_WAY_PROMILLE := 2.5
+const WRONG_WAY_DIRS := [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]
+var wrong_way := Vector2.ZERO
+var _wrong_cd := 3.0
+
+
+func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
+	var p := GameState.promille
+	if p < WRONG_WAY_PROMILLE:
+		wrong_way = Vector2.ZERO
+		return d
+	if wrong_way != Vector2.ZERO:
+		if d.dot(wrong_way) > 0.7:
+			# Corrected: the player steers the way the character was going.
+			wrong_way = Vector2.ZERO
+			var heavy := clampf((p - WRONG_WAY_PROMILLE) / 1.0, 0.0, 1.0)
+			_wrong_cd = lerpf(6.0, 2.0, heavy) * randf_range(0.7, 1.3)
+			return d
+		return wrong_way
+	_wrong_cd -= delta
+	if _wrong_cd <= 0.0:
+		var options: Array = []
+		for w in WRONG_WAY_DIRS:
+			if d.dot(w) < 0.3:
+				options.append(w)
+		wrong_way = options[randi() % options.size()]
+		return wrong_way
+	return d
 
 
 ## No hunger meter: when hungry the stomach growls now and then and the

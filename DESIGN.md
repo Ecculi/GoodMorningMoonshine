@@ -282,6 +282,7 @@ Krapula ei kovene päivien mukaan.
 Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 
 - **Horjuminen:** ohjaus ei mene aivan suoraan, ja lyönnit menevät joskus ohi.
+- **Väärä suunta:** kovassa humalassa (yli 2,5 ‰) hahmo lähtee välillä aivan eri suuntaan kuin nuoli osoittaa (esim. oikealle painettaessa ylös). Pelaajan pitää korjata painamalla siihen suuntaan, johon hahmo oikeasti menee; sitten ohjaus toimii taas hetken. Mitä kovempi humala, sitä useammin näin käy.
 - **Rohkeus:** lyönnit ovat kovempia ja kylmä tuntuu vähemmän, mutta poliisit huomaavat pelaajan helpommin.
 - **Näkökenttä:** kuva sumenee ja näkökenttä lyhenee.
 - **Sammuminen:** kun alkoholimittari on täynnä, hahmo sammuu paikalleen. Se lasketaan nukahtamiseksi.
