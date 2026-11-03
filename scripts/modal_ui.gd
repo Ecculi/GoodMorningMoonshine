@@ -182,6 +182,14 @@ func _draw_map(r: Rect2) -> void:
 		draw_line(to_screen.call(0.0, float(i)), to_screen.call(nb - 1.0, float(i)), Color(0.6, 0.6, 0.62), 3.0)
 	for j in nb:
 		draw_line(to_screen.call(float(j), 0.0), to_screen.call(float(j), na - 1.0), Color(0.6, 0.6, 0.62), 3.0)
+	# Home: a little house at the home door's position.
+	var hs: Vector3i = GameState.home_seg
+	var hf := clampf((GameState.home_x + 16.0) / 32.0, 0.0, 1.0)
+	var hp: Vector2 = to_screen.call(hs.z + hf, float(hs.y)) if hs.x == 0 else to_screen.call(float(hs.y), hs.z + hf)
+	var house := Color(0.15, 0.55, 0.3)
+	draw_rect(Rect2(hp + Vector2(-7, -4), Vector2(14, 11)), house)
+	draw_colored_polygon(PackedVector2Array([hp + Vector2(-10, -3), hp + Vector2(0, -13), hp + Vector2(10, -3)]), house)
+	draw_rect(Rect2(hp + Vector2(-2, 1), Vector2(4, 6)), Color(0.93, 0.92, 0.88))
 	# Where am I.
 	var seg: Vector3i = main.segment
 	var f := clampf((main.player.position.x + 16.0) / 32.0, 0.0, 1.0)

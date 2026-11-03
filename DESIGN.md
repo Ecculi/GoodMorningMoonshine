@@ -208,7 +208,7 @@ Krapula ei kovene päivien mukaan.
 - Käyttö on hyvin yksinkertaista: näkymiä selataan vain sivusuunnassa tässä järjestyksessä:
   1. **Viestit:** näkyvät listana kuten WhatsAppissa. Viestit ovat **enimmäkseen emojeja ja pieniä kuvia**, ja välissä on muutama sana, kuten kadunnimi (esim. 🍺➡️ Kirkkokatu 👟❓). Niistä saa vihjeitä siitä, missä hahmo oli eilen.
   2. **Viimeisin kuva:** kertoo, missä hahmo oli eilen. Kuvassa voi näkyä jokin hukattu tavara.
-  3. **Kartta:** näyttää, missä hahmo on juuri nyt.
+  3. **Kartta:** näyttää, missä hahmo on juuri nyt ja missä koti on (talon kuva).
 - **Akku:** virtaa on aina todella vähän. Akku kuluu koko ajan, kun puhelinta käytetään, ja mitä pidempään sitä käyttää, sitä enemmän akkua kuluu. Kartta kuluttaa akkua nopeimmin.
 - Puhelinta käytettäessä **maailma on pysähdyksissä**, mutta akku kuluu.
 - Akkua voi **ladata** esimerkiksi rautatieaseman pistorasiassa. Lataaminen on **vaihtokauppa**: aika harppaa hetken eteenpäin, puhelimeen tulee tietty määrä akkua (aina vain vähän), ja samalla alkoholi laskee ja nälkä kasvaa.
@@ -443,7 +443,7 @@ Lisätty prototyyppiin:
 - **Kotityypit:** kerrostaloasunto (ilman avaimia rappukäytävä), kellarikomero (ilman avaimia riippulukko rikotaan kolmella lyönnillä; kylmä yö) ja kaverin sohva (ovikello; juoma kädessä pääsee aina sisään, muuten kaveri nukkuu joskus eikä avaa sinä päivänä).
 - **Tavaroiden haitat:** ilman silmälaseja kadunnimikyltit ovat sumeita (humalassa kirjaimet myös menevät sekaisin), ilman aurinkolaseja aurinko häikäisee aurinkoisella säällä, ilman takkia lyönnit sattuvat 30 % enemmän ja paljain jaloin taskuvarkaus onnistuu paremmin.
 
-- **Puhelin:** ylös + toimintanappi avaa, vasen/oikea selaa, alas + toimintanappi sulkee. Viestit (tavaran ikoni ja kadunnimen alku), eilinen kuva (katukyltti ja hukattu tavara, hahmon edessä "sattumalta" sumea esine) ja kartta (pohjoinen ylhäällä, oma sijainti). Akkua on aamulla vähän, ja se kuluu reaaliajassa; kartta kuluttaa eniten. Maailma on pysähdyksissä puhelimen ollessa auki.
+- **Puhelin:** ylös + toimintanappi avaa, vasen/oikea selaa, alas + toimintanappi sulkee. Viestit (tavaran ikoni ja kadunnimen alku), eilinen kuva (katukyltti ja hukattu tavara, hahmon edessä "sattumalta" sumea esine) ja kartta (pohjoinen ylhäällä, oma sijainti ja koti). Akkua on aamulla vähän, ja se kuluu reaaliajassa; kartta kuluttaa eniten. Maailma on pysähdyksissä puhelimen ollessa auki.
 - **Kioski ja baari:** joissain kortteleissa (valaistu ovi ja kyltti), auki tai kiinni päivästä riippuen. Kioskista pullo (3 €), makkara (2 €) ja puhelimen lataus (ilmainen, mutta aika harppaa ja promillet laskevat). Baarissa tuoppi (5 €), ja ovella on portsari. Ostaminen vaatii lompakon ja alkoholi henkilökortin.
 - **Nälkä:** kasvaa liikkuessa ja yöllä, kova nälkä kuluttaa healthia ja tyhjään mahaan alkoholi nousee 40 % enemmän. Ei mittaria: maha kurisee ja hahmo lysähtää. Makkara vie nälkää.
 
