@@ -112,7 +112,7 @@ func _process(delta: float) -> void:
 	GameState.moving = moving
 	GameState.running = running and moving
 	model.rotation.y = 0.0 if facing > 0 else PI
-	model.animate(1.0 if moving else 0.0, delta, speed / WALK_SPEED)
+	model.animate(1.0 if moving else 0.0, delta, speed / WALK_SPEED, silly_amount())
 
 	_handle_action(delta)
 	_check_pickups()
@@ -159,9 +159,16 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 var _growl_t := 0.0
 
 
+## Very drunk: the absurd silly walk (strongest from about 3.2 per mille).
+func silly_amount() -> float:
+	return clampf((GameState.promille - 2.5) / 0.7, 0.0, 1.0)
+
+
 func _hunger_signs() -> void:
 	var hungry := GameState.hunger >= GameState.HUNGER_EMPTY_STOMACH
-	model.rotation.z = -0.12 if hungry else 0.0
+	# Hunger slumps forward; the silly walk leans back and bounces.
+	model.rotation.z = (-0.12 if hungry else 0.0) + model.silly_lean
+	model.position.y = model.silly_bounce
 	if not hungry:
 		return
 	_growl_t += GameState.world_dt

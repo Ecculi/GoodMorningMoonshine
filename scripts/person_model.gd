@@ -29,20 +29,32 @@ func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) ->
 	arm_r.add_child(hand)
 
 
-func animate(walk_amount: float, dt: float, speed_mult := 1.0) -> void:
+## `silly` 0..1: a very drunk, absurdly exaggerated walk (high kicks,
+## flailing arms, bouncing). Returns the bounce height and backward lean
+## so the owner can apply them to the whole body.
+var silly_bounce := 0.0
+var silly_lean := 0.0
+
+
+func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> void:
 	_walk_amount = lerpf(_walk_amount, walk_amount, clampf(dt * 10.0, 0.0, 1.0))
-	_walk_phase += dt * 9.0 * speed_mult
-	var s := sin(_walk_phase) * 0.55 * _walk_amount
-	leg_l.rotation.z = s
-	leg_r.rotation.z = -s
-	arm_l.rotation.z = -s * 0.8
+	_walk_phase += dt * 9.0 * speed_mult * (1.0 - silly * 0.35)
+	var ph := _walk_phase
+	var s := sin(ph) * 0.55 * _walk_amount
+	var k := silly * _walk_amount
+	# One leg kicks high forward, the other does a little skip.
+	leg_l.rotation.z = lerpf(s, maxf(0.0, sin(ph)) * 1.8 - 0.25, k)
+	leg_r.rotation.z = lerpf(-s, -0.45 * sin(ph) + 0.3 * sin(ph * 2.0), k)
+	arm_l.rotation.z = lerpf(-s * 0.8, 1.3 * sin(ph + 1.0) + 0.5, k)
+	silly_bounce = absf(sin(ph)) * 0.18 * k
+	silly_lean = (0.22 + 0.08 * sin(ph * 2.0)) * k
 	if _punch_t > 0.0:
 		_punch_t -= dt
 		arm_r.rotation.z = PI * 0.5
 	elif _raised:
 		arm_r.rotation.z = 2.5
 	else:
-		arm_r.rotation.z = s * 0.8
+		arm_r.rotation.z = lerpf(s * 0.8, -1.2 * sin(ph) + 0.6, k)
 
 
 func punch() -> void:
