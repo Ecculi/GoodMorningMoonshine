@@ -107,7 +107,18 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 - Kontrollien pitää olla niin simppelit, että peliä voi pelata **puhelimella**.
 - Käytössä on vain **suuntanuolet** ja **yksi toimintanappi**.
-- Toimintanapissa on **lyhyt ja pitkä painallus**. *Avoinna:* mitä kumpikin tekee.
+- Toimintanapissa on **lyhyt ja pitkä painallus**:
+
+  | Toiminto | Kontrolli |
+  |---|---|
+  | **Lyö** | lyhyt painallus |
+  | **Syö / juo** käden tavara | lyhyt painallus, kun lähellä ei ole ketään |
+  | **Mene sisään** | lyhyt painallus ovella |
+  | **Heitä** käden tavara katseen suuntaan | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää |
+  | **Juokse** | kaksoisnapautus suuntanuolta tai saman suunnan pitäminen hetken pohjassa |
+  | **Puhelin auki** | ylös + toimintanappi |
+  | **Puhelimen selaus** | vasen / oikea |
+  | **Puhelin kiinni** | alas + toimintanappi |
 
 ### Näkökenttä ja silmälasit
 
