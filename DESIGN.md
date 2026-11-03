@@ -200,7 +200,8 @@ Hahmoideat:
 | Tölkinkerääjä | kilpailija pantillisista tölkeistä |
 | Some-vaikuttaja | kuvaa pelaajan; video "leviää" ja poliisit tunnistavat helpommin |
 | Kerjäläinen | antaa rahaa vastaan vihjeen hukatusta tavarasta |
-| Muut kaupunkityypit | punkkarit, taskuvaras, portsari, pappi, poliitikko, koira… (erikoisuudet keksitään) |
+| Punkkarit | liikkuvat aina 2–3 hengen porukassa; jos lyöt yhtä, kaikki käyvät kimppuun; jos et ärsytä, voivat tarjota tölkin kaljaa |
+| Muut kaupunkityypit | taskuvaras, portsari, pappi, poliitikko, koira… (erikoisuudet keksitään) |
 
 ## Pisteytys
 
