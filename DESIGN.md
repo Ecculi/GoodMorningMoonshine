@@ -192,6 +192,11 @@ Krapula ei kovene päivien mukaan.
 - **Sunnuntaisin** (joka 7. pelipäivä) kirkossa on **ehtoollisviiniä**, eli ilmaista alkoholia.
 - **Rannekello:** jos pelaaja saa varastettua jollekulta rannekellon, siitä näkee, mikä viikonpäivä on. Silloin hän tietää, milloin on sunnuntai.
 
+## Pelattava hahmo
+
+- Pelin alussa valitaan **mies tai nainen**. Valinta ei vaikuta pelimekaniikkaan.
+- **Vaatetus vaihtelee** myöhemmin, mutta sitä ei toteuteta vielä ensimmäisessä versiossa.
+
 ## Hahmon tila
 
 | Tila | Näyttötapa | Seuraus |
