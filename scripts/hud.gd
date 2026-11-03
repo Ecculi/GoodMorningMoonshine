@@ -71,7 +71,7 @@ func _draw() -> void:
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_charge()
 	_draw_lost_list(vs)
-	if _pocket_t > 0.0 and mode == "":
+	if _pocket_t > 0.0 and mode == "" and GameState.modal == "":
 		_draw_pocket_check(vs)
 
 	if mode == "day":

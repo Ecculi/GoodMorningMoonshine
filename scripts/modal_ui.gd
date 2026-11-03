@@ -221,8 +221,14 @@ func _draw_shop(vs: Vector2) -> void:
 		if i == main.shop_sel:
 			draw_rect(Rect2(c - Vector2(cell * 0.45, 52), Vector2(cell * 0.9, 120)), Color(1.0, 0.85, 0.3, 0.5))
 		_draw_product(o["kind"], c, 56.0)
-		var price := "%d €" % o["price"] if o["price"] > 0 else "0 €"
-		draw_string(font, c + Vector2(-cell * 0.5, 58), price, HORIZONTAL_ALIGNMENT_CENTER, cell, 22, Color(0.15, 0.15, 0.15))
+		if o["price"] > 0:
+			draw_string(font, c + Vector2(-cell * 0.5, 58), "%d €" % o["price"], HORIZONTAL_ALIGNMENT_CENTER, cell, 22, Color(0.15, 0.15, 0.15))
+		else:
+			# Costs time, not money: a clock.
+			var cc := c + Vector2(0, 50)
+			draw_arc(cc, 11.0, 0, TAU, 24, Color(0.15, 0.15, 0.15), 2.5, true)
+			draw_line(cc, cc + Vector2(0, -8), Color(0.15, 0.15, 0.15), 2.5)
+			draw_line(cc, cc + Vector2(6, 0), Color(0.15, 0.15, 0.15), 2.5)
 	# Why buying failed: the missing thing, crossed out.
 	if main.shop_flash != "" and main.shop_flash_t > 0.0:
 		var fc := Vector2(r.get_center().x, r.end.y + 50)
