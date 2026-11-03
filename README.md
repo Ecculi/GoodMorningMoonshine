@@ -18,3 +18,5 @@ Ohjaus:
 | Heitä käden tavara | sama nappi pohjassa | sama | sama |
 | Puhelin auki / kiinni | P tai Tab (tai ylös + toimintanappi, kiinni alas + toimintanappi) | Y | ylös + iso nappi, kiinni alas + iso nappi |
 | Selaa puhelinta | vasen / oikea | sama | sama |
+
+Debug (vain kehitysversiossa, esim. editorista ajettaessa): F1 health täyteen, F2 alkoholi 2,0 ‰:iin, F3 rahaa +100 €. Samat napit näkyvät ruudun vasemmassa reunassa.

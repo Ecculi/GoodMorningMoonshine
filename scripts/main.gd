@@ -13,6 +13,7 @@ const CityMap = preload("res://scripts/city_map.gd")
 const BlockBuilder = preload("res://scripts/block_builder.gd")
 const LostItemNode = preload("res://scripts/lost_item_node.gd")
 const ModalUI = preload("res://scripts/modal_ui.gd")
+const DebugTools = preload("res://scripts/debug_tools.gd")
 
 ## Battery use per second while the phone is open, by page.
 const PHONE_DRAIN := [1.2, 1.8, 3.5]
@@ -100,6 +101,7 @@ func _ready() -> void:
 	modal_ui.main = self
 	hud_layer.add_child(modal_ui)
 	add_child(TouchControls.new())
+	add_child(DebugTools.new())
 
 	GameState.day_ended.connect(_on_day_ended)
 	GameState.player_died.connect(_on_player_died)
