@@ -42,6 +42,18 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - Käytetään **oikeita kadunnimiä ja julkisia paikkoja**. **Yritysten nimet** (ravintolat, hotellit, kauppakeskukset) korvataan keksityillä nimillä.
 - **Rakennuksiin pääsee sisälle**, esimerkiksi kioskiin ja rautatieasemalle.
 - Osassa rakennuksista on ovet kahdelle eri kadulle. Ne toimivat **oikoteinä**: yhdestä ovesta sisään, toisesta ulos eri kadulle.
+- Aluksi toteutettavat sisätilat:
+
+  | Paikka | Mitä siellä on |
+  |---|---|
+  | **Kioski** | ruokaa, juomaa, puhelimen lataus |
+  | **Baari / pubi** | alkoholia, portsari, tappeluita |
+  | **Kauppahalli** | ruokaa; oikotie kahden kadun välillä |
+  | **Kauppakeskus** | lämmittelyä, vartijoita, oikoteitä |
+  | **Rautatieasema** | pistorasia, vartijat, lämmin odotussali |
+  | **Kirkko** | rauhallinen lämmittelypaikka; pappi voi auttaa |
+  | **Kerrostalon rappu** | kodit, naapurit, varavaimet |
+
 - Sisätiloissa pelimekaniikka on sama kuin kadulla (liikkuminen, tappelu, hahmot, tavarat). Ne vain näyttävät erilaisilta.
 - Sisällä liikkuessaan hahmo **lämpenee hitaasti**. Pitkään ei kuitenkaan kannata lämmitellä, koska alkoholi laskee ja nälkä kasvaa.
 
@@ -187,5 +199,5 @@ Hahmoideat:
 - Hukattujen tavaroiden haittavaikutukset
 - Muut tavat saada alkoholia, ruokaa ja rahaa
 - Hahmojen erikoisuudet tarkemmin
-- Mitä rakennuksia ja sisätiloja kaupungissa on
+- Lisää rakennuksia ja sisätiloja myöhemmin (aloituslista on päätetty)
 - Pelin läpäisy
