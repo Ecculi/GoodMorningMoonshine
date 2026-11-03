@@ -299,6 +299,8 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 ## Tappelu
 
 - Pelissä on tappelua. Pelaaja voi lyödä muita, ja muut voivat hyökätä pelaajan kimppuun.
+- **Erillistä torjuntaa ei ole.** Iskuja voi väistää liikkumalla, esimerkiksi ylös tai alas kadun syvyyssuunnassa.
+- Osalla hahmoista isku näkyy hetkeä ennen osumaa (esim. käsi nousee), mutta **kaikista hahmoista ei näe, milloin ne ovat lyömässä**.
 
 ### Ryöstely
 
