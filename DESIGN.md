@@ -201,7 +201,8 @@ Hahmoideat:
 | Some-vaikuttaja | kuvaa pelaajan; video "leviää" ja poliisit tunnistavat helpommin |
 | Kerjäläinen | antaa rahaa vastaan vihjeen hukatusta tavarasta |
 | Punkkarit | liikkuvat aina 2–3 hengen porukassa; jos lyöt yhtä, kaikki käyvät kimppuun; jos et ärsytä, voivat tarjota tölkin kaljaa |
-| Muut kaupunkityypit | taskuvaras, portsari, pappi, poliitikko, koira… (erikoisuudet keksitään) |
+| Taskuvaras | satunnaisesti joko törmää ohimennen ja vie rahaa tai tavaran (esim. puhelimen; takaisin vain kiinni saamalla tai tyrmäämällä, muuten tavara hukkuu taas) tai yrittää näpistää samaan aikaan kuin pelaaja, jolloin syntyy koominen kollegakohtaus ja kumpikin saa jotain |
+| Muut kaupunkityypit | portsari, pappi, poliitikko, koira… (erikoisuudet keksitään) |
 
 ## Pisteytys
 
