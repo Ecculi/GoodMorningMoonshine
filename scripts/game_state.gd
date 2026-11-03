@@ -70,6 +70,9 @@ var placements := {}
 ## Where the character slept: "home", "stairs" or "street".
 var sleep_place := "home"
 var bonus := 0
+## Item kind taken by the police (-1 = nothing); get it back at the police
+## station with an ID card.
+var confiscated := -1
 ## Where the character wakes up (from day 2 on: never at home).
 var wake_seg := CityMap.START
 var wake_pos := Vector3.ZERO
@@ -177,6 +180,17 @@ func go_home(place: String) -> void:
 	_end_day(causes[place])
 
 
+## Caught by the police: the night is spent in a cell.
+func go_jail() -> void:
+	sleep_place = "jail"
+	_end_day("SLEEP_JAIL")
+
+
+## Chance that a block has police patrolling; grows day by day.
+func police_chance() -> float:
+	return minf(0.15 + 0.05 * float(day), 0.6)
+
+
 ## Search radius in grid units around home; grows every day.
 func search_radius() -> float:
 	return 1.0 + float(day)
@@ -187,13 +201,14 @@ func new_game() -> void:
 	promille = PROMILLE_START
 	health = 100.0
 	money = 0
+	confiscated = -1
 	hunger = 20.0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	bonus = 0
 	sleep_place = "home"
 	home_seg = CityMap.random_segment(rng)
-	while CityMap.far_side_is_sea(home_seg):
+	while CityMap.far_side_is_sea(home_seg) or home_seg == CityMap.POLICE_STATION:
 		home_seg = CityMap.random_segment(rng)
 	home_x = rng.randf_range(-11.0, 11.0)
 	home_type = ["flat", "basement", "friend"][rng.randi() % 3]
@@ -225,6 +240,11 @@ func new_day() -> void:
 		"stairs":
 			promille = clampf(0.5 + maxf(at_sleep - 1.2, 0.0) * 0.4, 0.3, 1.8)
 			health = minf(100.0, health + 40.0)
+		"jail":
+			# A hard morning: very little alcohol, a lot of hunger.
+			promille = 0.3
+			health = minf(100.0, health + 30.0)
+			hunger = minf(100.0, hunger + 20.0)
 		_:
 			promille = clampf(0.5 + maxf(at_sleep - 1.0, 0.0) * 0.5, 0.3, 2.0)
 			health = minf(100.0, health + 35.0)
@@ -236,6 +256,13 @@ func new_day() -> void:
 	busy_time = 0.0
 	_roll_weather()
 	_choose_wake_place()
+	if sleep_place == "jail":
+		# Released at the police station door; without an ID card they keep
+		# you longer, so the day starts later.
+		wake_seg = CityMap.POLICE_STATION
+		wake_pos = Vector3(CityMap.POLICE_DOOR_X, 0.0, -6.2)
+		if is_lost("idcard"):
+			clock_min += 120.0
 	_lose_items()
 	_place_lost_items()
 	_make_phone_hints()

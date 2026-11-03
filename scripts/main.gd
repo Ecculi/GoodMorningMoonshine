@@ -121,6 +121,7 @@ func _process(delta: float) -> void:
 	tilt_mat.set_shader_parameter("drunk",
 		clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
 	_check_lost_pickups()
+	_check_arrest()
 	_update_signs()
 	if hud.mode == "dead" and hud.card_time > 1.0 and Input.is_action_just_pressed("action"):
 		_new_game()
@@ -234,6 +235,17 @@ func _populate_block() -> void:
 			spawn_item(kind, Vector3(rng.randf_range(-15.0, 15.0), 0, _random_z()), rng.randi_range(1, 3))
 	for i in rng.randi_range(2, 5):
 		_spawn_npc(false)
+	# Police patrol some blocks (more of them later in the game); guards
+	# stand by shops.
+	if rng.randf() < GameState.police_chance():
+		_spawn_npc(false, "police")
+		if GameState.day >= 4 and rng.randf() < 0.4:
+			_spawn_npc(false, "police")
+	if level.has_meta("shops"):
+		for sh in level.get_meta("shops"):
+			if rng.randf() < 0.35:
+				var g = _spawn_npc(false, "guard")
+				g.position = Vector3(sh["x"] - 1.2, 0, -6.9)
 	for id in GameState.placements:
 		var pl: Array = GameState.placements[id]
 		if pl[0] == segment:
@@ -535,6 +547,9 @@ func try_enter_door(pos: Vector3) -> bool:
 	var sh = _shop_at(pos)
 	if sh != null:
 		return _try_shop(sh)
+	if segment == CityMap.POLICE_STATION and absf(pos.x - CityMap.POLICE_DOOR_X) < 0.9 and pos.z < -6.0:
+		_police_desk()
+		return true
 	if segment != GameState.home_seg:
 		return false
 	if absf(pos.x - GameState.home_x) > 0.9 or pos.z > -6.0:
@@ -609,8 +624,25 @@ func _new_game() -> void:
 func _new_day() -> void:
 	_block_items.clear()
 	_friend_refused = false
+	arrest = 0.0
 	_enter_block(GameState.wake_seg, GameState.wake_pos, 1 if rng.randf() < 0.5 else -1)
 	hud.show_pocket_check()
+	if GameState.sleep_place == "jail":
+		_cellmate()
+
+
+## Police station desk: confiscated things are handed back with an ID card.
+func _police_desk() -> void:
+	var door := Vector3(CityMap.POLICE_DOOR_X, 2.2, -7.4)
+	if GameState.confiscated < 0:
+		popup("?", door, Color(0.8, 0.9, 1.0))
+		return
+	if GameState.is_lost("idcard"):
+		hud.think(["idcard"])
+		return
+	var it = spawn_item(GameState.confiscated, player.position)
+	player._pickup(it)
+	GameState.confiscated = -1
 
 
 func _on_day_ended(cause: String) -> void:
@@ -687,8 +719,9 @@ func spawn_loot(pos: Vector3) -> void:
 
 func respawn_npc(n) -> void:
 	npcs.erase(n)
+	var role: String = n.role
 	n.queue_free()
-	_spawn_npc(true)
+	_spawn_npc(true, "civ" if role == "guard" else role)
 
 
 func popup(text: String, pos: Vector3, color: Color) -> void:
@@ -760,7 +793,7 @@ func stomach_texture() -> ImageTexture:
 	return _stomach_tex
 
 
-func _spawn_npc(at_edge: bool) -> void:
+func _spawn_npc(at_edge: bool, role := "civ"):
 	var n = Npc.new()
 	n.main = self
 	var d := 1 if rng.randf() < 0.5 else -1
@@ -771,9 +804,87 @@ func _spawn_npc(at_edge: bool) -> void:
 		if absf(x - player.position.x) < 4.0:
 			x = clampf(x + 8.0 * signf(x - player.position.x + 0.01), -15.0, 15.0)
 	var z := rng.randf_range(-7.2, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.0, 5.0)
-	n.setup(rng, x, z, d)
+	n.setup(rng, x, z, d, role)
 	add_child(n)
 	npcs.append(n)
+	return n
+
+
+# --- Police -----------------------------------------------------------------------
+
+## How long police must hold on to the player (seconds of world time).
+const ARREST_TIME := 1.6
+## Barefoot the player sneaks: police and guards notice only close by.
+const SNEAK_NOTICE_DIST := 7.0
+## 0..1: how close the police are to arresting the player.
+var arrest := 0.0
+
+
+## A crime happened (the player hit someone, or a pickpocketing victim
+## shouted). Police and guards in this block react; a shout can also bring
+## a police officer running from the street end.
+func report_crime(pos: Vector3, alarm: bool) -> void:
+	var noticed := false
+	var reach := SNEAK_NOTICE_DIST if GameState.is_lost("shoes") else INF
+	for n in npcs:
+		if n.role == "civ" or n.is_down():
+			continue
+		if Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length() < reach:
+			n.notice()
+			noticed = true
+	if alarm and not noticed and rng.randf() < 0.6:
+		var cop = _spawn_npc(true, "police")
+		cop.position.x = Npc.EDGE_X * (-1.0 if pos.x < 0.0 else 1.0)
+		cop.position.z = clampf(pos.z, Z_MIN, Z_MAX)
+		cop.notice()
+
+
+## Police next to the player fill the arrest meter; once full, it's the
+## cell for the night. Getting away lets it drain.
+func _check_arrest() -> void:
+	var dt := GameState.world_dt
+	if GameState.over or dt <= 0.0:
+		return
+	var holding := false
+	for n in npcs:
+		if n.role == "police" and n.state == Npc.S.CHASE:
+			if Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length() < 0.9:
+				holding = true
+	if holding:
+		arrest = minf(1.0, arrest + dt / ARREST_TIME)
+	else:
+		arrest = maxf(0.0, arrest - dt * 0.5)
+	if arrest >= 1.0:
+		arrest = 0.0
+		_get_arrested()
+
+
+func _get_arrested() -> void:
+	# The police take what is in the hand.
+	var hand = player.hand_item
+	if hand != null:
+		GameState.confiscated = hand.kind
+		items.erase(hand)
+		hand.queue_free()
+		player.hand_item = null
+	GameState.go_jail()
+
+
+## Morning in the cell: the cellmate either gives a tip about a lost thing
+## or steals some money.
+func _cellmate() -> void:
+	var candidates: Array = []
+	for id in GameState.placements:
+		candidates.append(id)
+	if not candidates.is_empty() and rng.randf() < 0.5:
+		var id: String = candidates[rng.randi() % candidates.size()]
+		var seg: Vector3i = GameState.placements[id][0]
+		hud.think([id])
+		popup(CityMap.street_name(seg), player.position + Vector3(0, 3.2, 0), Color(0.8, 0.9, 1.0))
+	elif GameState.money > 0:
+		var taken := maxi(1, GameState.money / 2)
+		GameState.money -= taken
+		popup("-%d €" % taken, player.position + Vector3(0, 2.4, 0), Color(1, 0.5, 0.4))
 
 
 # --- Light, camera, post-processing -------------------------------------------------

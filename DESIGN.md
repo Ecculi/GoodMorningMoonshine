@@ -452,6 +452,9 @@ Lisätty prototyyppiin:
 - **Kioski ja baari:** joissain kortteleissa (valaistu ovi ja kyltti), auki tai kiinni päivästä riippuen. Kioskista pullo (3 €), makkara (2 €) ja puhelimen lataus (ilmainen, mutta aika harppaa ja promillet laskevat). Baarissa tuoppi (5 €), ja ovella on portsari. Ostaminen vaatii lompakon ja alkoholi henkilökortin.
 - **Nälkä:** kasvaa liikkuessa ja yöllä, kova nälkä kuluttaa healthia ja tyhjään mahaan alkoholi nousee 40 % enemmän. Ei mittaria: hahmosta nousee välillä vatsan kuva (maha kurisee), ja hahmo lysähtää. Makkara vie nälkää.
 
+- **Poliisit ja vartijat:** poliiseja partioi osassa kortteleita (todennäköisyys kasvaa päivä päivältä, myöhemmin joskus pareittain), vartijoita seisoo kauppojen lähellä. Kun pelaaja lyö jotakuta tai heittää jollekulle pullon, korttelin poliisit lähtevät perään ja vartijat käyvät kimppuun. Epäonnistuneen taskuvarkauden uhri joko tappelee tai huutaa apua, jolloin poliisi voi juosta paikalle korttelin päästä. Paljain jaloin poliisit ja vartijat huomaavat rikoksen vain läheltä (7 m). Poliisin lyöminen vain horjuttaa hetkeksi. Kun poliisi pysyy pelaajan vieressä, ruudulle täyttyy sini-punainen rengas; täynnä oleva rengas vie putkaan. Toiseen kortteliin juoksemalla tai karkaamalla kauas pääsee pakoon.
+- **Putka ja poliisiasema:** poliisiasema on Isokadulla Pakkahuoneenkadun ja Hallituskadun välissä (POLIISI-kyltti). Putkayön jälkeen herätään aseman ovelta: alkoholia 0,3 ‰ ja kova nälkä. Käden tavara takavarikoidaan; sen saa takaisin aseman ovelta henkilökortilla. Ilman henkilökorttia herätään kaksi tuntia myöhemmin. Sellikaveri joko kertoo, millä kadulla jokin hukattu tavara on, tai vie puolet rahoista.
+
 Prototyypistä puuttuu vielä muun muassa hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
 
 ## Avoimet kysymykset

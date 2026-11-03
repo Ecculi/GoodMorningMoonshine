@@ -31,6 +31,10 @@ const B_STREETS := ["Sepänkatu", "Albertinkatu", "Saaristonkatu", "Kauppurienka
 const VIEW_AZIMUTH := [315.0, 45.0]
 
 const START := Vector3i(0, 3, 4)  # Kirkkokatu, Pakkahuoneenkatu–Hallituskatu
+## Police station (roughly where the real one is: the block between
+## Kirkkokatu and Isokatu, Pakkahuoneenkatu–Hallituskatu), seen from Isokatu.
+const POLICE_STATION := Vector3i(0, 4, 4)
+const POLICE_DOOR_X := 8.0
 
 
 static func streets(family: int) -> Array:

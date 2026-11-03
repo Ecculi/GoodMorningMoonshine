@@ -32,6 +32,8 @@ static func build(seg: Vector3i, home_x := INF, home_type := "flat") -> Node3D:
 		_sea(root)
 	else:
 		_buildings(root, rng, home_x)
+		if seg == CityMap.POLICE_STATION:
+			_police_station(root)
 		if home_x != INF:
 			_home_door(root, home_x, home_type)
 	_props(root, rng, sea)
@@ -184,6 +186,23 @@ static func _home_door(root: Node3D, x: float, home_type: String) -> void:
 	m.emission_enabled = true
 	m.emission = Color(1.0, 0.8, 0.4)
 	m.emission_energy_multiplier = 2.0
+
+
+## Police station front: grey-blue facade, blue POLIISI sign, glass door.
+static func _police_station(root: Node3D) -> void:
+	root.set_meta("shops", [])  # no shop doors hidden behind the station front
+	var x := CityMap.POLICE_DOOR_X
+	_box(root, Vector3(x, 4.0, -7.93), Vector3(9.0, 8.0, 0.08), Color(0.62, 0.66, 0.72))
+	_box(root, Vector3(x, 1.2, -7.86), Vector3(1.6, 2.4, 0.1), Color(0.55, 0.7, 0.8))
+	_box(root, Vector3(x, 3.0, -7.84), Vector3(3.6, 0.7, 0.1), Color(0.1, 0.25, 0.65))
+	var text := TranslationServer.translate("SIGN_POLICE")
+	var l := _label(text, 72, 0.007)
+	l.position = Vector3(x, 3.0, -7.76)
+	l.set_meta("real_text", text)
+	l.add_to_group("street_sign")
+	root.add_child(l)
+	for wx in [x - 3.0, x + 3.0]:
+		_box(root, Vector3(wx, 1.5, -7.87), Vector3(1.8, 1.8, 0.08), Color(0.3, 0.38, 0.45))
 
 
 static func _props(root: Node3D, rng: RandomNumberGenerator, sea: bool) -> void:

@@ -102,6 +102,7 @@ func _draw() -> void:
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_charge()
+	_draw_arrest()
 	_draw_lost_list(vs)
 	if _bubble_on and mode == "" and GameState.modal == "":
 		_draw_pocket_check(vs)
@@ -176,6 +177,19 @@ func _draw_coin(center: Vector2, amount: int, font: Font) -> void:
 	var text := str(amount)
 	draw_string_outline(font, center + Vector2(26, 9), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
 	draw_string(font, center + Vector2(26, 9), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color.WHITE)
+
+
+## Police holding on: a blue-red ring fills around the player.
+func _draw_arrest() -> void:
+	if main == null or main.arrest <= 0.0:
+		return
+	var p: Vector3 = main.player.global_position + Vector3(0, 1.0, 0)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	draw_arc(sp, 34.0, 0, TAU, 40, Color(0, 0, 0, 0.35), 7.0, true)
+	var col := Color(0.25, 0.45, 1.0) if int(Time.get_ticks_msec() / 150) % 2 == 0 else Color(1.0, 0.25, 0.25)
+	draw_arc(sp, 34.0, -PI * 0.5, -PI * 0.5 + TAU * main.arrest, 40, col, 7.0, true)
 
 
 func _draw_charge() -> void:
