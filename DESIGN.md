@@ -99,6 +99,15 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - **Kontrollit ovat helpot.** Tavarat poimitaan automaattisesti kävelemällä niiden päälle.
 - Hahmolla on **yksi tavara kädessä**. Kun hän koskee uuteen tavaraan, käden tavara **vaihtuu automaattisesti** uuteen.
 - Kadulla voi olla **muovipusseja**, jotka hahmo nappaa käteen automaattisesti päälle kävellessään.
+- Kun pussi on kädessä, uudet tavarat **menevät pussiin**, eikä pussi vaihdu. Pussiin mahtuu muutama tavara, esimerkiksi tölkkejä pullonpalautukseen.
+- Pussi voi **revetä**, jos siihen laittaa liikaa tai pelaaja tappelee. Silloin tavarat leviävät kadulle.
+- **Kaikkia tavaroita voi heittää**, myös pussin tavaroineen.
+
+### Kontrollit
+
+- Kontrollien pitää olla niin simppelit, että peliä voi pelata **puhelimella**.
+- Käytössä on vain **suuntanuolet** ja **yksi toimintanappi**.
+- Toimintanapissa on **lyhyt ja pitkä painallus**. *Avoinna:* mitä kumpikin tekee.
 
 ### Näkökenttä ja silmälasit
 
