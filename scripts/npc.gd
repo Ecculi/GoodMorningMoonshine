@@ -6,14 +6,17 @@ extends Node3D
 const PersonModel = preload("res://scripts/person_model.gd")
 const Item = preload("res://scripts/item.gd")
 
-enum S { WALK, FIGHT, STUNNED, KO }
+enum S { WALK, FIGHT, STUNNED, KO, LEAVE }
 
 const EDGE_X := 25.0
 const CHASE_SPEED := 2.3
 const WINDUP := 0.45
 const ATTACK_COOLDOWN := 1.3
 const HIT_DAMAGE := 9.0
-const KO_TIME := 8.0
+## A knocked-out passer-by lies this long (world time), then gets up and
+## limps away out of the block. They never just vanish.
+const KO_TIME := 10.0
+const LEAVE_SPEED := 0.9
 const PICKPOCKET_CHANCE := 0.6
 
 var main
@@ -31,6 +34,7 @@ var _cooldown := 0.0
 var _timer := 0.0
 var _knock := 0.0
 var _mark: Label3D
+var _looted := false
 
 const SHIRTS := [Color(0.75, 0.2, 0.2), Color(0.2, 0.55, 0.3), Color(0.85, 0.7, 0.2),
 	Color(0.5, 0.3, 0.6), Color(0.9, 0.9, 0.88), Color(0.2, 0.2, 0.25), Color(0.85, 0.45, 0.2)]
@@ -81,6 +85,12 @@ func _process(_delta: float) -> void:
 		S.KO:
 			_timer += dt
 			if _timer > KO_TIME:
+				_get_up()
+		S.LEAVE:
+			# Limp away from the player towards the nearer block end.
+			position.x += dir * LEAVE_SPEED * dt
+			model.animate(0.6, dt, 0.6)
+			if absf(position.x) > EDGE_X:
 				main.respawn_npc(self)
 				return
 	position.x += _knock * dt
@@ -186,10 +196,23 @@ func check_pickpocket(p: Node3D) -> void:
 		state = S.FIGHT
 
 
+func _get_up() -> void:
+	state = S.LEAVE
+	model.rotation.z = 0.0
+	model.position.y = 0.0
+	hp = 1
+	pickpocketed = true
+	var away := signf(position.x - main.player.position.x)
+	dir = 1 if away >= 0.0 else -1
+
+
 func _knock_out() -> void:
 	state = S.KO
 	_timer = 0.0
 	_mark.visible = false
 	model.raise_arm(false)
 	model.lie_down()
-	main.spawn_loot(position)
+	# Loot only the first time (no farming the same person).
+	if not _looted:
+		_looted = true
+		main.spawn_loot(position)

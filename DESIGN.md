@@ -326,6 +326,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 
 - Ilman lompakkoa pelaaja voi hankkia tavaraa hakkaamalla ohikulkijoita.
 - Tyrmätty ohikulkija pudottaa maahan satunnaisesti alkoholia, ruokaa, rahaa tai ei mitään. Joskus se pudottaa myös avaimen tai puhelimen.
+- Tyrmätty ei katoa: hetken päästä hän nousee ylös ja nilkuttaa pois korttelista. Uudelleen tyrmättynä hän ei enää pudota mitään.
 - Ohikulkijoilta voi myös **taskuvarastaa** ilman tappelua.
   - Pelihahmo on **kleptomaani**: aina kun hänet ohjataan tarpeeksi lähelle jonkun selän taakse, hän yrittää **automaattisesti** näpistää tämän taskuista.
   - Joskus hän jää kiinni, joskus ei. Hiippailu (paljain jaloin) parantaa onnistumisen mahdollisuuksia.
