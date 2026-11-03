@@ -338,6 +338,12 @@ Hahmoideat:
   - **Tavarat:** 100 pistettä jokaisesta tavarasta, joka on mukana kuollessa.
   - **Bonus:** 500 pistettä, jos pääsee kotiin ja kaikki sen päivän hukatut tavarat on löydetty.
 
+## Tallennus
+
+- Peli **tallentuu automaattisesti joka aamu** päivän alussa.
+- Jos sovellus suljetaan kesken päivän, jatketaan **saman päivän alusta**.
+- Kesken päivän ei voi tallentaa, joten huijaaminen ei onnistu.
+
 ## Tekniikka
 
 - Pelimoottori: **Godot 4.7** (tavallinen versio, ei .NET/mono)
