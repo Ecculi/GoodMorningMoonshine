@@ -338,6 +338,13 @@ Hahmoideat:
   - **Tavarat:** 100 pistettä jokaisesta tavarasta, joka on mukana kuollessa.
   - **Bonus:** 500 pistettä, jos pääsee kotiin ja kaikki sen päivän hukatut tavarat on löydetty.
 
+## Kieli ja teksti
+
+- Pelissä on **mahdollisimman vähän tekstiä**. Tapahtumat ja tilat selitetään **ikoneilla ja muodoilla**.
+- Ensimmäinen kieli on **suomi**.
+- Peli tehdään alusta asti **helposti lokalisoitavaksi** usealle kielelle: kaikki tekstit ovat käännöstiedostoissa (Godotin käännösjärjestelmä), eikä tekstiä kirjoiteta suoraan koodiin tai kuviin.
+- Oulun kadunnimet pysyvät suomeksi kaikissa kieliversioissa.
+
 ## Tallennus
 
 - Peli **tallentuu automaattisesti joka aamu** päivän alussa.
