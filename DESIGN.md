@@ -10,6 +10,8 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 **Peli on nopeatempoinen.** Mekaniikat, joissa vain odotetaan tai istutaan paikallaan, jätetään pois.
 
+**Pelissä ei ole tupakkaa lainkaan.**
+
 ## Kuvakulma ja grafiikka
 
 - **Grafiikka toteutetaan tilt-shift-tekniikalla**, jolloin kaupunki näyttää pienoismallilta.
@@ -202,7 +204,8 @@ Hahmoideat:
 | Kerjäläinen | antaa rahaa vastaan vihjeen hukatusta tavarasta |
 | Punkkarit | liikkuvat aina 2–3 hengen porukassa; jos lyöt yhtä, kaikki käyvät kimppuun; jos et ärsytä, voivat tarjota tölkin kaljaa |
 | Taskuvaras | satunnaisesti joko törmää ohimennen ja vie rahaa tai tavaran (esim. puhelimen; takaisin vain kiinni saamalla tai tyrmäämällä, muuten tavara hukkuu taas) tai yrittää näpistää samaan aikaan kuin pelaaja, jolloin syntyy koominen kollegakohtaus ja kumpikin saa jotain |
-| Muut kaupunkityypit | portsari, pappi, poliitikko, koira… (erikoisuudet keksitään) |
+| Portsari | seisoo baarin ovella ja arvioi kunnon: päästää sisään vain, jos alkoholia on sopivasti; liian humalaisen tai likaisen käännyttää; ilman kenkiä ei pääse sisään; rajatapauksissa rahalahjus auttaa; väkisin tunkeva heitetään kadulle (vie healthia) |
+| Muut kaupunkityypit | pappi, poliitikko, koira… (erikoisuudet keksitään) |
 
 ## Pisteytys
 
