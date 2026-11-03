@@ -10,6 +10,7 @@ var card_sub := ""
 var card_time := 0.0
 
 var _hurt := 0.0
+var _fade := 0.0
 
 
 func _ready() -> void:
@@ -32,8 +33,14 @@ func hide_card() -> void:
 	mode = ""
 
 
+## Quick fade from black when the view changes to another block.
+func fade_in() -> void:
+	_fade = 1.0
+
+
 func _process(delta: float) -> void:
 	_hurt = maxf(0.0, _hurt - delta)
+	_fade = maxf(0.0, _fade - delta * 4.0)
 	card_time += delta
 	queue_redraw()
 
@@ -41,6 +48,8 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var font := get_theme_default_font()
 	var vs := get_viewport_rect().size
+	if _fade > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, _fade))
 	if _hurt > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0.8, 0.0, 0.0, _hurt * 0.5))
 

@@ -7,9 +7,6 @@ const Item = preload("res://scripts/item.gd")
 
 const WALK_SPEED := 2.6
 const RUN_SPEED := 6.4  # one block (~32 m) in about 5 s
-const X_LIMIT := 21.0
-const Z_MIN := -7.4
-const Z_MAX := 5.2
 const LONG_PRESS := 0.35
 const DOUBLE_TAP := 0.3
 const HOLD_TO_RUN := 1.0
@@ -88,8 +85,7 @@ func _process(delta: float) -> void:
 
 	position += (v + _knock) * delta
 	_knock = _knock.move_toward(Vector3.ZERO, 12.0 * delta)
-	position.x = clampf(position.x, -X_LIMIT, X_LIMIT)
-	position.z = clampf(position.z, Z_MIN, Z_MAX)
+	position = main.clamp_walkable(position)
 
 	GameState.moving = moving
 	GameState.running = running and moving

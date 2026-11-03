@@ -54,6 +54,9 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - Kadut muodostavat kaksi ristikkäistä sarjaa (noin 9 × 9 katua), joten jokaisessa risteyksessä käännytään 90 astetta:
   - **Lounas–koillinen:** Rantakatu, Aleksanterinkatu, Torikatu, Kirkkokatu, Isokatu, Uusikatu, Mäkelininkatu, Koulukatu, Rautatienkatu
   - **Luode–kaakko:** Ojakatu, Hallituskatu, Pakkahuoneenkatu, Saaristonkatu, Albertinkatu, Sepänkatu (sekä idässä Asemakatu, Kajaaninkatu, Kauppurienkatu)
+- **Kuvakulma kaduilla:** lounas–koillinen-kaduilla kamera katsoo luoteeseen (oikealle on koilliseen), luode–kaakko-kaduilla koilliseen (oikealle on kaakkoon). Risteyksessä ylös tarkoittaa poispäin kamerasta ja alas kohti kameraa. Siksi aurinko ja varjot kääntyvät kadun mukana.
+- **Rantakadun pohjoispuolella on meri**, ja kartan reunoilla katu päättyy.
+- Katujen järjestys on tiedostossa `scripts/city_map.gd`, jossa sitä on helppo korjata. *Avoinna:* Asemakadun, Kajaaninkadun ja Kauppurienkadun paikka idässä.
 - **Maamerkit:** Kauppatori, kauppahalli, Rotuaari, tuomiokirkko, poliisiasema, rautatieasema, puistot (Snellmanin, Otto Karhin, Franzénin, Vaaranpuisto, Mannerheimin) ja kanava. Meri on luoteessa.
 - Käytetään **oikeita kadunnimiä ja julkisia paikkoja**. **Yritysten nimet** (ravintolat, hotellit, kauppakeskukset) korvataan keksityillä nimillä.
 - **Autoja liikkuu kaduilla tosi harvoin.** Auto tönäisee ja vie healthia, ja humalassa sitä on vaikeampi väistää. **Kävelykadulla (Rotuaari) ei ole autoja lainkaan.**
@@ -417,7 +420,13 @@ Tavoite: nähdä nopeasti, tuntuuko peli hyvältä, myös puhelimella. Prototyyp
 - Kosketusohjaimet puhelimelle, näppäimistö ja peliohjain muille alustoille
 - Tekstit käännöstiedostossa (suomi)
 
-Prototyypistä puuttuu vielä muun muassa kartta ja risteyksistä kääntyminen, koti, hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
+Lisätty prototyyppiin:
+
+- **Oulun keskustan kartta:** kaikki korttelit 9 × 6 kadun ruudukossa. Korttelin päästä jatketaan seuraavaan kortteliin, ja risteyksestä käännytään ylös tai alas poikkikadulle. Kadunnimikyltit ovat risteysten kulmissa. Korttelien ulkonäkö arvotaan, mutta sama kortteli näyttää aina samalta.
+- Kadulle jääneet tavarat pysyvät korttelissa saman päivän ajan. Seuraavana aamuna sisältö arvotaan uudelleen.
+- Uusi peli alkaa satunnaisesta korttelista. Seuraava päivä alkaa siitä korttelista, johon hahmo nukahti.
+
+Prototyypistä puuttuu vielä muun muassa koti, hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
 
 ## Avoimet kysymykset
 
