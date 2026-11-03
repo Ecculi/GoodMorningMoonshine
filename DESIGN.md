@@ -45,6 +45,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - Kun pelaaja kuolee ja aloittaa uuden pelin, kaupunki ja kodin sijainti vaihtuvat.
 - **Aluksi toteutetaan vain Oulu.**
 - **Asiat eivät ole joka päivä samassa paikassa.** Kartta pysyy samana, mutta tavarat, ruoka, juomat, hahmot ja palvelut (esim. mistä saa kahvia) arvotaan joka päivä uudelleen. Eilen toimiva paikka ei välttämättä toimi tänään.
+  - **Rakennukset ovat aina samoilla paikoilla**, koska ne ovat osa Oulun karttaa. Joka päivä arvotaan, **mitkä ovat auki ja mitä niissä on tarjolla** (esim. kioski voi olla kiinni tai baarissa eri portsari).
 
 ### Oulu
 
