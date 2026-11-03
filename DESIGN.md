@@ -19,6 +19,13 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - Kuvakulma on viisto sivukuva (beat 'em up / belt scroller -tyyli).
 - Pelaaja etenee pääasiassa sivusuunnassa, mutta voi liikkua myös ylös ja alas kadun syvyyssuunnassa.
 
+## Ääni ja musiikki
+
+- **Kaupungin äänet:** lokit, liikenne ja ihmisten puheensorina.
+- **Hahmon ääntelyt:** ähkimistä, hikkaa ja mahan kurinaa.
+- **Hiljainen taustamusiikki** soi koko ajan, ja se **horjuu humalatilan mukaan**.
+- Sisätiloissa soi paikan oma musiikki, esimerkiksi baarissa ja kauppakeskuksessa.
+
 ## Ajan kulku
 
 - Peli on reaaliaikainen, mutta **aika etenee vain, kun pelaaja liikkuu tai tekee jotain**. Muuten peli on kuin pausella.
