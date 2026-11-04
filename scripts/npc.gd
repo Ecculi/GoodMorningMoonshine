@@ -263,7 +263,9 @@ func take_hit(dmg: int, attacker: Node3D) -> void:
 		main.report_crime(position, false)
 	if hp <= 0:
 		# Cars throw people much further than fists.
-		var push := Vector3(_knock * 1.2, 2.0, 0.0)
+		# Knocked away from the punch.
+		var away := signf(position.x - attacker.position.x)
+		var push := Vector3(away * randf_range(5.0, 7.0), randf_range(2.0, 3.0), randf_range(-0.6, 0.6))
 		if attacker.has_method("_check_hits"):
 			push = Vector3(attacker.dir * 7.0, 3.5, randf_range(-0.8, 0.8))
 		_knock_out(push)
@@ -372,6 +374,8 @@ func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
 	add_child(_ragdoll)
 	_ragdoll.build(model, push)
 	model.visible = false
+	# Let the fall play out even if the player stands still.
+	GameState.busy_time = maxf(GameState.busy_time, 1.2)
 	# Loot only the first time (no farming the same person); never from
 	# police or guards.
 	if not _looted and role == "civ":

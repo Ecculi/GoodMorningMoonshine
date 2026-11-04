@@ -39,12 +39,26 @@ func torso_position() -> Vector3:
 	return torso.global_position if torso != null else global_position
 
 
+## Velocities saved while frozen, so the fall continues where it stopped.
+var _saved: Array = []
+
+
 func _physics_process(_delta: float) -> void:
 	var freeze := GameState.world_dt <= 0.0 and not GameState.over
-	if freeze != _frozen:
-		_frozen = freeze
+	if freeze == _frozen:
+		return
+	_frozen = freeze
+	if freeze:
+		_saved.clear()
 		for p in parts:
-			p.freeze = freeze
+			_saved.append([p.linear_velocity, p.angular_velocity])
+			p.freeze = true
+	else:
+		for i in parts.size():
+			parts[i].freeze = false
+			if i < _saved.size():
+				parts[i].linear_velocity = _saved[i][0]
+				parts[i].angular_velocity = _saved[i][1]
 
 
 func _part(xf: Transform3D, local: Vector3, size: Vector3, col: Color, mass: float, s: float, velocity: Vector3) -> RigidBody3D:
