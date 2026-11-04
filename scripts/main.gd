@@ -907,6 +907,10 @@ func remove_car(c) -> void:
 	c.queue_free()
 
 
+func obstacles() -> Array:
+	return level.get_meta("obstacles", []) if level != null else []
+
+
 ## The zebra crossings are at both ends of the block, across this street.
 func crosswalk_xs() -> Array:
 	return [-(BLOCK_HALF + 1.6), BLOCK_HALF + 1.6]

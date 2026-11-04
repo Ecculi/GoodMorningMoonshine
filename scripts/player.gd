@@ -129,6 +129,8 @@ func _process(delta: float) -> void:
 	position += (v + _knock) * delta
 	_knock = _knock.move_toward(Vector3.ZERO, 12.0 * delta)
 	position = main.clamp_walkable(position)
+	if moving:
+		_check_stumbles(before)
 	# A wrong way that runs into a wall or the curb would leave the
 	# character silly-walking on the spot: drop it instead.
 	if wrong_way != Vector2.ZERO and moving:
@@ -197,15 +199,6 @@ func _drunk_states(moving: bool) -> void:
 			_sing_t = 2.0
 			main.player_sings()
 
-	# Tripping over when running very drunk, or slipping on snow.
-	if running and moving:
-		var per_sec := 0.0
-		if p > TRIP_PROMILLE:
-			per_sec += 0.2 + 0.4 * clampf((p - TRIP_PROMILLE) / 0.7, 0.0, 1.0)
-		if GameState.weather == "snow":
-			per_sec += 0.15 * (2.5 if GameState.is_lost("shoes") else 1.0)
-		if randf() < per_sec * dt:
-			_trip()
 
 	# Love for everyone: hug the passers-by you bump into.
 	if p >= HUG_MIN and p <= HUG_MAX:
@@ -218,6 +211,7 @@ func _drunk_states(moving: bool) -> void:
 # --- Hit by a car -------------------------------------------------------------------
 
 const KNOCKOUT_TIME := 3.0
+const BLOCK_HALF_X := 16.0
 var _ride_car = null
 var _ragdoll = null
 
@@ -293,6 +287,47 @@ func _get_up() -> void:
 
 func is_helpless() -> bool:
 	return _ride_car != null or _fall_t > 0.0
+
+
+## Falling only happens on a change of surface (stepping over the curb
+## between the road and the sidewalk) or when walking into something
+## (tree, lamp post, bench, bin, sign pole). Drunk, running or snow make
+## it likelier; sober on dry ground you just bump and stop.
+const CURB_Z := [-5.0, 2.5]
+
+
+func _stumble_chance(base: float) -> float:
+	var p := GameState.promille
+	var c := 0.0
+	if p > GameState.PROMILLE_DRUNK:
+		c += base + 0.5 * clampf((p - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
+	if GameState.weather == "snow":
+		c += 0.15 * (2.0 if GameState.is_lost("shoes") else 1.0)
+	if running:
+		c *= 1.5
+	return clampf(c, 0.0, 0.9)
+
+
+func _check_stumbles(before: Vector3) -> void:
+	# Over the curb (only where there is a sidewalk, not in the crossings).
+	if absf(position.x) < BLOCK_HALF_X:
+		for cz in CURB_Z:
+			if (before.z - cz) * (position.z - cz) < 0.0:
+				if randf() < _stumble_chance(0.1):
+					_trip()
+					return
+	# Into an obstacle: blocked; maybe down.
+	for o in main.obstacles():
+		var d := Vector2(position.x - o[0], position.z - o[1])
+		var min_d: float = o[2] + 0.25
+		if d.length() < min_d:
+			var out := d.normalized() if d.length() > 0.001 else Vector2(-facing, 0)
+			position.x = o[0] + out.x * min_d
+			position.z = o[1] + out.y * min_d
+			if Vector2(before.x - o[0], before.z - o[1]).length() >= min_d - 0.01:
+				if randf() < _stumble_chance(0.25):
+					_trip()
+			return
 
 
 func _trip() -> void:

@@ -205,26 +205,39 @@ static func _police_station(root: Node3D) -> void:
 		_box(root, Vector3(wx, 1.5, -7.87), Vector3(1.8, 1.8, 0.08), Color(0.3, 0.38, 0.45))
 
 
+## Solid things the player bumps into: root meta "obstacles" = [[x, z, r], ...].
+static func _obstacle(root: Node3D, x: float, z: float, r: float) -> void:
+	var obs: Array = root.get_meta("obstacles", [])
+	obs.append([x, z, r])
+	root.set_meta("obstacles", obs)
+
+
 static func _props(root: Node3D, rng: RandomNumberGenerator, sea: bool) -> void:
 	var x := -40.0
 	while x <= 40.0:
 		if absf(absf(x) - (BLOCK_HALF + CROSS_HALF) * 0.5) > 4.0:
 			_cyl(root, Vector3(x, 2.0, 5.5), 0.07, 4.0, Color(0.2, 0.22, 0.25))
+			_obstacle(root, x, 5.5, 0.15)
 			_box(root, Vector3(x, 4.05, 5.2), Vector3(0.25, 0.12, 0.7), Color(0.2, 0.22, 0.25))
 		x += 10.0
 	if not sea:
 		for i in rng.randi_range(2, 4):
 			var tx := rng.randf_range(-BLOCK_HALF + 1.5, BLOCK_HALF - 1.5)
 			_cyl(root, Vector3(tx, 1.2, -7.3), 0.15, 2.4, Color(0.35, 0.25, 0.18))
+			_obstacle(root, tx, -7.3, 0.25)
 			_sphere(root, Vector3(tx, 3.3, -7.3), 1.3, Color(0.25, 0.5, 0.24))
 	for hx in [-30.0, -20.0, -4.0, 4.0, 20.0, 30.0]:
 		_box(root, Vector3(hx, 0.35, 7.0), Vector3(3.0, 0.7, 0.8), Color(0.22, 0.45, 0.22))
 	for i in rng.randi_range(0, 2):
 		var bx := rng.randf_range(-12.0, 12.0)
 		_box(root, Vector3(bx, 0.45, 5.4), Vector3(1.8, 0.1, 0.5), Color(0.45, 0.3, 0.2))
+		for ox in [-0.6, 0.0, 0.6]:
+			_obstacle(root, bx + ox, 5.4, 0.3)
 		_box(root, Vector3(bx, 0.22, 5.4), Vector3(1.6, 0.44, 0.08), Color(0.2, 0.2, 0.2))
 	for i in rng.randi_range(1, 3):
-		_cyl(root, Vector3(rng.randf_range(-14.0, 14.0), 0.5, -7.5), 0.3, 0.8, Color(0.2, 0.35, 0.25))
+		var binx := rng.randf_range(-14.0, 14.0)
+		_cyl(root, Vector3(binx, 0.5, -7.5), 0.3, 0.8, Color(0.2, 0.35, 0.25))
+		_obstacle(root, binx, -7.5, 0.35)
 
 
 ## Blue street name signs on poles at both corners of the far sidewalk.
@@ -235,6 +248,7 @@ static func _signs(root: Node3D, seg: Vector3i) -> void:
 	for s in [-1, 1]:
 		var px: float = s * (BLOCK_HALF - 0.4)
 		_cyl(root, Vector3(px, 1.5, -5.4), 0.05, 3.0, Color(0.25, 0.27, 0.3))
+		_obstacle(root, px, -5.4, 0.12)
 		_sign(root, CityMap.street_name(seg), Vector3(px - s * 1.3, 2.75, -5.36), false)
 		_sign(root, CityMap.cross_name(seg, s > 0), Vector3(px + s * 1.3, 2.3, -5.36), true)
 
