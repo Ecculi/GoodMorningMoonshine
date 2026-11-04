@@ -458,7 +458,8 @@ func _place_lost_items() -> void:
 ## Each morning the phone has a little battery and maybe some hints about
 ## where things were yesterday (messages and a photo). Not every day.
 func _make_phone_hints() -> void:
-	battery = rng.randf_range(8.0, 25.0)
+	# First day: half a battery, enough to look at the map a bit.
+	battery = 50.0 if day == 1 else rng.randf_range(8.0, 25.0)
 	phone_msgs.clear()
 	phone_photo = {}
 	var candidates: Array = []
