@@ -16,6 +16,9 @@ var card_time := 0.0
 var _hurt := 0.0
 var _fade := 0.0
 var _fade_speed := 4.0
+## Heart above the player's head while punching too fast.
+var _head_heart_t := 0.0
+var _shown_strain := 0.0
 var _bubble_on := false
 ## Items shown in the thought bubble (morning: today's lost items).
 var _bubble_items: Array = []
@@ -65,6 +68,10 @@ func think(items: Array) -> void:
 	if main != null and main.player != null:
 		_bubble_last = main.player.position
 	_think_t = 1.5
+
+
+func show_head_heart() -> void:
+	_head_heart_t = 2.0
 
 
 ## Quick fade from black when the view changes to another block.
@@ -118,6 +125,7 @@ func _draw() -> void:
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_charge()
+	_draw_head_heart(delta_draw())
 	_draw_arrest()
 	_draw_lost_list(vs)
 	if _bubble_on and mode == "" and GameState.modal == "":
@@ -215,6 +223,38 @@ func _draw_arrest() -> void:
 	draw_arc(sp, 34.0, 0, TAU, 40, Color(0, 0, 0, 0.35), 7.0, true)
 	var col := Color(0.25, 0.45, 1.0) if int(Time.get_ticks_msec() / 150) % 2 == 0 else Color(1.0, 0.25, 0.25)
 	draw_arc(sp, 34.0, -PI * 0.5, -PI * 0.5 + TAU * main.arrest, 40, col, 7.0, true)
+
+
+func delta_draw() -> float:
+	return get_process_delta_time()
+
+
+## A small heart above the head: red = health left, light pink = used up by
+## punching too fast. The pink part grows smoothly so it looks like the
+## heart drains. Shown for a moment after each too-fast punch and while
+## exhausted.
+func _draw_head_heart(dt: float) -> void:
+	if main == null or main.player == null:
+		return
+	_shown_strain = lerpf(_shown_strain, GameState.strain, 1.0 - exp(-8.0 * dt))
+	if GameState.exhausted:
+		_head_heart_t = maxf(_head_heart_t, 0.5)
+	_head_heart_t = maxf(0.0, _head_heart_t - dt)
+	if _head_heart_t <= 0.0:
+		return
+	var p: Vector3 = main.player.global_position + Vector3(0, 2.5, 0)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	var a := clampf(_head_heart_t / 0.4, 0.0, 1.0)
+	var hp := maxf(GameState.health, 0.001)
+	var size := 34.0
+	if GameState.exhausted:
+		size += 4.0 * absf(sin(Time.get_ticks_msec() / 160.0))
+	modulate.a = 1.0
+	draw_circle(sp, size * 0.62, Color(0, 0, 0, 0.25 * a))
+	# Here the heart is "full" = current health; pink = share used up.
+	_draw_heart(sp, size, 1.0, clampf(_shown_strain / hp, 0.0, 1.0))
 
 
 func _draw_charge() -> void:

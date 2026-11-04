@@ -814,6 +814,23 @@ func note_texture() -> ImageTexture:
 
 
 var _strain_heart_tex: ImageTexture
+var _breath_tex: ImageTexture
+
+
+## A small white puff of breath.
+func breath_texture() -> ImageTexture:
+	if _breath_tex != null:
+		return _breath_tex
+	var n := 32
+	var img := Image.create_empty(n, n, false, Image.FORMAT_RGBA8)
+	for y in n:
+		for x in n:
+			var p := Vector2(x + 0.5, y + 0.5)
+			var d := minf(p.distance_to(Vector2(12, 18)) / 8.0, minf(p.distance_to(Vector2(20, 14)) / 9.0, p.distance_to(Vector2(22, 21)) / 6.0))
+			if d < 1.0:
+				img.set_pixel(x, y, Color(1, 1, 1, 0.85 * (1.0 - d * 0.5)))
+	_breath_tex = ImageTexture.create_from_image(img)
+	return _breath_tex
 
 
 ## Light pink heart with a dark outline: "this used up temporary health"

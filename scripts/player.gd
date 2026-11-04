@@ -121,6 +121,9 @@ func _process(delta: float) -> void:
 	var moving := dir.length() > 0.2
 	_update_run(dir, moving, delta)
 	var speed := RUN_SPEED if running else WALK_SPEED
+	# Exhausted from punching too fast: running at half speed.
+	if running and GameState.exhausted:
+		speed *= 0.5
 	# Without shoes walking is slower and running much harder.
 	if GameState.is_lost("shoes"):
 		speed *= 0.65 if running else 0.8
@@ -494,6 +497,25 @@ func _update_silly(delta: float) -> void:
 	_silly_level = move_toward(_silly_level, target, delta * 4.0)
 
 
+## Exhausted: heavy breathing, visible even when standing still (real
+## time, not world time): the chest heaves and little breath puffs rise.
+var _breath_t := 0.0
+
+
+func _heavy_breathing() -> void:
+	var s: float = 1.0
+	if GameState.exhausted:
+		var dt := get_process_delta_time()
+		_breath_t += dt
+		var heave := sin(_breath_t * 7.0)
+		model.scale = Vector3(s * (1.0 + 0.02 * heave), s * (1.0 + 0.035 * heave), s * (1.0 + 0.02 * heave))
+		model.rotation.z += 0.08 + 0.05 * heave
+		if fmod(_breath_t, 0.9) < dt:
+			main.popup_icon(main.breath_texture(), position + Vector3(0.35 * facing, 1.75, 0.3))
+	elif model.scale != Vector3.ONE:
+		model.scale = Vector3.ONE
+
+
 func _hunger_signs() -> void:
 	var hungry := GameState.hunger >= GameState.HUNGER_EMPTY_STOMACH
 	# Hunger slumps forward; the silly walk leans back and bounces.
@@ -522,6 +544,7 @@ func _hunger_signs() -> void:
 	else:
 		model.position.x = 0.0
 		model.position.z = 0.0
+	_heavy_breathing()
 	if not hungry:
 		return
 	_growl_t += GameState.world_dt
@@ -609,7 +632,7 @@ func _short_action() -> void:
 			return
 	# Exhausted from punching too fast: no strength left to punch.
 	if GameState.exhausted:
-		main.popup_icon(main.strain_heart_texture(), position + Vector3(0.0, 2.3, 0.3))
+		main.hud.show_head_heart()
 		return
 	model.punch()
 	_punch_strain()
@@ -645,8 +668,8 @@ var _rest_t := 0.0
 func _punch_strain() -> void:
 	if _clock - _last_punch < SPAM_WINDOW:
 		GameState.add_strain(SPAM_COST)
-		# Show it right above the character: a light pink heart.
-		main.popup_icon(main.strain_heart_texture(), position + Vector3(0.0, 2.3, 0.3))
+		# Show a heart above the head that drains (red -> light pink).
+		main.hud.show_head_heart()
 	_last_punch = _clock
 	_rest_t = 0.0
 
