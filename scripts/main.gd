@@ -1263,19 +1263,21 @@ func _build_post_process() -> void:
 ## above 3.0 the blur outside gets much stronger.
 const DRUNK_CIRCLE_MAX := 14.0
 const DRUNK_CIRCLE_MIN := 1.5
+const BLUR_START := 1.0
 
 
 func _update_drunk_circle() -> void:
-	var t := clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
+	# Blur starts mildly at 1.0 per mille and grows from there.
+	var t := clampf((GameState.promille - BLUR_START) / 1.8, 0.0, 1.0)
 	tilt_mat.set_shader_parameter("drunk", t)
 	tilt_mat.set_shader_parameter("heavy", clampf((GameState.promille - 2.3) / 0.5, 0.0, 1.0))
-	# The edges of the view darken from 1.5 per mille on.
+	# The edges of the view darken from 0.8 per mille on.
 	tilt_mat.set_shader_parameter("vignette", clampf((GameState.promille - 0.8) / 2.0, 0.0, 1.0))
 	var vs := get_viewport().get_visible_rect().size
 	var c: Vector3 = player.global_position + Vector3(0, 1.0, 0)
 	if camera.is_position_behind(c):
 		return
-	var shrink := pow(clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.0, 0.0, 1.0), 0.6)
+	var shrink := pow(clampf((GameState.promille - BLUR_START) / 1.3, 0.0, 1.0), 0.6)
 	var r_m := lerpf(DRUNK_CIRCLE_MAX, DRUNK_CIRCLE_MIN, shrink)
 	var cp := camera.unproject_position(c)
 	var ep := camera.unproject_position(c + Vector3(r_m, 0, 0))
