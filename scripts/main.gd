@@ -1212,14 +1212,16 @@ func _build_post_process() -> void:
 
 ## Drunk: everything gets blurrier (a little inside a circle around the
 ## player, more outside it), and the circle shrinks quickly from the whole
-## screen (2.0 per mille) to a radius of 2.5 m (3.0 per mille and up).
+## screen (2.0 per mille) to a radius of 1.5 m (3.0 per mille and up);
+## above 3.0 the blur outside gets much stronger.
 const DRUNK_CIRCLE_MAX := 14.0
-const DRUNK_CIRCLE_MIN := 2.5
+const DRUNK_CIRCLE_MIN := 1.5
 
 
 func _update_drunk_circle() -> void:
 	var t := clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
 	tilt_mat.set_shader_parameter("drunk", t)
+	tilt_mat.set_shader_parameter("heavy", clampf((GameState.promille - 3.0) / 0.5, 0.0, 1.0))
 	var vs := get_viewport().get_visible_rect().size
 	var c: Vector3 = player.global_position + Vector3(0, 1.0, 0)
 	if camera.is_position_behind(c):

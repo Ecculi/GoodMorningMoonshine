@@ -16,6 +16,8 @@ uniform float drunk = 0.0;
 uniform vec2 circle_center = vec2(0.5, 0.5);
 uniform float circle_radius = 2.0;
 uniform float aspect = 1.7778;
+// Above 3 per mille (0..1): much stronger blur outside the circle.
+uniform float heavy = 0.0;
 // Sun glare without sunglasses (0..1), strongest towards the top.
 uniform float glare = 0.0;
 // Double vision when very drunk (0..1): a second, shifted image.
@@ -30,15 +32,20 @@ void fragment() {
 	float dc = length((SCREEN_UV - circle_center) * vec2(aspect, 1.0));
 	float outside = smoothstep(circle_radius, circle_radius * 1.6, dc);
 	// Some blur also inside the circle, stronger outside it.
-	amount = clamp(max(amount, mix(0.3, 1.0, outside) * drunk), 0.0, 1.0);
+	float drunk_blur = mix(0.3, 1.0, outside) * drunk + outside * heavy * 1.3;
+	amount = clamp(max(amount, drunk_blur), 0.0, 2.3);
 	vec2 step_px = SCREEN_PIXEL_SIZE * max_blur * amount;
 	vec3 col = vec3(0.0);
 	float wsum = 0.0;
+	// Rotate the sample grid randomly per pixel so strong blur turns into
+	// soft noise instead of visible copies.
+	float ang = fract(sin(dot(FRAGCOORD.xy, vec2(12.9898, 78.233))) * 43758.5453) * 6.2831853;
+	mat2 rot = mat2(vec2(cos(ang), sin(ang)), vec2(-sin(ang), cos(ang)));
 	for (int x = -2; x <= 2; x++) {
 		for (int y = -2; y <= 2; y++) {
 			vec2 o = vec2(float(x), float(y));
 			float w = exp(-dot(o, o) / 3.0);
-			col += texture(screen_tex, uv + o * step_px).rgb * w;
+			col += texture(screen_tex, uv + (rot * o) * step_px).rgb * w;
 			wsum += w;
 		}
 	}
