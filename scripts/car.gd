@@ -108,7 +108,7 @@ func _check_hits() -> void:
 			_brake_in = main.rng.randf_range(1.0, 2.5)
 		else:
 			# Straight under the wheels; the car doesn't slow down.
-			p.run_over()
+			p.run_over(dir)
 	for n in main.npcs:
 		if n.is_down():
 			continue

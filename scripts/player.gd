@@ -3,6 +3,7 @@ extends Node3D
 ## short press = punch / drink / eat, long press = throw the held item.
 
 const PersonModel = preload("res://scripts/person_model.gd")
+const Ragdoll = preload("res://scripts/ragdoll.gd")
 const Item = preload("res://scripts/item.gd")
 
 const WALK_SPEED := 2.6
@@ -51,6 +52,9 @@ func reset(pos: Vector3) -> void:
 	if hand_item != null and is_instance_valid(hand_item):
 		hand_item.queue_free()
 	hand_item = null
+	_ride_car = null
+	_fall_t = 0.0
+	_get_up()
 
 
 func is_aiming() -> bool:
@@ -76,16 +80,16 @@ func _process(delta: float) -> void:
 	if _ride_car != null:
 		_ride_on_car(delta)
 		return
-	if _fly_t >= 0.0:
-		_fly(delta)
-		return
-	# Tripped over (or knocked out): lie on the ground for a moment.
+	# Fallen over or knocked out: the rag doll does the falling; then get up
+	# where it ended.
 	if _fall_t > 0.0:
 		_fall_t -= delta
 		GameState.moving = false
+		if _ragdoll != null:
+			var t: Vector3 = _ragdoll.torso_position()
+			position = main.clamp_walkable(Vector3(t.x, 0.0, t.z))
 		if _fall_t <= 0.0:
-			model.rotation.z = 0.0
-			model.position.y = 0.0
+			_get_up()
 		return
 
 	var dir := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
@@ -215,9 +219,7 @@ func _drunk_states(moving: bool) -> void:
 
 const KNOCKOUT_TIME := 3.0
 var _ride_car = null
-var _fly_t := -1.0
-var _fly_from := Vector3.ZERO
-var _fly_to := Vector3.ZERO
+var _ragdoll = null
 
 
 ## Thrown onto the bonnet: ride along until the car brakes.
@@ -245,52 +247,57 @@ func _ride_on_car(_delta: float) -> void:
 		_launch(d)
 
 
+## Thrown off the bonnet: the rag doll flies onto the street.
 func _launch(d: int) -> void:
 	_ride_car = null
-	_fly_from = position
-	_fly_to = main.clamp_walkable(position + Vector3(d * randf_range(3.0, 5.0), 0.0, randf_range(-0.5, 0.5)))
-	_fly_t = 0.0
-
-
-func _fly(delta: float) -> void:
-	GameState.busy_time = maxf(GameState.busy_time, 0.5)
-	_fly_t = minf(1.0, _fly_t + delta / 0.6)
-	position = _fly_from.lerp(_fly_to, _fly_t)
-	model.position.y = lerpf(1.05, 0.16, _fly_t) + sin(_fly_t * PI) * 1.2
-	model.rotation.z += delta * 12.0
-	if _fly_t >= 1.0:
-		_fly_t = -1.0
-		_knock_out(14.0)
+	model.rotation.z = 0.0
+	_knock_out(14.0, Vector3(d * randf_range(6.0, 8.0), randf_range(3.0, 4.5), randf_range(-0.8, 0.8)))
 
 
 ## Run over: straight under the car, which doesn't even slow down.
-func run_over() -> void:
+func run_over(car_dir: int) -> void:
 	running = false
 	_press_time = -1.0
-	_knock_out(28.0)
+	_knock_out(28.0, Vector3(car_dir * 3.0, 0.5, randf_range(-1.0, 1.0)))
 
 
-func _knock_out(dmg: float) -> void:
-	model.rotation.z = -PI * 0.5
-	model.position.y = 0.16
-	_fall_t = KNOCKOUT_TIME
-	GameState.busy_time = maxf(GameState.busy_time, KNOCKOUT_TIME)
+func _knock_out(dmg: float, push: Vector3) -> void:
+	_go_ragdoll(push, KNOCKOUT_TIME)
 	GameState.damage(dmg)
 	main.hud.flash_hurt()
 	main.hud.blackout(1.6)
 
 
+func _go_ragdoll(push: Vector3, time: float) -> void:
+	_fall_t = time
+	running = false
+	_press_time = -1.0
+	GameState.busy_time = maxf(GameState.busy_time, time)
+	if _ragdoll != null:
+		_ragdoll.queue_free()
+	model.position.y = 0.0
+	_ragdoll = Ragdoll.new()
+	add_child(_ragdoll)
+	_ragdoll.build(model, push)
+	model.visible = false
+
+
+func _get_up() -> void:
+	if _ragdoll != null:
+		_ragdoll.queue_free()
+		_ragdoll = null
+	model.visible = true
+	model.rotation.z = 0.0
+	model.position.y = 0.0
+
+
 func is_helpless() -> bool:
-	return _ride_car != null or _fly_t >= 0.0 or _fall_t > 0.0
+	return _ride_car != null or _fall_t > 0.0
 
 
 func _trip() -> void:
-	_fall_t = 1.2
-	running = false
-	model.rotation.z = -PI * 0.5
-	model.position.y = 0.16
-	GameState.busy_time = maxf(GameState.busy_time, 1.2)
 	main.popup("*", position + Vector3(0.6 * facing, 0.6, 0.3), Color(1, 0.9, 0.4))
+	_go_ragdoll(Vector3(facing * 4.0, 1.5, randf_range(-0.5, 0.5)), 1.6)
 	GameState.damage(4.0)
 	main.hud.flash_hurt()
 

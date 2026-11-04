@@ -90,6 +90,7 @@ var _focus_y := 0.58
 func _ready() -> void:
 	rng.randomize()
 	_build_environment()
+	_build_physics_ground()
 	_build_clouds()
 	_build_precipitation()
 	_build_camera()
@@ -1079,6 +1080,21 @@ func _update_sun() -> void:
 			cloud_mat.set_shader_parameter("to_sun", to_sun)
 			_cloud_sun_set = true
 	env.background_energy_multiplier = 0.15 + 0.85 * smoothstep(0.0, 0.4, day_light)
+
+
+## Invisible ground and facade for the rag dolls to land on and bounce off.
+func _build_physics_ground() -> void:
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	add_child(body)
+	for spec in [[Vector3(0, -0.45, -10), Vector3(400, 1.0, 120)], [Vector3(0, 10, -8.6), Vector3(400, 20, 1.0)]]:
+		var cs := CollisionShape3D.new()
+		var sh := BoxShape3D.new()
+		sh.size = spec[1]
+		cs.shape = sh
+		cs.position = spec[0]
+		body.add_child(cs)
 
 
 # --- Rain and snow -------------------------------------------------------------

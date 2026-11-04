@@ -31,6 +31,10 @@ window/handheld/orientation=0
 locale/translations=PackedStringArray("res://localization/strings.fi.translation")
 locale/fallback="fi"
 
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

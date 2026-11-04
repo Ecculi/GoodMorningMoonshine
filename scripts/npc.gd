@@ -8,6 +8,7 @@ extends Node3D
 
 const PersonModel = preload("res://scripts/person_model.gd")
 const Item = preload("res://scripts/item.gd")
+const Ragdoll = preload("res://scripts/ragdoll.gd")
 
 enum S { WALK, FIGHT, STUNNED, KO, LEAVE, CHASE }
 
@@ -51,6 +52,7 @@ var _timer := 0.0
 var _knock := 0.0
 var _mark: Label3D
 var _looted := false
+var _ragdoll = null
 
 const SHIRTS := [Color(0.75, 0.2, 0.2), Color(0.2, 0.55, 0.3), Color(0.85, 0.7, 0.2),
 	Color(0.5, 0.3, 0.6), Color(0.9, 0.9, 0.88), Color(0.2, 0.2, 0.25), Color(0.85, 0.45, 0.2)]
@@ -148,13 +150,15 @@ func _process(_delta: float) -> void:
 				state = S.CHASE if role == "police" else S.FIGHT
 		S.KO:
 			_timer += dt
+			if _ragdoll != null:
+				var t: Vector3 = _ragdoll.torso_position()
+				position = Vector3(t.x, 0.0, clampf(t.z, -7.4, 5.2))
 			if _timer > KO_TIME:
+				_end_ragdoll()
 				if role == "civ":
 					_get_up()
 				else:
 					# Police and guards get back up angry.
-					model.rotation.z = 0.0
-					model.position.y = 0.0
 					hp = 3
 					notice()
 		S.LEAVE:
@@ -258,7 +262,11 @@ func take_hit(dmg: int, attacker: Node3D) -> void:
 	if attacker == main.player:
 		main.report_crime(position, false)
 	if hp <= 0:
-		_knock_out()
+		# Cars throw people much further than fists.
+		var push := Vector3(_knock * 1.2, 2.0, 0.0)
+		if attacker.has_method("_check_hits"):
+			push = Vector3(attacker.dir * 7.0, 3.5, randf_range(-0.8, 0.8))
+		_knock_out(push)
 	elif role == "civ":
 		state = S.FIGHT
 		_cooldown = maxf(_cooldown, 0.5)
@@ -344,12 +352,26 @@ func _get_up() -> void:
 	dir = 1 if away >= 0.0 else -1
 
 
-func _knock_out() -> void:
+func _end_ragdoll() -> void:
+	if _ragdoll != null:
+		_ragdoll.queue_free()
+		_ragdoll = null
+	model.visible = true
+	model.rotation.z = 0.0
+	model.position.y = 0.0
+
+
+func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
 	state = S.KO
 	_timer = 0.0
 	_mark.visible = false
 	model.raise_arm(false)
-	model.lie_down()
+	# Fall over as a rag doll.
+	_knock = 0.0
+	_ragdoll = Ragdoll.new()
+	add_child(_ragdoll)
+	_ragdoll.build(model, push)
+	model.visible = false
 	# Loot only the first time (no farming the same person); never from
 	# police or guards.
 	if not _looted and role == "civ":

@@ -15,7 +15,15 @@ var _punch_t := 0.0
 var _raised := false
 
 
+var shirt_color: Color
+var pants_color: Color
+var skin_color: Color
+
+
 func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) -> void:
+	shirt_color = shirt
+	pants_color = pants
+	skin_color = skin
 	scale = Vector3.ONE * size
 	leg_l = _limb(Vector3(0, 0.9, -0.1), Vector3(0.17, 0.88, 0.17), pants)
 	leg_r = _limb(Vector3(0, 0.9, 0.1), Vector3(0.17, 0.88, 0.17), pants)
