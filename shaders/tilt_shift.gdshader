@@ -13,6 +13,8 @@ uniform float contrast = 1.12;
 uniform float drunk = 0.0;
 // Sun glare without sunglasses (0..1), strongest towards the top.
 uniform float glare = 0.0;
+// Double vision when very drunk (0..1): a second, shifted image.
+uniform float double_vision = 0.0;
 
 void fragment() {
 	vec2 uv = SCREEN_UV;
@@ -32,6 +34,11 @@ void fragment() {
 		}
 	}
 	col /= wsum;
+	if (double_vision > 0.0) {
+		vec2 shift = vec2(0.025 + 0.01 * sin(TIME * 0.7), 0.006) * double_vision;
+		vec3 ghost = texture(screen_tex, uv + shift).rgb;
+		col = mix(col, ghost, 0.45 * double_vision);
+	}
 	float l = dot(col, vec3(0.299, 0.587, 0.114));
 	col = mix(vec3(l), col, saturation);
 	col = (col - 0.5) * contrast + 0.5;

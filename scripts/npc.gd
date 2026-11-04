@@ -43,6 +43,7 @@ var hit_damage := HIT_DAMAGE
 ## Guards stand still at their post until there is trouble.
 var stationary := false
 var _far_t := 0.0
+var _hug_t := 0.0
 
 var _windup := -1.0
 var _cooldown := 0.0
@@ -170,6 +171,12 @@ func _process(_delta: float) -> void:
 
 
 func _walk(dt: float) -> void:
+	if _hug_t > 0.0:
+		_hug_t -= dt
+		model.animate(0.0, dt)
+		if _hug_t <= 0.0:
+			model.raise_arm(false)
+		return
 	if stationary:
 		model.animate(0.0, dt)
 		return
@@ -280,6 +287,22 @@ func hit_by_item(kind: int) -> void:
 				notice()
 
 
+## A drunk hug: the passer-by stops, confused, and the player's hands
+## wander into their pockets (almost always works, never starts a fight).
+func hug(p: Node3D) -> void:
+	pickpocketed = true
+	_hug_t = 1.0
+	model.raise_arm(true)
+	p.model.raise_arm(true)
+	p.get_tree().create_timer(1.0).timeout.connect(func(): p.model.raise_arm(false))
+	GameState.busy_time = maxf(GameState.busy_time, 1.0)
+	main.popup_icon(main.heart_texture(), (position + p.position) * 0.5 + Vector3(0, 2.1, 0.3))
+	if main.rng.randf() < 0.9:
+		var amount: int = main.rng.randi_range(1, 6)
+		GameState.money += amount
+		main.popup("+%d €" % amount, position + Vector3(0, 2.4, 0), Color(1, 0.85, 0.3))
+
+
 func check_pickpocket(p: Node3D) -> void:
 	if state != S.WALK or pickpocketed:
 		return
@@ -293,6 +316,9 @@ func check_pickpocket(p: Node3D) -> void:
 	p.model.punch()
 	# Barefoot the player sneaks quietly, so pickpocketing works better.
 	var chance := 0.85 if GameState.is_lost("shoes") else PICKPOCKET_CHANCE
+	# A hiccup right now gives the player away.
+	if p.hic_window > 0.0:
+		chance = 0.0
 	if main.rng.randf() < chance:
 		var amount: int = main.rng.randi_range(1, 6)
 		GameState.money += amount

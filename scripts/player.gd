@@ -72,6 +72,15 @@ func _process(delta: float) -> void:
 		model.animate(0.0, 0.0)
 		return
 
+	# Tripped over: lie on the ground for a moment.
+	if _fall_t > 0.0:
+		_fall_t -= delta
+		GameState.moving = false
+		if _fall_t <= 0.0:
+			model.rotation.z = 0.0
+			model.position.y = 0.0
+		return
+
 	var dir := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
 	# While a throw is being charged the arrows aim instead of moving.
 	if is_aiming():
@@ -125,8 +134,81 @@ func _process(delta: float) -> void:
 	_handle_action(delta)
 	_check_pickups()
 	_hunger_signs()
+	_drunk_states(moving)
 	for n in main.npcs:
 		n.check_pickpocket(self)
+
+
+# --- Drunk states ---------------------------------------------------------------
+
+const HICCUP_PROMILLE := 1.5
+const SING_PROMILLE := 2.2
+const TRIP_PROMILLE := 2.8
+const HUG_MIN := 2.0
+const HUG_MAX := 2.5
+
+var _hic_cd := 5.0
+var _hic_jolt := 0.0
+## > 0 right after a hiccup: pickpocketing gets noticed.
+var hic_window := 0.0
+var _sing_cd := 10.0
+var _sing_t := 0.0
+var _note_t := 0.0
+var _fall_t := 0.0
+
+
+func _drunk_states(moving: bool) -> void:
+	var dt := GameState.world_dt
+	var p := GameState.promille
+	_hic_jolt = maxf(0.0, _hic_jolt - dt)
+	hic_window = maxf(0.0, hic_window - dt)
+
+	# Hiccups.
+	if p > HICCUP_PROMILLE:
+		_hic_cd -= dt
+		if _hic_cd <= 0.0:
+			_hic_cd = randf_range(4.0, 8.0)
+			_hic_jolt = 0.15
+			hic_window = 1.0
+			main.popup(tr("HICCUP"), position + Vector3(0.3 * facing, 1.9, 0.3), Color(1, 1, 1))
+
+	# Singing out loud now and then.
+	if _sing_t > 0.0:
+		_sing_t -= dt
+		_note_t -= dt
+		if _note_t <= 0.0:
+			_note_t = 0.4
+			main.popup_icon(main.note_texture(), position + Vector3(randf_range(-0.3, 0.3), 2.0, 0.3))
+	elif p > SING_PROMILLE:
+		_sing_cd -= dt
+		if _sing_cd <= 0.0:
+			_sing_cd = randf_range(8.0, 14.0)
+			_sing_t = 2.0
+			main.player_sings()
+
+	# Tripping over when running very drunk.
+	if running and moving and p > TRIP_PROMILLE:
+		var per_sec := 0.2 + 0.4 * clampf((p - TRIP_PROMILLE) / 0.7, 0.0, 1.0)
+		if randf() < per_sec * dt:
+			_trip()
+
+	# Love for everyone: hug the passers-by you bump into.
+	if p >= HUG_MIN and p <= HUG_MAX:
+		for n in main.npcs:
+			if n.role == "civ" and n.state == n.S.WALK and not n.pickpocketed:
+				if Vector2(n.position.x - position.x, n.position.z - position.z).length() < 0.8:
+					n.hug(self)
+
+
+func _trip() -> void:
+	_fall_t = 1.2
+	running = false
+	model.rotation.z = -PI * 0.5
+	model.position.y = 0.16
+	GameState.busy_time = maxf(GameState.busy_time, 1.2)
+	main.popup("*", position + Vector3(0.6 * facing, 0.6, 0.3), Color(1, 0.9, 0.4))
+	GameState.damage(4.0)
+	main.hud.flash_hurt()
 
 
 ## Very drunk: every now and then the character heads off in a wrong
@@ -194,7 +276,14 @@ func _hunger_signs() -> void:
 	var hungry := GameState.hunger >= GameState.HUNGER_EMPTY_STOMACH
 	# Hunger slumps forward; the silly walk leans back and bounces.
 	model.rotation.z = (-0.12 if hungry else 0.0) + model.silly_lean
-	model.position.y = model.silly_bounce
+	model.position.y = model.silly_bounce + (0.15 if _hic_jolt > 0.0 else 0.0)
+	# Hangover shakes.
+	if GameState.promille < GameState.PROMILLE_HANGOVER:
+		model.position.x = randf_range(-0.025, 0.025)
+		model.position.z = randf_range(-0.025, 0.025)
+	else:
+		model.position.x = 0.0
+		model.position.z = 0.0
 	if not hungry:
 		return
 	_growl_t += GameState.world_dt
@@ -275,8 +364,20 @@ func _short_action() -> void:
 			_consume_hand_item()
 			return
 	model.punch()
-	if target != null:
-		target.take_hit(1, self)
+	if target == null:
+		return
+	var p := GameState.promille
+	# Drunk: swings miss more often the drunker you are.
+	var drunk := clampf((p - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
+	if randf() < drunk * 0.35:
+		main.popup("?", target.position + Vector3(0, 2.0, 0), Color(1, 1, 1))
+		return
+	var dmg := 1
+	if p > GameState.PROMILLE_DRUNK:
+		dmg = 2  # Dutch courage: harder punches
+	elif p < GameState.PROMILLE_HANGOVER and randf() < 0.5:
+		dmg = 0  # hangover: a feeble punch that does no harm
+	target.take_hit(dmg, self)
 
 
 func _consume_hand_item() -> void:

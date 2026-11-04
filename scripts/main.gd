@@ -118,6 +118,7 @@ func _process(delta: float) -> void:
 	camera.position.x = lerpf(camera.position.x, target_x, 1.0 - exp(-4.0 * delta))
 	_update_sun()
 	_update_focus(delta)
+	tilt_mat.set_shader_parameter("double_vision", clampf((GameState.promille - 3.0) / 0.5, 0.0, 1.0))
 	tilt_mat.set_shader_parameter("drunk",
 		clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
 	_check_lost_pickups()
@@ -759,6 +760,58 @@ func popup_icon(tex: Texture2D, pos: Vector3) -> void:
 
 
 var _stomach_tex: ImageTexture
+var _note_tex: ImageTexture
+var _heart_tex: ImageTexture
+
+
+## Singing drunk: passers-by close by may get angry, police may notice.
+func player_sings() -> void:
+	for n in npcs:
+		if n.is_down():
+			continue
+		var d := Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length()
+		if n.role == "civ" and d < 4.0 and n.state == n.S.WALK and rng.randf() < 0.3:
+			n.state = n.S.FIGHT
+			n._mark.visible = true
+		elif n.role == "police" and d < 10.0 and rng.randf() < 0.5:
+			n.notice()
+
+
+func note_texture() -> ImageTexture:
+	if _note_tex != null:
+		return _note_tex
+	var n := 48
+	var img := Image.create_empty(n, n, false, Image.FORMAT_RGBA8)
+	var col := Color(0.15, 0.15, 0.2)
+	for y in n:
+		for x in n:
+			var p := Vector2(x + 0.5, y + 0.5)
+			var head := pow((p.x - 16.0) / 9.0, 2) + pow((p.y - 36.0) / 6.5, 2) < 1.0
+			var stem := p.x > 22.0 and p.x < 26.0 and p.y > 6.0 and p.y < 36.0
+			var flag := p.x >= 24.0 and p.x < 24.0 + (p.y - 6.0) * 0.9 and p.y > 6.0 and p.y < 18.0
+			if head or stem or flag:
+				img.set_pixel(x, y, col)
+			elif (pow((p.x - 16.0) / 11.0, 2) + pow((p.y - 36.0) / 8.5, 2) < 1.0) or (p.x > 20.0 and p.x < 28.0 and p.y > 4.0 and p.y < 37.0):
+				img.set_pixel(x, y, Color(1, 1, 1, 0.9))
+	_note_tex = ImageTexture.create_from_image(img)
+	return _note_tex
+
+
+func heart_texture() -> ImageTexture:
+	if _heart_tex != null:
+		return _heart_tex
+	var n := 48
+	var img := Image.create_empty(n, n, false, Image.FORMAT_RGBA8)
+	var pts := PackedVector2Array()
+	for i in 40:
+		var t := TAU * i / 40.0
+		pts.append(Vector2(24, 24) + Vector2(16.0 * pow(sin(t), 3), -(13.0 * cos(t) - 5.0 * cos(2 * t) - 2.0 * cos(3 * t) - cos(4 * t))) * 1.3)
+	for y in n:
+		for x in n:
+			if Geometry2D.is_point_in_polygon(Vector2(x + 0.5, y + 0.5), pts):
+				img.set_pixel(x, y, Color(1.0, 0.3, 0.45))
+	_heart_tex = ImageTexture.create_from_image(img)
+	return _heart_tex
 
 
 ## A pink stomach with growl lines, drawn once into a texture.
@@ -826,6 +879,9 @@ var arrest := 0.0
 func report_crime(pos: Vector3, alarm: bool) -> void:
 	var noticed := false
 	var reach := SNEAK_NOTICE_DIST if GameState.is_lost("shoes") else INF
+	# Drunk and loud: noticed from further away even when sneaking.
+	if GameState.promille > GameState.PROMILLE_DRUNK:
+		reach *= 2.0
 	for n in npcs:
 		if n.role == "civ" or n.is_down():
 			continue
