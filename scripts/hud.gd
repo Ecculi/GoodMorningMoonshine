@@ -15,6 +15,7 @@ var card_time := 0.0
 
 var _hurt := 0.0
 var _fade := 0.0
+var _fade_speed := 4.0
 var _bubble_on := false
 ## Items shown in the thought bubble (morning: today's lost items).
 var _bubble_items: Array = []
@@ -69,11 +70,18 @@ func think(items: Array) -> void:
 ## Quick fade from black when the view changes to another block.
 func fade_in() -> void:
 	_fade = 1.0
+	_fade_speed = 4.0
+
+
+## Knocked out: the screen goes black and slowly comes back.
+func blackout(seconds: float) -> void:
+	_fade = 1.0
+	_fade_speed = 1.0 / maxf(seconds, 0.1)
 
 
 func _process(delta: float) -> void:
 	_hurt = maxf(0.0, _hurt - delta)
-	_fade = maxf(0.0, _fade - delta * 4.0)
+	_fade = maxf(0.0, _fade - delta * _fade_speed)
 	if _bubble_on and main != null and main.player != null:
 		var p: Vector3 = main.player.position
 		var d := Vector2(p.x - _bubble_last.x, p.z - _bubble_last.z).length()

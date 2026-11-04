@@ -72,7 +72,14 @@ func _process(delta: float) -> void:
 		model.animate(0.0, 0.0)
 		return
 
-	# Tripped over: lie on the ground for a moment.
+	# Hit by a car: riding on the bonnet, then flying onto the street.
+	if _ride_car != null:
+		_ride_on_car(delta)
+		return
+	if _fly_t >= 0.0:
+		_fly(delta)
+		return
+	# Tripped over (or knocked out): lie on the ground for a moment.
 	if _fall_t > 0.0:
 		_fall_t -= delta
 		GameState.moving = false
@@ -202,6 +209,79 @@ func _drunk_states(moving: bool) -> void:
 			if n.role == "civ" and n.state == n.S.WALK and not n.pickpocketed:
 				if Vector2(n.position.x - position.x, n.position.z - position.z).length() < 0.8:
 					n.hug(self)
+
+
+# --- Hit by a car -------------------------------------------------------------------
+
+const KNOCKOUT_TIME := 3.0
+var _ride_car = null
+var _fly_t := -1.0
+var _fly_from := Vector3.ZERO
+var _fly_to := Vector3.ZERO
+
+
+## Thrown onto the bonnet: ride along until the car brakes.
+func start_bonnet_ride(car) -> void:
+	_ride_car = car
+	running = false
+	_press_time = -1.0
+	model.rotation.z = PI * 0.5
+	GameState.damage(8.0)
+	main.hud.flash_hurt()
+
+
+func _ride_on_car(_delta: float) -> void:
+	GameState.busy_time = maxf(GameState.busy_time, 0.5)
+	GameState.moving = false
+	if not is_instance_valid(_ride_car):
+		_launch(facing)
+		return
+	position = Vector3(_ride_car.position.x + _ride_car.dir * 0.9, 0.0, _ride_car.position.z)
+	model.position.y = 1.05
+	# The car has braked hard: off you go, onto the street.
+	if _ride_car.braking and _ride_car.speed < 1.5:
+		var d: int = _ride_car.dir
+		_ride_car = null
+		_launch(d)
+
+
+func _launch(d: int) -> void:
+	_ride_car = null
+	_fly_from = position
+	_fly_to = main.clamp_walkable(position + Vector3(d * randf_range(3.0, 5.0), 0.0, randf_range(-0.5, 0.5)))
+	_fly_t = 0.0
+
+
+func _fly(delta: float) -> void:
+	GameState.busy_time = maxf(GameState.busy_time, 0.5)
+	_fly_t = minf(1.0, _fly_t + delta / 0.6)
+	position = _fly_from.lerp(_fly_to, _fly_t)
+	model.position.y = lerpf(1.05, 0.16, _fly_t) + sin(_fly_t * PI) * 1.2
+	model.rotation.z += delta * 12.0
+	if _fly_t >= 1.0:
+		_fly_t = -1.0
+		_knock_out(14.0)
+
+
+## Run over: straight under the car, which doesn't even slow down.
+func run_over() -> void:
+	running = false
+	_press_time = -1.0
+	_knock_out(28.0)
+
+
+func _knock_out(dmg: float) -> void:
+	model.rotation.z = -PI * 0.5
+	model.position.y = 0.16
+	_fall_t = KNOCKOUT_TIME
+	GameState.busy_time = maxf(GameState.busy_time, KNOCKOUT_TIME)
+	GameState.damage(dmg)
+	main.hud.flash_hurt()
+	main.hud.blackout(1.6)
+
+
+func is_helpless() -> bool:
+	return _ride_car != null or _fly_t >= 0.0 or _fall_t > 0.0
 
 
 func _trip() -> void:

@@ -21,6 +21,10 @@ var main
 var dir := 1
 var speed := MAX_SPEED
 var _hit_cool := 0.0
+## After throwing someone onto the bonnet: drive on for a while, then brake.
+var _brake_in := -1.0
+var braking := false
+var _stop_t := 0.0
 
 
 func setup(rng: RandomNumberGenerator, d: int, x: float) -> void:
@@ -58,6 +62,20 @@ func _process(_delta: float) -> void:
 		return
 	_hit_cool = maxf(0.0, _hit_cool - dt)
 	var want := MAX_SPEED
+	if _brake_in >= 0.0:
+		_brake_in -= dt
+		if _brake_in < 0.0:
+			braking = true
+	if braking:
+		# Emergency stop, wait a moment, then drive on.
+		speed = move_toward(speed, 0.0, 26.0 * dt)
+		if speed <= 0.0:
+			_stop_t += dt
+			if _stop_t > 1.5:
+				braking = false
+				_stop_t = 0.0
+		position.x += dir * speed * dt
+		return
 	# Someone on a zebra crossing ahead: stop in front of it.
 	for cw_x in main.crosswalk_xs():
 		var ahead: float = (cw_x - position.x) * dir
@@ -82,9 +100,15 @@ func _process(_delta: float) -> void:
 ## Anyone in the car's way on the road gets hit.
 func _check_hits() -> void:
 	var p = main.player
-	if absf(p.position.x - position.x) < HALF_LEN + 0.3 and absf(p.position.z - position.z) < 1.1:
-		p.take_hit(HIT_DAMAGE, position.x - dir * 3.0)
+	if not p.is_helpless() and absf(p.position.x - position.x) < HALF_LEN + 0.3 and absf(p.position.z - position.z) < 1.1:
 		_hit_cool = 1.0
+		if main.rng.randf() < 0.6:
+			# Onto the bonnet; brake after a random while.
+			p.start_bonnet_ride(self)
+			_brake_in = main.rng.randf_range(1.0, 2.5)
+		else:
+			# Straight under the wheels; the car doesn't slow down.
+			p.run_over()
 	for n in main.npcs:
 		if n.is_down():
 			continue
