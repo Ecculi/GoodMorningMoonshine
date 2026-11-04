@@ -224,7 +224,7 @@ func _save_block_items() -> void:
 	var saved := []
 	for it in items:
 		if is_instance_valid(it) and it != player.hand_item and it.state == Item.St.GROUND:
-			saved.append([it.kind, it.global_position, it.value])
+			saved.append([it.kind, it.global_position, it.value, it.drink])
 	_block_items[_key(segment)] = saved
 
 
@@ -232,7 +232,7 @@ func _populate_block() -> void:
 	var key := _key(segment)
 	if _block_items.has(key):
 		for entry in _block_items[key]:
-			spawn_item(entry[0], entry[1], entry[2])
+			spawn_item(entry[0], entry[1], entry[2], entry[3])
 	else:
 		for i in rng.randi_range(2, 5):
 			var r := rng.randf()
@@ -554,6 +554,45 @@ func _try_shop(sh: Dictionary) -> bool:
 	return true
 
 
+# --- Bins -------------------------------------------------------------------
+
+## Bins searched today: "block key:index" -> true. Cleared every morning.
+var _searched_bins := {}
+
+
+## Short action next to a bin: rummage through it. Half of the bins hide a
+## bottle (beer, spirits or something mysterious). Each bin can be searched
+## once a day; the contents are fixed for the day (seeded by day + place).
+func try_search_bin(pos: Vector3) -> bool:
+	if level == null or GameState.over:
+		return false
+	var bins: Array = level.get_meta("bins", [])
+	for i in bins.size():
+		var bx: float = bins[i]
+		if absf(pos.x - bx) > 1.0 or pos.z > -6.4:
+			continue
+		var top := Vector3(bx, 1.4, -7.5)
+		player.model.punch()
+		GameState.busy_time = maxf(GameState.busy_time, 0.6)
+		var key := "%s:%d" % [_key(segment), i]
+		if _searched_bins.has(key):
+			popup("?", top, Color(0.8, 0.8, 0.8))
+			return true
+		_searched_bins[key] = true
+		var r := RandomNumberGenerator.new()
+		r.seed = hash("bin|%d|%s|%s|%d" % [GameState.day, GameState.home_seg, segment, i])
+		r.randi()  # warm up: similar seeds give similar first numbers
+		if r.randf() < 0.5:
+			var roll := r.randf()
+			var drink := Item.Drink.BEER if roll < 0.5 else (Item.Drink.SPIRITS if roll < 0.85 else Item.Drink.MYSTERY)
+			player._pickup(spawn_item(Item.Kind.BOTTLE, player.position, 1, drink))
+			popup("!", top, Color(1, 0.85, 0.3))
+		else:
+			popup("-", top, Color(0.8, 0.8, 0.8))
+		return true
+	return false
+
+
 ## Short action at a door: the home door ends the day, shop doors open the
 ## counter.
 func try_enter_door(pos: Vector3) -> bool:
@@ -626,6 +665,7 @@ func _random_z() -> float:
 ## A new game starts at the home door, after checking the pockets.
 func _new_game() -> void:
 	GameState.new_game()
+	_searched_bins.clear()
 	_lock_hits = 0
 	_friend_refused = false
 	_block_items.clear()
@@ -638,6 +678,7 @@ func _new_game() -> void:
 ## went out again during the night); further away every day.
 func _new_day() -> void:
 	_block_items.clear()
+	_searched_bins.clear()
 	_friend_refused = false
 	arrest = 0.0
 	_enter_block(GameState.wake_seg, GameState.wake_pos, 1 if rng.randf() < 0.5 else -1)
@@ -705,10 +746,10 @@ func nearest_npc_distance(pos: Vector3) -> float:
 	return best
 
 
-func spawn_item(kind: int, pos: Vector3, value := 1):
+func spawn_item(kind: int, pos: Vector3, value := 1, drink := 0):
 	var it = Item.new()
 	it.main = self
-	it.setup(kind, value)
+	it.setup(kind, value, drink)
 	add_child(it)
 	it.global_position = pos
 	items.append(it)

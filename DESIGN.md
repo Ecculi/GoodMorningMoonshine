@@ -318,7 +318,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - **Ostaminen:** kioskista, baarista ja kauppahallista (vaatii lompakon ja rahaa).
 - **Ryöstely ja taskuvarkaus:** ohikulkija voi pudottaa ruokaa tai alkoholia.
 - **Kadun juoppo:** voi tarjota huikan vaihtokauppana.
-- **Roskiksen penkominen:** nopea toiminto. Sieltä voi löytyä ruokaa, tölkki tai ei mitään, ja lokit voivat hyökätä.
+- **Roskiksen penkominen:** toimintanappi roskiksen vieressä. Puolessa roskiksista on pullo: olutta (+0,25 ‰), viinaa (+0,6 ‰) tai tuntematonta huumaavaa ainetta (+0,9 ‰, violetti pullo käsin kirjoitetulla etiketillä). Löytö menee käteen. Kukin roskis penkoo kerran päivässä; sisältö pysyy samana koko päivän (myös palatessa kortteliin) ja arvotaan uudelleen seuraavana aamuna. *(Lokit myöhemmin.)*
 - **Terassilta varastaminen:** pelaaja nappaa juoman pöydältä ohi kulkiessaan. Asiakas tai portsari voi suuttua.
 - **Hukatut pullot ja eväät:** kadulla on muiden hukkaamia pulloja ja eväitä. Ne näkyvät epäselvinä kuten muutkin esineet.
 - **Ehtoollisviini:** kirkossa sunnuntaisin (ks. Viikonpäivät ja rannekello).

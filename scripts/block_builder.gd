@@ -238,6 +238,9 @@ static func _props(root: Node3D, rng: RandomNumberGenerator, sea: bool) -> void:
 		var binx := rng.randf_range(-14.0, 14.0)
 		_cyl(root, Vector3(binx, 0.5, -7.5), 0.3, 0.8, Color(0.2, 0.35, 0.25))
 		_obstacle(root, binx, -7.5, 0.35)
+		var bins: Array = root.get_meta("bins", [])
+		bins.append(binx)
+		root.set_meta("bins", bins)
 
 
 ## Blue street name signs on poles at both corners of the far sidewalk.

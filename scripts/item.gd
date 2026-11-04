@@ -21,15 +21,27 @@ var _to := Vector3.ZERO
 var _root: Node3D
 
 
-func setup(k: Kind, v := 1) -> void:
+## Bottle contents: what it is and how much it raises the per mille.
+enum Drink { BOTTLE, BEER, SPIRITS, MYSTERY }
+const DRINK_PROMILLE := {Drink.BOTTLE: 0.4, Drink.BEER: 0.25, Drink.SPIRITS: 0.6, Drink.MYSTERY: 0.9}
+const DRINK_COLOR := {Drink.BOTTLE: Color(0.18, 0.42, 0.2), Drink.BEER: Color(0.45, 0.25, 0.08),
+	Drink.SPIRITS: Color(0.85, 0.9, 0.95), Drink.MYSTERY: Color(0.55, 0.2, 0.7)}
+var drink: Drink = Drink.BOTTLE
+
+
+func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:
 	kind = k
 	value = v
+	drink = d
 	_root = Node3D.new()
 	add_child(_root)
 	match kind:
 		Kind.BOTTLE:
-			_cyl(0.07, 0.3, Color(0.18, 0.42, 0.2), Vector3(0, 0.15, 0))
-			_cyl(0.03, 0.12, Color(0.18, 0.42, 0.2), Vector3(0, 0.36, 0))
+			var bc: Color = DRINK_COLOR[drink]
+			_cyl(0.07, 0.3, bc, Vector3(0, 0.15, 0))
+			_cyl(0.03, 0.12, bc, Vector3(0, 0.36, 0))
+			if drink == Drink.MYSTERY:
+				_cyl(0.072, 0.08, Color(0.95, 0.95, 0.9), Vector3(0, 0.15, 0))  # hand-written label
 		Kind.CAN:
 			_cyl(0.055, 0.17, Color(0.78, 0.8, 0.84), Vector3(0, 0.085, 0))
 			_cyl(0.057, 0.07, Color(0.15, 0.35, 0.75), Vector3(0, 0.085, 0))
