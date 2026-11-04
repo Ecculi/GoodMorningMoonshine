@@ -81,6 +81,16 @@ func set_eyes(closed: float) -> void:
 		lid.position.y = 1.745 - h * 0.5
 
 
+## Get up from lying at `angle` (rotation.z) to standing over `time` seconds.
+func rise_from(angle: float, time: float) -> void:
+	rotation.z = angle
+	position.y = 0.12
+	var tw := create_tween()
+	tw.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	tw.tween_property(self, "rotation:z", 0.0, time)
+	tw.parallel().tween_property(self, "position:y", 0.0, time)
+
+
 func punch() -> void:
 	_punch_t = 0.18
 	arm_r.rotation.z = PI * 0.5

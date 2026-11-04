@@ -138,6 +138,10 @@ func _process(_delta: float) -> void:
 	var dt: float = GameState.world_dt
 	if dt <= 0.0:
 		return
+	# Getting back up after a fall: no moving until standing.
+	if _rise_t > 0.0:
+		_rise_t -= dt
+		return
 	match state:
 		S.WALK:
 			_walk(dt)
@@ -156,6 +160,9 @@ func _process(_delta: float) -> void:
 				var t: Vector3 = _ragdoll.torso_position()
 				position = Vector3(t.x, 0.0, clampf(t.z, -7.4, 5.2))
 			if _timer > KO_TIME:
+				if role == "civ":
+					# Face away from the player before rising, then limp off.
+					dir = 1 if position.x >= main.player.position.x else -1
 				_end_ragdoll()
 				if role == "civ":
 					_get_up()
@@ -348,21 +355,28 @@ func check_pickpocket(p: Node3D) -> void:
 
 func _get_up() -> void:
 	state = S.LEAVE
-	model.rotation.z = 0.0
-	model.position.y = 0.0
 	hp = 1
 	pickpocketed = true
-	var away := signf(position.x - main.player.position.x)
-	dir = 1 if away >= 0.0 else -1
 
 
+const RISE_TIME := 0.8
+var _rise_t := 0.0
+
+
+## Get up from the pose the rag doll ended in (not just pop upright).
 func _end_ragdoll() -> void:
+	model.visible = true
 	if _ragdoll != null:
+		var pose: Dictionary = _ragdoll.lying_pose(dir, model.scale.x)
+		position = Vector3(pose["feet"].x, 0.0, clampf(pose["feet"].z, -7.4, 5.2))
+		model.rotation.y = 0.0 if dir > 0 else PI
+		model.rise_from(pose["angle"], RISE_TIME)
+		_rise_t = RISE_TIME
 		_ragdoll.queue_free()
 		_ragdoll = null
-	model.visible = true
-	model.rotation.z = 0.0
-	model.position.y = 0.0
+	else:
+		model.rotation.z = 0.0
+		model.position.y = 0.0
 
 
 func _knock_out(push := Vector3(0, 1.5, 0)) -> void:

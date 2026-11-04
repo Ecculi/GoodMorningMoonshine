@@ -79,6 +79,19 @@ func _head_mesh(head: RigidBody3D, pos: Vector3, size: Vector3, col: Color) -> v
 	head.add_child(mi)
 
 
+## Where the model's feet should go and which way it should lie (rotation.z
+## for a model facing `facing`) so that getting up starts from the same
+## pose the rag doll ended in.
+func lying_pose(facing: int, s: float) -> Dictionary:
+	var t := torso_position()
+	var up: Vector3 = torso.global_transform.basis.y
+	var head_x := 1.0 if up.x >= 0.0 else -1.0
+	var feet := Vector3(t.x - head_x * 1.22 * s, 0.0, t.z)
+	# Model faces +x when facing > 0; head towards local -x = rotation +90°.
+	var local_head := head_x * float(facing)
+	return {"feet": feet, "angle": PI * 0.5 if local_head < 0.0 else -PI * 0.5}
+
+
 func torso_position() -> Vector3:
 	return torso.global_position if torso != null else global_position
 

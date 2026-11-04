@@ -54,7 +54,13 @@ func reset(pos: Vector3) -> void:
 	hand_item = null
 	_ride_car = null
 	_fall_t = 0.0
-	_get_up()
+	if _ragdoll != null:
+		_ragdoll.queue_free()
+		_ragdoll = null
+	model.visible = true
+	model.rotation.z = 0.0
+	model.position.y = 0.0
+	_rise_t = 0.0
 	car_grace = 0.0
 
 
@@ -83,6 +89,11 @@ func _process(delta: float) -> void:
 		return
 	# Fallen over or knocked out: the rag doll does the falling; then get up
 	# where it ended.
+	# Getting back up: wait until standing.
+	if _rise_t > 0.0:
+		_rise_t -= delta
+		GameState.moving = false
+		return
 	if _fall_t > 0.0:
 		_fall_t -= delta
 		GameState.moving = false
@@ -281,18 +292,30 @@ func _go_ragdoll(push: Vector3, time: float) -> void:
 	model.visible = false
 
 
+const RISE_TIME := 0.7
+var _rise_t := 0.0
+
+
 func _get_up() -> void:
 	car_grace = CAR_GRACE
+	model.visible = true
 	if _ragdoll != null:
+		# Rise from the pose the rag doll ended in.
+		var pose: Dictionary = _ragdoll.lying_pose(facing, model.scale.x)
+		position = main.clamp_walkable(pose["feet"])
+		model.rotation.y = 0.0 if facing > 0 else PI
+		model.rise_from(pose["angle"], RISE_TIME)
+		_rise_t = RISE_TIME
+		GameState.busy_time = maxf(GameState.busy_time, RISE_TIME)
 		_ragdoll.queue_free()
 		_ragdoll = null
-	model.visible = true
-	model.rotation.z = 0.0
-	model.position.y = 0.0
+	else:
+		model.rotation.z = 0.0
+		model.position.y = 0.0
 
 
 func is_helpless() -> bool:
-	return _ride_car != null or _fall_t > 0.0
+	return _ride_car != null or _fall_t > 0.0 or _rise_t > 0.0
 
 
 ## Falling only happens on a change of surface (stepping over the curb
