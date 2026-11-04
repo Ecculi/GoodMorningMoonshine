@@ -170,8 +170,10 @@ func _process(_delta: float) -> void:
 				if role == "civ":
 					_get_up()
 				else:
-					# Police and guards get back up angry.
+					# Police and guards get back up angry (leave the KO state
+					# first, or notice() would ignore them).
 					hp = 3
+					state = S.WALK
 					notice()
 		S.LEAVE:
 			if car_ref != null and is_instance_valid(car_ref):
@@ -197,6 +199,9 @@ func _process(_delta: float) -> void:
 				return
 	position.x += _knock * dt
 	_knock = move_toward(_knock, 0.0, 12.0 * dt)
+	# Cars are solid for everyone.
+	if state != S.KO:
+		position = main.push_out_of_cars(position)
 	if state != S.KO:
 		model.rotation.y = 0.0 if dir > 0 else PI
 

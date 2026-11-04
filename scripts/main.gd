@@ -913,6 +913,22 @@ func spawn_driver(car, pos: Vector3):
 	return n
 
 
+## Keeps a person out of the cars' footprints (cars are solid).
+func push_out_of_cars(pos: Vector3) -> Vector3:
+	for c in cars:
+		var hx: float = Car.HALF_LEN + 0.25
+		var hz: float = Car.HALF_WIDTH + 0.25
+		var dx: float = pos.x - c.position.x
+		var dz: float = pos.z - c.position.z
+		if absf(dx) >= hx or absf(dz) >= hz:
+			continue
+		if hz - absf(dz) < hx - absf(dx):
+			pos.z = c.position.z + (1.0 if dz >= 0.0 else -1.0) * hz
+		else:
+			pos.x = c.position.x + (1.0 if dx >= 0.0 else -1.0) * hx
+	return pos
+
+
 func remove_car(c) -> void:
 	cars.erase(c)
 	c.queue_free()

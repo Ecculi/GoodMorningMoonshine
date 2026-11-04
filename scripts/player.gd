@@ -240,7 +240,7 @@ func start_bonnet_ride(car) -> void:
 	running = false
 	_press_time = -1.0
 	model.rotation.z = PI * 0.5
-	GameState.damage(8.0)
+	GameState.damage(15.0)
 	main.hud.flash_hurt()
 
 
@@ -263,14 +263,14 @@ func _ride_on_car(_delta: float) -> void:
 func _launch(d: int) -> void:
 	_ride_car = null
 	model.rotation.z = 0.0
-	_knock_out(14.0, Vector3(d * randf_range(6.0, 8.0), randf_range(3.0, 4.5), randf_range(-0.8, 0.8)))
+	_knock_out(25.0, Vector3(d * randf_range(6.0, 8.0), randf_range(3.0, 4.5), randf_range(-0.8, 0.8)))
 
 
 ## Run over: straight under the car, which doesn't even slow down.
 func run_over(car_dir: int) -> void:
 	running = false
 	_press_time = -1.0
-	_knock_out(28.0, Vector3(car_dir * 3.0, 0.5, randf_range(-1.0, 1.0)))
+	_knock_out(55.0, Vector3(car_dir * 3.0, 0.5, randf_range(-1.0, 1.0)))
 
 
 func _knock_out(dmg: float, push: Vector3) -> void:
