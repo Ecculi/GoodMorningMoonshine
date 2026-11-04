@@ -120,7 +120,7 @@ Krapula ei kovene päivien mukaan.
 - **Ajatuskupla aamulla:** päivän alussa hahmon pään yläpuolelle tulee ajatuskupla, jossa näkyvät vain hukassa olevat tavarat (yliviivattuina). Kupla pysyy näkyvissä, kunnes pelaaja on kävellyt noin 5 metriä.
 - Sen jälkeen **puuttuvat tavarat näkyvät koko päivän ruudun yläreunan keskellä** tekstin "Etsi:" perässä harmaina ikoneina. Löydetty tavara muuttuu värilliseksi ja saa vihreän rastin.
 - **Löydetty oma tavara menee suoraan omalle paikalleen**: lompakko taskuun, kengät jalkaan ja niin edelleen. Harmaa ikoni muuttuu värilliseksi. Käden tavara ja pussi pysyvät ennallaan.
-- **Humala vie muistin:** kun promillet nousevat tietyn rajan yli (esim. 2,0 ‰, tarkka raja säädetään testauksessa), hukkalistan ikoneita muuttuu yhtäkkiä tunnistamattomiksi harmaiksi läiskiksi. Pelaaja ei enää muista, mitä oli etsimässä. Kun promillet laskevat rajan alle, muisti palaa ja ikonit näkyvät taas.
+- **Humala vie muistin:** kun promillet nousevat yli 1,3 ‰ (kolmasosa), 1,9 ‰ (kaksi kolmasosaa) ja 2,4 ‰ (kaikki), hukkalistan ikoneita muuttuu yhtäkkiä tunnistamattomiksi harmaiksi läiskiksi. Pelaaja ei enää muista, mitä oli etsimässä. Kun promillet laskevat rajan alle, muisti palaa ja ikonit näkyvät taas.
 - Joka päivä hukkuu uusia tavaroita. Aiemmin hukatut pysyvät hukassa, kunnes ne löytyvät.
 - Jokaisen puuttuvan tavaran puute haittaa peliä jollain tavalla. Esimerkkejä:
   - **Lompakko:** ei voi ostaa mitään. Ensimmäisenä päivänä lompakko voi olla hukassa.
@@ -143,6 +143,7 @@ Krapula ei kovene päivien mukaan.
 
 ### Tavara kädessä ja muovipussit
 
+- **Hahmo kääntyy pehmeästi kulkusuuntaan**, myös ylös, alas ja viistoon (heittoa tähdätessä tähtäyssuuntaan).
 - **Kontrollit ovat helpot.** Tavarat poimitaan automaattisesti kävelemällä niiden päälle.
 - Hahmolla on **yksi tavara kädessä**. Kun hän koskee uuteen tavaraan, käden tavara **vaihtuu automaattisesti** uuteen.
 - Kadulla voi olla **muovipusseja**, jotka hahmo nappaa käteen automaattisesti päälle kävellessään.
@@ -174,7 +175,7 @@ Krapula ei kovene päivien mukaan.
 - **Omat tavarat eivät hehku eivätkä erotu muista** ennen kuin ne ovat lähellä. Pelaajan pitää tutkia epäilyttäviä möykkyjä.
 - **Ilman silmälaseja** tämä näkökenttä on lyhyempi.
 - **Ilman silmälaseja** kadunnimikyltit ovat sumeita, ja niistä saa selvää vasta aivan vierestä.
-- **Humalassa** (yli 2 ‰) kyltin kirjaimet menevät sekaisin: yli 5 metrin päästä kyltissä on mitä sattuu kirjaimia. Lähempänä kuin 5 metriä kirjaimet ovat oikeat, mutta ne pyörivät uuteen järjestykseen jokaisella askeleella. **Jokaisella kyltillä on oma kohta** (eri kyltillä eri paikassa) kyltin lähellä: mitä lähempänä sitä kohtaa ollaan, sitä useampi kirjain on oikealla paikallaan, ja oikea nimi näkyy vasta aivan siinä kohdassa.
+- **Humalassa** (yli 1,3 ‰) kyltin kirjaimet menevät sekaisin: yli 5 metrin päästä kyltissä on mitä sattuu kirjaimia. Lähempänä kuin 5 metriä kirjaimet ovat oikeat, mutta ne pyörivät uuteen järjestykseen jokaisella askeleella. **Jokaisella kyltillä on oma kohta** (eri kyltillä eri paikassa) kyltin lähellä: mitä lähempänä sitä kohtaa ollaan, sitä useampi kirjain on oikealla paikallaan, ja oikea nimi näkyy vasta aivan siinä kohdassa.
 - Jos on humalassa ja lasit hukassa, molemmat efektit ovat voimassa.
 - Sama koskee kauppojen kylttejä (kioski, baari).
 
@@ -241,12 +242,14 @@ Krapula ei kovene päivien mukaan.
 
 ### Promillerajat
 
+Humalan vaikutukset alkavat matalammalla kuin alussa suunniteltiin (kaikki rajat siirrettiin 0,7 ‰ alemmas); sammumisraja arvotaan joka päivä 3,2–4,0 ‰.
+
 | Promillet | Tila |
 |---|---|
 | **0 ‰** | kuolema |
 | **alle 0,5 ‰** | krapula: hahmo tärisee, lyönnit ovat heikkoja ja health kuluu hitaasti. Varoitus, että juotavaa pitää löytää. |
-| **0,5–2,0 ‰** | sopiva alue, hahmo toimii normaalisti |
-| **2,0–3,5 ‰** | humalan haitat (horjuminen, sumea näkökenttä, rohkeus) voimistuvat vähitellen |
+| **0,5–1,3 ‰** | sopiva alue, hahmo toimii normaalisti |
+| **1,3 ‰ – sammumisraja** | humalan haitat (horjuminen, sumea näkökenttä, rohkeus) voimistuvat vähitellen |
 | **yli 3,2–4,0 ‰** | hahmo sammuu (raja arvotaan joka päivä 3,2 ja 4,0 ‰ väliltä, joten sitä ei voi tietää tarkasti) |
 
 - Promillet laskevat tasaisesti, kun pelaaja liikkuu tai tekee jotain.
@@ -282,18 +285,18 @@ Krapula ei kovene päivien mukaan.
 Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 
 - **Horjuminen:** ohjaus ei mene aivan suoraan, ja lyönnit menevät joskus ohi.
-- **Vinjetti (yli 1,5 ‰):** näkökentän reunat tummuvat, ja tummuus voimistuu ja leviää kohti keskustaa promillejen noustessa (voimakkaimmillaan 3,5 ‰).
-- **Hikka (yli 1,5 ‰):** hahmo hikkaa välillä ("hik!") ja nytkähtää. Hikan hetkellä taskuvarkaus paljastuu aina.
-- **Rakkaus kaikkiin (2,0–2,5 ‰):** hahmo halaa ohikulkijoita, joihin törmää. Halauksen aikana taskuvarkaus onnistuu lähes aina, eikä halattu suutu.
-- **Laulaminen (yli 2,2 ‰):** hahmo alkaa välillä laulaa (nuotteja nousee). Lähellä olevat ohikulkijat voivat suuttua, ja poliisit voivat huomata.
-- **Rohkeus ja ohilyönnit (yli 2,0 ‰):** lyönnit tekevät tuplavahinkoa, mutta menevät sitä useammin ohi, mitä kovempi humala. Poliisit ja vartijat huomaavat rikoksen kaksi kertaa kauempaa myös hiippaillessa.
-- **Kaatuilu:** hahmo voi kaatua vain, kun alusta vaihtuu (reunakiven yli ajotieltä jalkakäytävälle tai takaisin) tai kun hän kävelee jotain päin (puu, lyhtypylväs, penkki, roskis, kyltin tolppa). Kaatuminen on satunnainen yllätys: reunakiven ylityksessä 2 % (2,0 ‰) – 15 % (3,5 ‰), esteeseen törmätessä 8 % – 35 %; juostessa 1,5-kertaisesti ja lumella lisää 5 prosenttiyksikköä (kengättä 10). Selvin päin kuivalla kadulla hahmo vain törmää esteeseen ja pysähtyy. Esteiden läpi ei voi kävellä.
-- **Tuplanäkö (yli 3,0 ‰):** kuva näkyy kahtena.
+- **Vinjetti (yli 0,8 ‰):** näkökentän reunat tummuvat, ja tummuus voimistuu ja leviää kohti keskustaa promillejen noustessa (voimakkaimmillaan 2,8 ‰).
+- **Hikka (yli 0,8 ‰):** hahmo hikkaa välillä ("hik!") ja nytkähtää. Hikan hetkellä taskuvarkaus paljastuu aina.
+- **Rakkaus kaikkiin (1,3–1,8 ‰):** hahmo halaa ohikulkijoita, joihin törmää. Halauksen aikana taskuvarkaus onnistuu lähes aina, eikä halattu suutu.
+- **Laulaminen (yli 1,5 ‰):** hahmo alkaa välillä laulaa (nuotteja nousee). Lähellä olevat ohikulkijat voivat suuttua, ja poliisit voivat huomata.
+- **Rohkeus ja ohilyönnit (yli 1,3 ‰):** lyönnit tekevät tuplavahinkoa, mutta menevät sitä useammin ohi, mitä kovempi humala. Poliisit ja vartijat huomaavat rikoksen kaksi kertaa kauempaa myös hiippaillessa.
+- **Kaatuilu:** hahmo voi kaatua vain, kun alusta vaihtuu (reunakiven yli ajotieltä jalkakäytävälle tai takaisin) tai kun hän kävelee jotain päin (puu, lyhtypylväs, penkki, roskis, kyltin tolppa). Kaatuminen on satunnainen yllätys: reunakiven ylityksessä 2 % (1,3 ‰) – 15 % (2,8 ‰), esteeseen törmätessä 8 % – 35 %; juostessa 1,5-kertaisesti ja lumella lisää 5 prosenttiyksikköä (kengättä 10). Selvin päin kuivalla kadulla hahmo vain törmää esteeseen ja pysähtyy. Esteiden läpi ei voi kävellä.
+- **Tuplanäkö (yli 2,3 ‰):** kuva näkyy kahtena.
 - **Krapula (alle 0,5 ‰):** hahmo tärisee, ja joka toinen lyönti on niin heikko, ettei se tee vahinkoa.
-- **Hassu kävely:** kunnon humalassa (yli 2,5 ‰, voimakkaimmillaan noin 3,2 ‰) hahmo kävelee absurdin liioitellusti: korkeita potkuja eteen, heiluvat kädet, pomppiva askel ja taaksepäin kallistuva vartalo.
-- **Väärä suunta:** kovassa humalassa (yli 2,5 ‰) hahmo lähtee välillä aivan eri suuntaan kuin nuoli osoittaa (esim. oikealle painettaessa ylös). Pelaaja voi korjata heti painamalla siihen suuntaan, johon hahmo oikeasti menee. Jos hän vain jatkaa alkuperäisen nuolen painamista, väärä suunta menee ohi itsestään noin 1,5–3 sekunnissa. Mitä kovempi humala, sitä useammin näin käy, ja **juostessa paljon useammin** kuin kävellessä. Väärä suunta voi olla mikä tahansa kahdeksasta suunnasta (myös viistoon), mutta **ei koskaan suoraan vastakkainen**. Jos väärä suunta veisi seinää tai reunaa päin, se peruuntuu, jottei hahmo jää kävelemään paikallaan.
+- **Hassu kävely:** kunnon humalassa (yli 1,8 ‰, voimakkaimmillaan noin 2,5 ‰) hahmo kävelee absurdin liioitellusti: korkeita potkuja eteen, heiluvat kädet, pomppiva askel ja taaksepäin kallistuva vartalo.
+- **Väärä suunta:** kovassa humalassa (yli 1,8 ‰) hahmo lähtee välillä aivan eri suuntaan kuin nuoli osoittaa (esim. oikealle painettaessa ylös). Pelaaja voi korjata heti painamalla siihen suuntaan, johon hahmo oikeasti menee. Jos hän vain jatkaa alkuperäisen nuolen painamista, väärä suunta menee ohi itsestään noin 1,5–3 sekunnissa. Mitä kovempi humala, sitä useammin näin käy, ja **juostessa paljon useammin** kuin kävellessä. Väärä suunta voi olla mikä tahansa kahdeksasta suunnasta (myös viistoon), mutta **ei koskaan suoraan vastakkainen**. Jos väärä suunta veisi seinää tai reunaa päin, se peruuntuu, jottei hahmo jää kävelemään paikallaan.
 - **Rohkeus:** lyönnit ovat kovempia ja kylmä tuntuu vähemmän, mutta poliisit huomaavat pelaajan helpommin.
-- **Näkökenttä:** yli 2,0 promillessa kuva sumenee: pelihahmon ympärillä olevan ympyrän sisällä vähän, ulkopuolella enemmän, ja sitä enemmän mitä kovempi humala. Ympyrä pienenee nopeasti koko ruudun kokoisesta (2,0 ‰) 1,5 metrin säteeseen (3,0 ‰ ja enemmän), ja yli 3,0 promillessa sumennus ympyrän ulkopuolella voimistuu selvästi. Hahmon lähellä kuva pysyy selvimpänä.
+- **Näkökenttä:** yli 1,3 promillessa kuva sumenee: pelihahmon ympärillä olevan ympyrän sisällä vähän, ulkopuolella enemmän, ja sitä enemmän mitä kovempi humala. Ympyrä pienenee nopeasti koko ruudun kokoisesta (1,3 ‰) 1,5 metrin säteeseen (2,3 ‰ ja enemmän), ja yli 2,3 promillessa sumennus ympyrän ulkopuolella voimistuu selvästi. Hahmon lähellä kuva pysyy selvimpänä.
 - **Sammuminen:** kun promillet ylittävät päivän sammumisrajan (arvotaan joka päivä 3,2–4,0 ‰), hahmo sammuu paikalleen. Se lasketaan nukahtamiseksi.
 
 ### Nukahtaminen väsymyksestä
@@ -453,7 +456,7 @@ Lisätty prototyyppiin:
 - **Koti ja hukatut tavarat:** kodin paikka (kerrostalo, vihreä ovi) arvotaan joka peliin, ja ensimmäinen päivä alkaa kodin ovelta (myöhemmin herätään muualta). Aamulla hukatut tavarat näkyvät hahmon ajatuskuplassa ensimmäisten 5 metrin ajan ja sen jälkeen ylhäällä keskellä "Etsi:"-listassa; humalassa osa ikoneista muuttuu läiskiksi. Tavarat arvotaan kodin lähelle säteellä, joka kasvaa päivä päivältä. Kaukaa ne ovat harmaita möhkäleitä, ja ilman silmälaseja ne erottuvat vasta aivan läheltä. Kotiovella toimintanappi vie nukkumaan, ja kotona nukuttu yö on paras. Ilman avaimia hahmo nukkuu rappukäytävässä, ja ilman kenkiä vauhti on hitaampi. Kun kaikki tavarat löytyvät ennen kotiin menoa, saa 500 pisteen bonuksen.
 
 - **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot), pilvinen (pehmeä valo), sade (pisarat, harmaa valo, sumu) tai lumi ja pakkanen (hiutaleet, lumikerros kaduilla, reunakiven yli tai esteeseen törmätessä voi liukastua, kengättä helpommin). Sade ja lumi pysähtyvät ilmaan, kun aika on pysähdyksissä.
-- **Kylmä:** ei mittaria; hahmo tärisee, kun on kylmissään. Kylmä kasvaa sateella ja pakkasella, ilman takkia ja märillä/kylmillä jaloilla nopeammin; aurinkoisella säällä hahmo lämpenee. Kylmissään nälkä kasvaa 1,5-kertaisesti, ja kova kylmä kuluttaa healthia. Humalassa (yli 2 ‰) kylmä tuntuu vähemmän. Kioskissa ja baarissa lämpenee, mutta aika kuluu sillä aikaa. Aamun kylmyys riippuu yöpaikasta.
+- **Kylmä:** ei mittaria; hahmo tärisee, kun on kylmissään. Kylmä kasvaa sateella ja pakkasella, ilman takkia ja märillä/kylmillä jaloilla nopeammin; aurinkoisella säällä hahmo lämpenee. Kylmissään nälkä kasvaa 1,5-kertaisesti, ja kova kylmä kuluttaa healthia. Humalassa (yli 1,3 ‰) kylmä tuntuu vähemmän. Kioskissa ja baarissa lämpenee, mutta aika kuluu sillä aikaa. Aamun kylmyys riippuu yöpaikasta.
 
 - **Kotityypit:** kerrostaloasunto (ilman avaimia rappukäytävä), kellarikomero (ilman avaimia riippulukko rikotaan kolmella lyönnillä; kylmä yö) ja kaverin sohva (ovikello; juoma kädessä pääsee aina sisään, muuten kaveri nukkuu joskus eikä avaa sinä päivänä).
 - **Tavaroiden haitat:** ilman silmälaseja kadunnimikyltit ovat sumeita (humalassa kirjaimet myös menevät sekaisin), ilman aurinkolaseja aurinko häikäisee aurinkoisella säällä, ilman takkia lyönnit sattuvat 30 % enemmän ja paljain jaloin taskuvarkaus onnistuu paremmin.

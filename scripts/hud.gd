@@ -281,7 +281,7 @@ func _forgotten(id: String) -> bool:
 	var p := GameState.promille
 	if p <= GameState.PROMILLE_DRUNK:
 		return false
-	var level := 1 if p < 2.6 else (2 if p < 3.1 else 3)
+	var level := 1 if p < 1.9 else (2 if p < 2.4 else 3)
 	return (LostItems.IDS.find(id) % 3) < level
 
 

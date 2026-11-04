@@ -15,7 +15,7 @@ const DAY_ACTIVE_SECONDS := 180.0
 
 const PROMILLE_START := 0.8
 const PROMILLE_HANGOVER := 0.5
-const PROMILLE_DRUNK := 2.0
+const PROMILLE_DRUNK := 1.3
 ## Passing out happens somewhere between these; a new limit every day.
 const PASS_OUT_MIN := 3.2
 const PASS_OUT_MAX := 4.0

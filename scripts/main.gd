@@ -125,7 +125,7 @@ func _process(delta: float) -> void:
 	camera.position.x = lerpf(camera.position.x, target_x, 1.0 - exp(-4.0 * delta))
 	_update_sun()
 	_update_focus(delta)
-	tilt_mat.set_shader_parameter("double_vision", clampf((GameState.promille - 3.0) / 0.5, 0.0, 1.0))
+	tilt_mat.set_shader_parameter("double_vision", clampf((GameState.promille - 2.3) / 0.5, 0.0, 1.0))
 	_update_drunk_circle()
 	_check_lost_pickups()
 	_check_arrest()
@@ -540,8 +540,8 @@ func _try_shop(sh: Dictionary) -> bool:
 		# The bouncer: no shoes, no entry; too drunk is turned away, but a
 		# borderline case can be fixed with a fiver.
 		var p := GameState.promille
-		var ok := not GameState.is_lost("shoes") and p <= 2.5
-		if not ok and not GameState.is_lost("shoes") and p <= 3.0 and GameState.money >= 5:
+		var ok := not GameState.is_lost("shoes") and p <= 1.8
+		if not ok and not GameState.is_lost("shoes") and p <= 2.3 and GameState.money >= 5:
 			GameState.money -= 5
 			popup("-5 €", door, Color(1, 0.85, 0.3))
 			ok = true
@@ -1268,9 +1268,9 @@ const DRUNK_CIRCLE_MIN := 1.5
 func _update_drunk_circle() -> void:
 	var t := clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
 	tilt_mat.set_shader_parameter("drunk", t)
-	tilt_mat.set_shader_parameter("heavy", clampf((GameState.promille - 3.0) / 0.5, 0.0, 1.0))
+	tilt_mat.set_shader_parameter("heavy", clampf((GameState.promille - 2.3) / 0.5, 0.0, 1.0))
 	# The edges of the view darken from 1.5 per mille on.
-	tilt_mat.set_shader_parameter("vignette", clampf((GameState.promille - 1.5) / 2.0, 0.0, 1.0))
+	tilt_mat.set_shader_parameter("vignette", clampf((GameState.promille - 0.8) / 2.0, 0.0, 1.0))
 	var vs := get_viewport().get_visible_rect().size
 	var c: Vector3 = player.global_position + Vector3(0, 1.0, 0)
 	if camera.is_position_behind(c):

@@ -34,6 +34,8 @@ var _knock := Vector3.ZERO
 var _sway := 0.0
 ## Ignore a press that was already down when the game (re)started.
 var _block_action := false
+## Direction the body turns towards (radians; 0 = facing right).
+var _yaw_target := 0.0
 
 
 func _ready() -> void:
@@ -45,6 +47,7 @@ func _ready() -> void:
 func reset(pos: Vector3) -> void:
 	position = pos
 	facing = 1
+	_yaw_target = 0.0
 	running = false
 	_press_time = -1.0
 	_block_action = true
@@ -155,7 +158,16 @@ func _process(delta: float) -> void:
 
 	GameState.moving = moving
 	GameState.running = running and moving
-	model.rotation.y = 0.0 if facing > 0 else PI
+	# Turn smoothly towards where the character walks (also up, down and
+	# diagonally); while aiming a throw, towards the aim.
+	var look := Vector2.ZERO
+	if is_aiming():
+		look = aim
+	elif moving:
+		look = Vector2(v.x, v.z)
+	if look.length() > 0.1:
+		_yaw_target = atan2(-look.y, look.x)
+	model.rotation.y = lerp_angle(model.rotation.y, _yaw_target, 1.0 - exp(-14.0 * delta))
 	model.animate(1.0 if moving else 0.0, delta, speed / WALK_SPEED, silly_amount())
 
 	_handle_action(delta)
@@ -168,11 +180,11 @@ func _process(delta: float) -> void:
 
 # --- Drunk states ---------------------------------------------------------------
 
-const HICCUP_PROMILLE := 1.5
-const SING_PROMILLE := 2.2
-const TRIP_PROMILLE := 2.8
-const HUG_MIN := 2.0
-const HUG_MAX := 2.5
+const HICCUP_PROMILLE := 0.8
+const SING_PROMILLE := 1.5
+const TRIP_PROMILLE := 2.1
+const HUG_MIN := 1.3
+const HUG_MAX := 1.8
 
 var _hic_cd := 5.0
 var _hic_jolt := 0.0
@@ -306,6 +318,7 @@ func _get_up() -> void:
 		var pose: Dictionary = _ragdoll.lying_pose(facing, model.scale.x)
 		position = main.clamp_walkable(pose["feet"])
 		model.rotation.y = 0.0 if facing > 0 else PI
+		_yaw_target = model.rotation.y
 		model.rise_from(pose["angle"], RISE_TIME)
 		_rise_t = RISE_TIME
 		GameState.busy_time = maxf(GameState.busy_time, RISE_TIME)
@@ -393,7 +406,7 @@ func _trip() -> void:
 ## Very drunk: every now and then the character heads off in a wrong
 ## direction whatever arrow is pressed. Pressing the direction they are
 ## actually going puts them back on track, until it happens again.
-const WRONG_WAY_PROMILLE := 2.5
+const WRONG_WAY_PROMILLE := 1.8
 const WRONG_WAY_RUN_MULT := 2.5
 ## Eight directions (arrows can steer diagonally).
 const WRONG_WAY_DIRS := [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1),
@@ -449,7 +462,7 @@ var _zzz_t := 0.0
 
 ## Very drunk: the absurd silly walk (strongest from about 3.2 per mille).
 func silly_amount() -> float:
-	return clampf((GameState.promille - 2.5) / 0.7, 0.0, 1.0)
+	return clampf((GameState.promille - 1.8) / 0.7, 0.0, 1.0)
 
 
 func _hunger_signs() -> void:
