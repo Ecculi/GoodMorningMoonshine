@@ -57,8 +57,9 @@ var health := 100.0
 var money := 0
 var hunger := 20.0
 ## Temporary health loss from punching too fast (light pink in the heart).
-## Comes back after resting; never kills: if it would use up all health,
-## half of the current health is lost for good instead.
+## Comes back while walking calmly; never kills: when it uses up all the
+## health the player is exhausted and can't punch until it has all
+## come back.
 var strain := 0.0
 ## Cold 0..100 (no meter: the character shivers). Depends on the weather and
 ## missing clothes; warms up indoors and on sunny days.
@@ -237,19 +238,21 @@ func add_strain(amount: float) -> void:
 	_check_strain()
 
 
-## True when the strain just used up all health (half of it is lost).
-var strain_broke := false
+## Exhausted: the temporary loss used up all the health; no punching until
+## it has fully recovered.
+var exhausted := false
 
 
 func _check_strain() -> void:
-	if strain >= health and health > 0.0:
-		health = maxf(1.0, health * 0.5)
-		strain = 0.0
-		strain_broke = true
+	if health > 0.0 and strain >= health:
+		strain = health
+		exhausted = true
 
 
 func recover_strain(amount: float) -> void:
 	strain = maxf(0.0, strain - amount)
+	if strain <= 0.0:
+		exhausted = false
 
 
 func score() -> int:
@@ -304,6 +307,7 @@ func new_game() -> void:
 	confiscated = -1
 	hunger = 20.0
 	strain = 0.0
+	exhausted = false
 	cold = 20.0
 	tired = 0.0
 	caffeine = 0.0
@@ -358,6 +362,7 @@ func new_day() -> void:
 	caffeine = 0.0
 	jitter_t = 0.0
 	strain = 0.0
+	exhausted = false
 	# Morning cold depends on where the night was spent.
 	cold = {"home": 10.0, "friend": 15.0, "jail": 30.0}.get(sleep_place, 50.0)
 	# Sleeping always burns alcohol and makes you hungry.

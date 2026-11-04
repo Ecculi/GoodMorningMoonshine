@@ -813,6 +813,34 @@ func note_texture() -> ImageTexture:
 	return _note_tex
 
 
+var _strain_heart_tex: ImageTexture
+
+
+## Light pink heart with a dark outline: "this used up temporary health"
+## (same colour as the temporary part in the HUD heart).
+func strain_heart_texture() -> ImageTexture:
+	if _strain_heart_tex != null:
+		return _strain_heart_tex
+	var n := 48
+	var img := Image.create_empty(n, n, false, Image.FORMAT_RGBA8)
+	var outer := PackedVector2Array()
+	var inner := PackedVector2Array()
+	for i in 40:
+		var t := TAU * i / 40.0
+		var hp := Vector2(16.0 * pow(sin(t), 3), -(13.0 * cos(t) - 5.0 * cos(2 * t) - 2.0 * cos(3 * t) - cos(4 * t)))
+		outer.append(Vector2(24, 24) + hp * 1.35)
+		inner.append(Vector2(24, 24) + hp * 1.15)
+	for y in n:
+		for x in n:
+			var pt := Vector2(x + 0.5, y + 0.5)
+			if Geometry2D.is_point_in_polygon(pt, inner):
+				img.set_pixel(x, y, Color(1.0, 0.65, 0.72))
+			elif Geometry2D.is_point_in_polygon(pt, outer):
+				img.set_pixel(x, y, Color(0.45, 0.1, 0.18))
+	_strain_heart_tex = ImageTexture.create_from_image(img)
+	return _strain_heart_tex
+
+
 func heart_texture() -> ImageTexture:
 	if _heart_tex != null:
 		return _heart_tex

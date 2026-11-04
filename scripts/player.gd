@@ -607,6 +607,10 @@ func _short_action() -> void:
 			main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
 			_consume_hand_item()
 			return
+	# Exhausted from punching too fast: no strength left to punch.
+	if GameState.exhausted:
+		main.popup_icon(main.strain_heart_texture(), position + Vector3(0.0, 2.3, 0.3))
+		return
 	model.punch()
 	_punch_strain()
 	if target == null:
@@ -641,20 +645,20 @@ var _rest_t := 0.0
 func _punch_strain() -> void:
 	if _clock - _last_punch < SPAM_WINDOW:
 		GameState.add_strain(SPAM_COST)
-		if GameState.strain_broke:
-			GameState.strain_broke = false
-			main.hud.flash_hurt()
-			main.popup("-50 %", position + Vector3(0, 2.3, 0), Color(1, 0.4, 0.45))
+		# Show it right above the character: a light pink heart.
+		main.popup_icon(main.strain_heart_texture(), position + Vector3(0.0, 2.3, 0.3))
 	_last_punch = _clock
 	_rest_t = 0.0
 
 
-func _update_rest(delta: float) -> void:
-	if running and GameState.moving:
-		_rest_t = 0.0
-	_rest_t += delta
+## Recovery happens only while time moves (walking), never by just standing.
+func _update_rest(_delta: float) -> void:
+	var dt := GameState.world_dt
+	_rest_t += dt
 	if _rest_t > REST_DELAY:
-		GameState.recover_strain(STRAIN_RECOVERY * delta)
+		# Running (holding an arrow turns into running) recovers at half speed.
+		var rate := STRAIN_RECOVERY * (0.5 if running and GameState.moving else 1.0)
+		GameState.recover_strain(rate * dt)
 
 
 func _consume_hand_item() -> void:
