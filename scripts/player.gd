@@ -55,6 +55,7 @@ func reset(pos: Vector3) -> void:
 	_ride_car = null
 	_fall_t = 0.0
 	_get_up()
+	car_grace = 0.0
 
 
 func is_aiming() -> bool:
@@ -172,6 +173,7 @@ var _fall_t := 0.0
 
 func _drunk_states(moving: bool) -> void:
 	var dt := GameState.world_dt
+	car_grace = maxf(0.0, car_grace - dt)
 	var p := GameState.promille
 	_hic_jolt = maxf(0.0, _hic_jolt - dt)
 	hic_window = maxf(0.0, hic_window - dt)
@@ -210,7 +212,10 @@ func _drunk_states(moving: bool) -> void:
 
 # --- Hit by a car -------------------------------------------------------------------
 
-const KNOCKOUT_TIME := 3.0
+const KNOCKOUT_TIME := 4.0
+## Just got up: cars can't hit you for this long.
+const CAR_GRACE := 1.5
+var car_grace := 0.0
 const BLOCK_HALF_X := 16.0
 var _ride_car = null
 var _ragdoll = null
@@ -277,6 +282,7 @@ func _go_ragdoll(push: Vector3, time: float) -> void:
 
 
 func _get_up() -> void:
+	car_grace = CAR_GRACE
 	if _ragdoll != null:
 		_ragdoll.queue_free()
 		_ragdoll = null

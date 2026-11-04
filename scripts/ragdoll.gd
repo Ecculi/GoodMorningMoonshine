@@ -21,18 +21,62 @@ func build(model: Node3D, velocity: Vector3) -> void:
 	var pants: Color = model.pants_color
 	var skin: Color = model.skin_color
 	torso = _part(xf, Vector3(0, 1.22, 0), Vector3(0.28, 0.64, 0.46), shirt, 3.0, s, velocity)
-	var head := _part(xf, Vector3(0, 1.69, 0), Vector3(0.3, 0.32, 0.3), skin, 1.0, s, velocity)
+	# The head sits rigidly on the torso (a loose neck let it sink into the
+	# body).
+	_dress_head(torso, model, s, Vector3(0, 0.47, 0) * s, skin)
 	var leg_l := _part(xf, Vector3(0, 0.46, -0.1), Vector3(0.17, 0.88, 0.17), pants, 0.9, s, velocity)
 	var leg_r := _part(xf, Vector3(0, 0.46, 0.1), Vector3(0.17, 0.88, 0.17), pants, 0.9, s, velocity)
 	var arm_l := _part(xf, Vector3(0, 1.19, -0.29), Vector3(0.12, 0.62, 0.12), shirt, 0.6, s, velocity)
 	var arm_r := _part(xf, Vector3(0, 1.19, 0.29), Vector3(0.12, 0.62, 0.12), shirt, 0.6, s, velocity)
-	_joint(xf, Vector3(0, 1.54, 0), torso, head)
 	_joint(xf, Vector3(0, 0.9, -0.1), torso, leg_l)
 	_joint(xf, Vector3(0, 0.9, 0.1), torso, leg_r)
 	_joint(xf, Vector3(0, 1.5, -0.29), torso, arm_l)
 	_joint(xf, Vector3(0, 1.5, 0.29), torso, arm_r)
 	# A little spin makes it look less stiff.
 	torso.angular_velocity = Vector3(randf_range(-3, 3), randf_range(-2, 2), randf_range(-3, 3))
+
+
+## Make the head look like the walking model's: round, with hair, eyes and
+## any hat (police cap).
+func _dress_head(body: RigidBody3D, model: Node3D, s: float, at: Vector3, skin: Color) -> void:
+	var head := MeshInstance3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = 0.16 * s
+	sm.height = 0.32 * s
+	sm.radial_segments = 12
+	sm.rings = 6
+	head.mesh = sm
+	var m0 := StandardMaterial3D.new()
+	m0.albedo_color = skin
+	head.material_override = m0
+	head.position = at
+	body.add_child(head)
+	var cs := CollisionShape3D.new()
+	var sph := SphereShape3D.new()
+	sph.radius = 0.16 * s
+	cs.shape = sph
+	cs.position = at
+	body.add_child(cs)
+	_head_mesh(body, at + Vector3(-0.03, 0.12, 0) * s, Vector3(0.28, 0.08, 0.32) * s, model.hair_color)
+	for ez in [-0.065, 0.065]:
+		_head_mesh(body, at + Vector3(0.152, 0.03, ez) * s, Vector3(0.02, 0.045, 0.045) * s, Color(0.08, 0.08, 0.1))
+	for c in model.get_children():
+		if c is MeshInstance3D and c.has_meta("head_extra"):
+			var bm: BoxMesh = c.mesh
+			var m: StandardMaterial3D = c.material_override
+			_head_mesh(body, at + (c.position - Vector3(0, 1.69, 0)) * s, bm.size * s, m.albedo_color)
+
+
+func _head_mesh(head: RigidBody3D, pos: Vector3, size: Vector3, col: Color) -> void:
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = size
+	mi.mesh = bm
+	var m := StandardMaterial3D.new()
+	m.albedo_color = col
+	mi.material_override = m
+	mi.position = pos
+	head.add_child(mi)
 
 
 func torso_position() -> Vector3:

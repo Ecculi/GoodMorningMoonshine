@@ -82,6 +82,17 @@ func _process(_delta: float) -> void:
 		if ahead > 0.0 and ahead < 14.0 and main.someone_on_crosswalk(cw_x):
 			var room: float = ahead - HALF_LEN - STOP_GAP - 1.2
 			want = minf(want, maxf(0.0, room * 1.6))
+	# Someone lying on the road in this lane ahead: stop in front of them.
+	var lying: Array = []
+	if main.player.is_helpless() and main.player._ride_car == null:
+		lying.append(main.player.position)
+	for n in main.npcs:
+		if n.is_down():
+			lying.append(n.position)
+	for lp in lying:
+		var ahead2: float = (lp.x - position.x) * dir
+		if ahead2 > 0.0 and ahead2 < 14.0 and absf(lp.z - position.z) < 1.6:
+			want = minf(want, maxf(0.0, (ahead2 - HALF_LEN - 1.0) * 1.6))
 	# Keep a gap to the car in front.
 	for other in main.cars:
 		if other == self or other.dir != dir:
@@ -100,12 +111,12 @@ func _process(_delta: float) -> void:
 ## Anyone in the car's way on the road gets hit.
 func _check_hits() -> void:
 	var p = main.player
-	if not p.is_helpless() and absf(p.position.x - position.x) < HALF_LEN + 0.3 and absf(p.position.z - position.z) < 1.1:
+	if not p.is_helpless() and p.car_grace <= 0.0 and absf(p.position.x - position.x) < HALF_LEN + 0.3 and absf(p.position.z - position.z) < 1.1:
 		_hit_cool = 1.0
 		if main.rng.randf() < 0.6:
 			# Onto the bonnet; brake after a random while.
 			p.start_bonnet_ride(self)
-			_brake_in = main.rng.randf_range(1.0, 2.5)
+			_brake_in = main.rng.randf_range(0.3, 0.9)
 		else:
 			# Straight under the wheels; the car doesn't slow down.
 			p.run_over(dir)

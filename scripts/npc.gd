@@ -119,6 +119,8 @@ func _cap(col: Color, band: Color) -> void:
 		m.albedo_color = spec[2]
 		mi.material_override = m
 		mi.position = spec[0]
+		# Copied onto the rag doll's head too.
+		mi.set_meta("head_extra", true)
 		model.add_child(mi)
 
 
