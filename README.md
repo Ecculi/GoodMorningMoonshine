@@ -3,6 +3,12 @@ Modern version of Spurgux
 
 Suunnitelma ja päätökset: [DESIGN.md](DESIGN.md)
 
+## Pelaa selaimessa
+
+Uusin versio (myös puhelimella, kosketusnapit ruudulla): https://ecculi.github.io/GoodMorningMoonshine/
+
+Versio päivittyy automaattisesti jokaisen pushin jälkeen (GitHub Actions, `.github/workflows/web.yml`). Käännä puhelin vaakatasoon.
+
 ## Prototyypin ajaminen
 
 1. Asenna [Godot 4.7](https://godotengine.org/download) (tavallinen versio, ei .NET).

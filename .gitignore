@@ -3,3 +3,4 @@
 *.translation
 /export/
 /android/
+/build/
