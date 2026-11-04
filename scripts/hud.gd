@@ -106,7 +106,14 @@ func _draw() -> void:
 	if _hurt > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0.8, 0.0, 0.0, _hurt * 0.5))
 
-	_draw_heart(Vector2(46, 46), 58.0, clampf(GameState.health / 100.0, 0.0, 1.0),
+	# Low health: the heart beats and blinks so a near-empty heart is
+	# clearly "still alive, but in danger".
+	var heart_size := 58.0
+	if GameState.health < 15.0 and GameState.health > 0.0:
+		var beat := absf(sin(Time.get_ticks_msec() / 180.0))
+		heart_size = 58.0 + 8.0 * beat
+		draw_circle(Vector2(46, 46), 34.0 + 6.0 * beat, Color(1, 0.1, 0.15, 0.25 * beat))
+	_draw_heart(Vector2(46, 46), heart_size, clampf(GameState.health / 100.0, 0.0, 1.0),
 		clampf(GameState.strain / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_coin(Vector2(186, 46), GameState.money, font)

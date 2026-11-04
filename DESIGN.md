@@ -233,7 +233,7 @@ Krapula ei kovene päivien mukaan.
 
 | Tila | Näyttötapa | Seuraus |
 |---|---|---|
-| **Health** | sydän, josta väri valuu pois; ei tarkkaa lukemaa | kuolema, kun nollassa |
+| **Health** | sydän, josta väri valuu pois; ei tarkkaa lukemaa. Alle 15:ssä sydän sykkii ja hehkuu punaisena (vaara, mutta vielä hengissä) | kuolema, kun nollassa |
 | **Alkoholi** | **tarkka lukema promilleina** (esim. 1,4 ‰) pulloikonin sisällä, koska alkoholi on pelin tärkein muuttuja | kuolema, kun nollassa |
 | **Väsymys** | ei mittaria: silmät alkavat painua kiinni, ryhti lysähtää, hahmo haukottelee ja päästä nousee välillä Zzz-ikoni | nukahtaa, kun täynnä (ks. alla) |
 | **Kylmä** | ei mittaria: hahmo tärisee | nälkä kasvaa nopeammin ja health kuluu |
