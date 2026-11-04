@@ -463,6 +463,9 @@ Lisätty prototyyppiin:
 - **Poliisit ja vartijat:** poliiseja partioi osassa kortteleita (todennäköisyys kasvaa päivä päivältä, myöhemmin joskus pareittain), vartijoita seisoo kauppojen lähellä. Kun pelaaja lyö jotakuta tai heittää jollekulle pullon, korttelin poliisit lähtevät perään ja vartijat käyvät kimppuun. Epäonnistuneen taskuvarkauden uhri joko tappelee tai huutaa apua, jolloin poliisi voi juosta paikalle korttelin päästä. Paljain jaloin poliisit ja vartijat huomaavat rikoksen vain läheltä (7 m). Poliisin lyöminen vain horjuttaa hetkeksi. Kun poliisi pysyy pelaajan vieressä, ruudulle täyttyy sini-punainen rengas; täynnä oleva rengas vie putkaan. Toiseen kortteliin juoksemalla tai karkaamalla kauas pääsee pakoon.
 - **Putka ja poliisiasema:** poliisiasema on Isokadulla Pakkahuoneenkadun ja Hallituskadun välissä (POLIISI-kyltti). Putkayön jälkeen herätään aseman ovelta: alkoholia 0,3 ‰ ja kova nälkä. Käden tavara takavarikoidaan; sen saa takaisin aseman ovelta henkilökortilla. Ilman henkilökorttia herätään kaksi tuntia myöhemmin. Sellikaveri joko kertoo, millä kadulla jokin hukattu tavara on, tai vie puolet rahoista.
 
+- **Väsymys:** kasvaa liikkuessa, juostessa ja illalla pimeällä nopeammin (klo 20 jälkeen kaksinkertaisesti, klo 22 jälkeen kolminkertaisesti). Ei mittaria: silmät painuvat kiinni, hahmo lysähtää ja päästä nousee välillä Zzz. Täynnä hahmo nukahtaa siihen paikkaan. Aamulla väsymys on lähes nolla (kotona 0, kaverilla 5, muualla 15).
+- **Kahvi ja energiajuoma:** löytyvät harvoin kadulta; energiajuomaa saa kioskista (3 €). Kahvi vie väsymystä 35, energiajuoma 45. Kaksi kofeiinijuomaa lyhyessä ajassa saa hahmon tärisemään 20 sekunniksi, jolloin lyönnit menevät usein ohi.
+
 Prototyypistä puuttuu vielä muun muassa hukatut tavarat, puhelin, nälkä, kylmä, väsymys, sää, poliisit ja muut hahmotyypit sekä sisätilat.
 
 ## Avoimet kysymykset

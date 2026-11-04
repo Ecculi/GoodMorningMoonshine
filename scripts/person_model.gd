@@ -22,6 +22,10 @@ func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) ->
 	_box(Vector3(0, 1.22, 0), Vector3(0.28, 0.64, 0.46), shirt)
 	_sphere(Vector3(0, 1.69, 0), 0.16, skin)
 	_box(Vector3(-0.03, 1.81, 0), Vector3(0.28, 0.08, 0.32), hair)
+	# Eyes (the face looks towards +X) and eyelids that close when tired.
+	for ez in [-0.065, 0.065]:
+		_box(Vector3(0.152, 1.72, ez), Vector3(0.02, 0.045, 0.045), Color(0.08, 0.08, 0.1))
+		_eyelids.append(_box(Vector3(0.162, 1.74, ez), Vector3(0.02, 0.006, 0.055), skin))
 	arm_l = _limb(Vector3(0, 1.5, -0.29), Vector3(0.12, 0.62, 0.12), shirt)
 	arm_r = _limb(Vector3(0, 1.5, 0.29), Vector3(0.12, 0.62, 0.12), shirt)
 	hand = Node3D.new()
@@ -32,6 +36,7 @@ func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) ->
 ## `silly` 0..1: a very drunk, absurdly exaggerated walk (high kicks,
 ## flailing arms, bouncing). Returns the bounce height and backward lean
 ## so the owner can apply them to the whole body.
+var _eyelids: Array = []
 var silly_bounce := 0.0
 var silly_lean := 0.0
 
@@ -55,6 +60,15 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 		arm_r.rotation.z = 2.5
 	else:
 		arm_r.rotation.z = lerpf(s * 0.8, -1.2 * sin(ph) + 0.6, k)
+
+
+## 0 = eyes open, 1 = closed.
+func set_eyes(closed: float) -> void:
+	var h := 0.006 + 0.05 * clampf(closed, 0.0, 1.0)
+	for lid in _eyelids:
+		var bm: BoxMesh = lid.mesh
+		bm.size.y = h
+		lid.position.y = 1.745 - h * 0.5
 
 
 func punch() -> void:

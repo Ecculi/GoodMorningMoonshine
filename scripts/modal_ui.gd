@@ -289,3 +289,9 @@ func _draw_product(kind: String, c: Vector2, s: float) -> void:
 				c + Vector2(0, s * 0.05)]), Color(0.95, 0.75, 0.1))
 		"pint":
 			_draw_beer_icon(c, s)
+		"energy":
+			draw_rect(Rect2(c + Vector2(-s * 0.16, -s * 0.4), Vector2(s * 0.32, s * 0.8)), Color(0.1, 0.1, 0.12))
+			draw_rect(Rect2(c + Vector2(-s * 0.16, -s * 0.1), Vector2(s * 0.32, s * 0.22)), Color(0.4, 0.95, 0.2))
+			draw_colored_polygon(PackedVector2Array([c + Vector2(s * 0.04, -s * 0.32), c + Vector2(-s * 0.08, -s * 0.12),
+				c + Vector2(0, -s * 0.12), c + Vector2(-s * 0.04, s * 0.02), c + Vector2(s * 0.08, -s * 0.18),
+				c + Vector2(0, -s * 0.18)]), Color(0.95, 0.85, 0.1))

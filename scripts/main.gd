@@ -20,6 +20,7 @@ const PHONE_DRAIN := [1.2, 1.8, 3.5]
 const KIOSK_OPTIONS := [
 	{"kind": "bottle", "price": 3, "alcohol": true},
 	{"kind": "food", "price": 2, "alcohol": false},
+	{"kind": "energy", "price": 3, "alcohol": false},
 	{"kind": "charge", "price": 0, "alcohol": false},
 ]
 const BAR_OPTIONS := [
@@ -228,7 +229,11 @@ func _populate_block() -> void:
 		for i in rng.randi_range(2, 5):
 			var r := rng.randf()
 			var kind: int = Item.Kind.CAN
-			if r < 0.15:
+			if r < 0.03:
+				kind = Item.Kind.COFFEE  # rare
+			elif r < 0.06:
+				kind = Item.Kind.ENERGY  # rare
+			elif r < 0.15:
 				kind = Item.Kind.BOTTLE
 			elif r < 0.35:
 				kind = Item.Kind.FOOD
@@ -486,6 +491,8 @@ func _buy(o: Dictionary) -> void:
 			player._pickup(spawn_item(Item.Kind.BOTTLE, player.position))
 		"food":
 			player._pickup(spawn_item(Item.Kind.FOOD, player.position))
+		"energy":
+			player._pickup(spawn_item(Item.Kind.ENERGY, player.position))
 		"pint":
 			GameState.drink(0.5)
 		"charge":

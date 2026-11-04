@@ -43,6 +43,12 @@ const COLD_HUNGRY := 50.0
 const COLD_HURTS := 80.0
 const COLD_INDOOR_WARM := 4.0
 
+const TIRED_RATE := 0.5
+const COFFEE_AWAKE := 35.0
+const ENERGY_AWAKE := 45.0
+const CAFFEINE_LIMIT := 1.5
+const JITTER_TIME := 20.0
+
 var day := 1
 var promille := PROMILLE_START
 var health := 100.0
@@ -51,6 +57,12 @@ var hunger := 20.0
 ## Cold 0..100 (no meter: the character shivers). Depends on the weather and
 ## missing clothes; warms up indoors and on sunny days.
 var cold := 20.0
+## Tiredness 0..100 (no meter: the eyes close and the character slumps).
+## Full = falls asleep on the spot. Grows faster in the dark.
+var tired := 0.0
+## Caffeine in the blood; too much at once makes the character jittery.
+var caffeine := 0.0
+var jitter_t := 0.0
 var clock_min := float(DAY_START_MIN)
 
 ## Set by the player every frame.
@@ -138,6 +150,9 @@ func _process(delta: float) -> void:
 		_die("HEADLINE_SOBER")
 	elif health <= 0.0:
 		_die("HEADLINE_BEATEN")
+	elif tired >= 100.0:
+		sleep_place = "street"
+		_end_day("SLEEP_TIRED")
 	elif promille > PROMILLE_PASS_OUT:
 		sleep_place = "street"
 		_end_day("SLEEP_PASSOUT")
@@ -158,6 +173,12 @@ func _tick_body(dt: float, is_running: bool) -> void:
 	hunger = minf(100.0, hunger + HUNGER_RATE * dt * mult * hunger_mult)
 	if hunger >= HUNGER_HURTS:
 		health -= 1.0 * dt
+	# Tiredness grows, faster when running and in the dark.
+	var h := clock_min / 60.0
+	var dark := 3.0 if h >= 22.0 else (2.0 if h >= 20.0 else 1.0)
+	tired = minf(100.0, tired + TIRED_RATE * dt * dark * (1.3 if is_running else 1.0))
+	caffeine = maxf(0.0, caffeine - dt / 60.0)
+	jitter_t = maxf(0.0, jitter_t - dt)
 
 
 ## How fast the character gets colder (per second of activity; negative =
@@ -171,6 +192,14 @@ func cold_rate() -> float:
 	if r > 0.0 and promille > PROMILLE_DRUNK:
 		r *= 0.6
 	return r
+
+
+## Coffee or an energy drink: less tired; two in a short time = jitters.
+func caffeinate(awake: float) -> void:
+	tired = maxf(0.0, tired - awake)
+	caffeine += 1.0
+	if caffeine > CAFFEINE_LIMIT:
+		jitter_t = JITTER_TIME
 
 
 ## Returns how much the per mille went up: more on an empty stomach.
@@ -244,6 +273,9 @@ func new_game() -> void:
 	confiscated = -1
 	hunger = 20.0
 	cold = 20.0
+	tired = 0.0
+	caffeine = 0.0
+	jitter_t = 0.0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	bonus = 0
@@ -289,6 +321,10 @@ func new_day() -> void:
 		_:
 			promille = clampf(0.5 + maxf(at_sleep - 1.0, 0.0) * 0.5, 0.3, 2.0)
 			health = minf(100.0, health + 35.0)
+	# Tiredness is almost gone in the morning; a bad night leaves a little.
+	tired = {"home": 0.0, "friend": 5.0}.get(sleep_place, 15.0)
+	caffeine = 0.0
+	jitter_t = 0.0
 	# Morning cold depends on where the night was spent.
 	cold = {"home": 10.0, "friend": 15.0, "jail": 30.0}.get(sleep_place, 50.0)
 	# Sleeping always burns alcohol and makes you hungry.

@@ -269,6 +269,7 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 ## No hunger meter: when hungry the stomach growls now and then and the
 ## character slumps a little.
 var _growl_t := 0.0
+var _zzz_t := 0.0
 
 
 ## Very drunk: the absurd silly walk (strongest from about 3.2 per mille).
@@ -287,6 +288,17 @@ func _hunger_signs() -> void:
 		shake = 0.025
 	if GameState.cold >= GameState.COLD_SHIVER:
 		shake = maxf(shake, 0.015 + 0.03 * (GameState.cold - GameState.COLD_SHIVER) / 50.0)
+	if GameState.jitter_t > 0.0:
+		shake = maxf(shake, 0.03)
+	# Tired: eyes close, the body slumps, Zzz now and then.
+	var t := GameState.tired
+	model.set_eyes((t - 40.0) / 60.0)
+	model.rotation.z -= 0.18 * clampf((t - 60.0) / 40.0, 0.0, 1.0)
+	if t > 70.0:
+		_zzz_t += GameState.world_dt
+		if _zzz_t > 5.0:
+			_zzz_t = 0.0
+			main.popup("Zzz", position + Vector3(0.2 * facing, 2.2, 0.3), Color(0.8, 0.85, 1.0))
 	if shake > 0.0:
 		model.position.x = randf_range(-shake, shake)
 		model.position.z = randf_range(-shake, shake)
@@ -367,6 +379,12 @@ func _short_action() -> void:
 				position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
 			_consume_hand_item()
 			return
+		if hand_item.kind == Item.Kind.COFFEE or hand_item.kind == Item.Kind.ENERGY:
+			var coffee: bool = hand_item.kind == Item.Kind.COFFEE
+			GameState.caffeinate(GameState.COFFEE_AWAKE if coffee else GameState.ENERGY_AWAKE)
+			main.popup("!", position + Vector3(0, 2.1, 0), Color(0.6, 1.0, 0.4))
+			_consume_hand_item()
+			return
 		if hand_item.kind == Item.Kind.FOOD:
 			GameState.eat()
 			main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
@@ -378,7 +396,9 @@ func _short_action() -> void:
 	var p := GameState.promille
 	# Drunk: swings miss more often the drunker you are.
 	var drunk := clampf((p - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
-	if randf() < drunk * 0.35:
+	# Too much caffeine: jittery hands miss half the time.
+	var miss := drunk * 0.35 + (0.5 if GameState.jitter_t > 0.0 else 0.0)
+	if randf() < miss:
 		main.popup("?", target.position + Vector3(0, 2.0, 0), Color(1, 1, 1))
 		return
 	var dmg := 1
