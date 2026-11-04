@@ -154,7 +154,7 @@ Krapula ei kovene päivien mukaan.
 ### Kontrollit
 
 - Kontrollien pitää olla niin simppelit, että peliä voi pelata **puhelimella**.
-- Käytössä on vain **suuntanuolet** ja **yksi toimintanappi**.
+- Käytössä on **suuntanuolet**, **toimintanappi** ja erillinen **puhelinnappi**.
 - Toimintanapissa on **lyhyt ja pitkä painallus**:
 
   | Toiminto | Kontrolli |
@@ -164,9 +164,8 @@ Krapula ei kovene päivien mukaan.
   | **Mene sisään** | lyhyt painallus ovella |
   | **Heitä** käden tavara | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää. Latauksen aikana hahmo ei liiku, vaan nuolilla valitaan heiton suunta (myös ylös ja alas). Heitto lähtee, kun nappi päästetään. |
   | **Juokse** | kaksoisnapautus suuntanuolta tai saman suunnan pitäminen hetken pohjassa |
-  | **Puhelin auki** | ylös + toimintanappi (kummassa järjestyksessä tahansa); näppäimistöllä myös P tai Tab |
+  | **Puhelin auki / kiinni** | oma puhelinnappi (kosketusnäytöllä pieni nappi ison napin yläpuolella, näppäimistöllä P tai Tab, peliohjaimella Y) |
   | **Puhelimen selaus** | vasen / oikea |
-  | **Puhelin kiinni** | alas + toimintanappi |
 
 ### Näkökenttä ja silmälasit
 
@@ -461,7 +460,7 @@ Lisätty prototyyppiin:
 - **Kotityypit:** kerrostaloasunto (ilman avaimia rappukäytävä), kellarikomero (ilman avaimia riippulukko rikotaan kolmella lyönnillä; kylmä yö) ja kaverin sohva (ovikello; juoma kädessä pääsee aina sisään, muuten kaveri nukkuu joskus eikä avaa sinä päivänä).
 - **Tavaroiden haitat:** ilman silmälaseja kadunnimikyltit ovat sumeita (humalassa kirjaimet myös menevät sekaisin), ilman aurinkolaseja aurinko häikäisee aurinkoisella säällä, ilman takkia lyönnit sattuvat 30 % enemmän ja paljain jaloin taskuvarkaus onnistuu paremmin.
 
-- **Puhelin:** ylös + toimintanappi avaa, vasen/oikea selaa, alas + toimintanappi sulkee. Viestit (tavaran ikoni ja kadunnimen alku), eilinen kuva (katukyltti ja hukattu tavara, hahmon edessä "sattumalta" sumea esine) ja kartta (pohjoinen ylhäällä, oma sijainti ja koti). Akkua on aamulla vähän, ja se kuluu reaaliajassa; kartta kuluttaa eniten. Maailma on pysähdyksissä puhelimen ollessa auki.
+- **Puhelin:** oma puhelinnappi avaa ja sulkee, vasen/oikea selaa. Viestit (tavaran ikoni ja kadunnimen alku), eilinen kuva (katukyltti ja hukattu tavara, hahmon edessä "sattumalta" sumea esine) ja kartta (pohjoinen ylhäällä, oma sijainti ja koti). Akkua on aamulla vähän, ja se kuluu reaaliajassa; kartta kuluttaa eniten. Maailma on pysähdyksissä puhelimen ollessa auki.
 - **Kioski ja baari:** joissain kortteleissa (valaistu ovi ja kyltti), auki tai kiinni päivästä riippuen. Kioskista pullo (3 €), makkara (2 €) ja puhelimen lataus (ilmainen, mutta aika harppaa ja promillet laskevat). Baarissa tuoppi (5 €), ja ovella on portsari. Ostaminen vaatii lompakon ja alkoholi henkilökortin.
 - **Nälkä:** kasvaa liikkuessa ja yöllä, kova nälkä kuluttaa healthia ja tyhjään mahaan alkoholi nousee 40 % enemmän. Ei mittaria: hahmosta nousee välillä vatsan kuva (maha kurisee), ja hahmo lysähtää. Makkara vie nälkää.
 

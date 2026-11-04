@@ -578,24 +578,15 @@ func _handle_action(delta: float) -> void:
 		if not Input.is_action_pressed("action"):
 			_block_action = false
 		return
-	# Phone: up + action in either order, or the phone key (P / Tab).
+	# Phone: its own button (P / Tab, gamepad Y, phone button on screen).
 	if Input.is_action_just_pressed("phone"):
 		main.open_phone()
 		_press_time = -1.0
 		return
 	if Input.is_action_just_pressed("action"):
-		if Input.is_action_pressed("move_up"):
-			main.open_phone()
-			_press_time = -1.0
-			return
 		_press_time = 0.0
 		aim = Vector2(facing, 0)
 	if _press_time < 0.0:
-		return
-	if _press_time < LONG_PRESS and Input.is_action_just_pressed("move_up"):
-		main.open_phone()
-		_press_time = -1.0
-		_block_action = true
 		return
 	_press_time += delta
 	if Input.is_action_pressed("action"):
