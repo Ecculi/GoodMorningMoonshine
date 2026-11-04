@@ -247,7 +247,7 @@ Krapula ei kovene päivien mukaan.
 | **alle 0,5 ‰** | krapula: hahmo tärisee, lyönnit ovat heikkoja ja health kuluu hitaasti. Varoitus, että juotavaa pitää löytää. |
 | **0,5–2,0 ‰** | sopiva alue, hahmo toimii normaalisti |
 | **2,0–3,5 ‰** | humalan haitat (horjuminen, sumea näkökenttä, rohkeus) voimistuvat vähitellen |
-| **yli 3,5 ‰** | hahmo sammuu |
+| **yli 3,2–4,0 ‰** | hahmo sammuu (raja arvotaan joka päivä 3,2 ja 4,0 ‰ väliltä, joten sitä ei voi tietää tarkasti) |
 
 - Promillet laskevat tasaisesti, kun pelaaja liikkuu tai tekee jotain.
 
@@ -294,7 +294,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - **Väärä suunta:** kovassa humalassa (yli 2,5 ‰) hahmo lähtee välillä aivan eri suuntaan kuin nuoli osoittaa (esim. oikealle painettaessa ylös). Pelaaja voi korjata heti painamalla siihen suuntaan, johon hahmo oikeasti menee. Jos hän vain jatkaa alkuperäisen nuolen painamista, väärä suunta menee ohi itsestään noin 1,5–3 sekunnissa. Mitä kovempi humala, sitä useammin näin käy, ja **juostessa paljon useammin** kuin kävellessä. Väärä suunta voi olla mikä tahansa kahdeksasta suunnasta (myös viistoon), mutta **ei koskaan suoraan vastakkainen**. Jos väärä suunta veisi seinää tai reunaa päin, se peruuntuu, jottei hahmo jää kävelemään paikallaan.
 - **Rohkeus:** lyönnit ovat kovempia ja kylmä tuntuu vähemmän, mutta poliisit huomaavat pelaajan helpommin.
 - **Näkökenttä:** yli 2,0 promillessa kuva sumenee: pelihahmon ympärillä olevan ympyrän sisällä vähän, ulkopuolella enemmän, ja sitä enemmän mitä kovempi humala. Ympyrä pienenee nopeasti koko ruudun kokoisesta (2,0 ‰) 1,5 metrin säteeseen (3,0 ‰ ja enemmän), ja yli 3,0 promillessa sumennus ympyrän ulkopuolella voimistuu selvästi. Hahmon lähellä kuva pysyy selvimpänä.
-- **Sammuminen:** kun alkoholimittari on täynnä, hahmo sammuu paikalleen. Se lasketaan nukahtamiseksi.
+- **Sammuminen:** kun promillet ylittävät päivän sammumisrajan (arvotaan joka päivä 3,2–4,0 ‰), hahmo sammuu paikalleen. Se lasketaan nukahtamiseksi.
 
 ### Nukahtaminen väsymyksestä
 

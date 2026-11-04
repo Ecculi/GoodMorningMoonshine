@@ -16,7 +16,9 @@ const DAY_ACTIVE_SECONDS := 180.0
 const PROMILLE_START := 0.8
 const PROMILLE_HANGOVER := 0.5
 const PROMILLE_DRUNK := 2.0
-const PROMILLE_PASS_OUT := 3.5
+## Passing out happens somewhere between these; a new limit every day.
+const PASS_OUT_MIN := 3.2
+const PASS_OUT_MAX := 4.0
 const PROMILLE_MAX_SHOWN := 4.0
 ## Per mille lost per second of activity (running burns faster).
 const PROMILLE_DECAY := 0.0135
@@ -60,6 +62,8 @@ var cold := 20.0
 ## Tiredness 0..100 (no meter: the eyes close and the character slumps).
 ## Full = falls asleep on the spot. Grows faster in the dark.
 var tired := 0.0
+## Today's passing-out limit (random between PASS_OUT_MIN and PASS_OUT_MAX).
+var pass_out_promille := 3.5
 ## Caffeine in the blood; too much at once makes the character jittery.
 var caffeine := 0.0
 var jitter_t := 0.0
@@ -153,7 +157,7 @@ func _process(delta: float) -> void:
 	elif tired >= 100.0:
 		sleep_place = "street"
 		_end_day("SLEEP_TIRED")
-	elif promille > PROMILLE_PASS_OUT:
+	elif promille > pass_out_promille:
 		sleep_place = "street"
 		_end_day("SLEEP_PASSOUT")
 	elif clock_min >= DAY_END_MIN:
@@ -373,8 +377,9 @@ func _choose_wake_place() -> void:
 	wake_pos = Vector3(rng.randf_range(-12.0, 12.0), 0.0, z)
 
 
-## Every day has its own weather.
+## Every day has its own weather (and its own passing-out limit).
 func _roll_weather() -> void:
+	pass_out_promille = rng.randf_range(PASS_OUT_MIN, PASS_OUT_MAX)
 	var r := rng.randf()
 	if r < 0.4:
 		weather = "sunny"
