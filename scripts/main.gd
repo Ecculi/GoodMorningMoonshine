@@ -87,6 +87,7 @@ func _ready() -> void:
 	rng.randomize()
 	_build_environment()
 	_build_clouds()
+	_build_precipitation()
 	_build_camera()
 	_build_post_process()
 
@@ -985,18 +986,23 @@ func _update_sun() -> void:
 	# Screen: forward (camera look) = -Z, right = +X.
 	var to_sun := Vector3(cos(elev) * sin(rel), sin(elev), -cos(elev) * cos(rel))
 	sun.basis = Basis.looking_at(-to_sun, Vector3.UP)
-	var cloudy := GameState.weather == "cloudy"
-	# Overcast: soft light, no sharp shadows.
+	var weather := GameState.weather
+	var cloudy := weather != "sunny"
+	# Overcast (cloudy, rain, snow): soft light, no sharp shadows.
 	sun.shadow_enabled = not cloudy
-	sun.light_energy = (0.25 if cloudy else 1.0) * smoothstep(0.0, 0.25, day_light)
+	var sun_e: float = {"sunny": 1.0, "cloudy": 0.25, "rain": 0.15, "snow": 0.3}[weather]
+	sun.light_energy = sun_e * smoothstep(0.0, 0.25, day_light)
 	sun.light_color = Color(1.0, 0.85, 0.7).lerp(Color(1, 0.98, 0.94), smoothstep(0.0, 0.5, day_light))
 	env.ambient_light_energy = (0.35 + 0.55 * smoothstep(0.0, 0.4, day_light)) * (1.45 if cloudy else 1.0)
-	sky_mat.sky_top_color = Color(0.55, 0.58, 0.62) if cloudy else Color(0.2, 0.42, 0.8)
-	sky_mat.sky_horizon_color = Color(0.72, 0.74, 0.76) if cloudy else Color(0.6, 0.72, 0.85)
+	sky_mat.sky_top_color = {"sunny": Color(0.2, 0.42, 0.8), "cloudy": Color(0.55, 0.58, 0.62),
+		"rain": Color(0.38, 0.4, 0.44), "snow": Color(0.7, 0.72, 0.76)}[weather]
+	sky_mat.sky_horizon_color = {"sunny": Color(0.6, 0.72, 0.85), "cloudy": Color(0.72, 0.74, 0.76),
+		"rain": Color(0.55, 0.57, 0.6), "snow": Color(0.86, 0.87, 0.9)}[weather]
+	_update_precipitation(weather)
 	# Without sunglasses, facing the sun on a sunny day dazzles; a low sun
 	# is the worst.
 	var want_glare := 0.0
-	if not cloudy and GameState.is_lost("sunglasses") and day_light > 0.1:
+	if weather == "sunny" and GameState.is_lost("sunglasses") and day_light > 0.1:
 		var low := 1.0 - clampf(rad_to_deg(elev) / 45.0, 0.0, 1.0) * 0.5
 		want_glare = clampf(player.facing * to_sun.x * 1.2 + maxf(0.0, -to_sun.z) * 0.5, 0.0, 1.0) * low * 0.8
 	_glare = lerpf(_glare, want_glare, 0.05)
@@ -1015,6 +1021,80 @@ func _update_sun() -> void:
 			cloud_mat.set_shader_parameter("to_sun", to_sun)
 			_cloud_sun_set = true
 	env.background_energy_multiplier = 0.15 + 0.85 * smoothstep(0.0, 0.4, day_light)
+
+
+# --- Rain and snow -------------------------------------------------------------
+
+var rain: CPUParticles3D
+var snow: CPUParticles3D
+var snow_cover: Node3D
+
+
+func _build_precipitation() -> void:
+	rain = _particles(Color(0.75, 0.8, 0.9, 0.7), Vector3(0.015, 0.45, 0.015), 900, Vector3(0, -18, 0), 1.2)
+	snow = _particles(Color(1, 1, 1, 0.95), Vector3(0.12, 0.12, 0.12), 1400, Vector3(0, -1.6, 0), 9.0)
+	snow.initial_velocity_min = 0.3
+	snow.initial_velocity_max = 0.9
+	snow.direction = Vector3(1, 0, 0.3)
+	snow.spread = 180.0
+	# A thin white layer over the street and sidewalks on snowy days.
+	snow_cover = Node3D.new()
+	add_child(snow_cover)
+	for spec in [[Vector3(0, 0.135, -6.5), Vector3(120, 0.005, 3.0), 0.75], [Vector3(0, 0.135, 4.15), Vector3(120, 0.005, 3.3), 0.75],
+			[Vector3(0, 0.012, -1.25), Vector3(120, 0.005, 7.5), 0.45]]:
+		var mi := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = spec[1]
+		mi.mesh = bm
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.95, 0.96, 1.0, spec[2])
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mi.material_override = m
+		mi.position = spec[0]
+		snow_cover.add_child(mi)
+
+
+func _particles(col: Color, size: Vector3, amount: int, gravity: Vector3, lifetime: float) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var m := StandardMaterial3D.new()
+	m.albedo_color = col
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mesh.material = m
+	p.mesh = mesh
+	p.amount = amount
+	p.lifetime = lifetime
+	p.preprocess = lifetime
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	p.emission_box_extents = Vector3(24, 0.5, 14)
+	p.gravity = gravity
+	p.initial_velocity_min = 0.0
+	p.initial_velocity_max = 0.0
+	p.position = Vector3(0, 12, -2)
+	p.emitting = false
+	p.visible = false
+	add_child(p)
+	return p
+
+
+## Rain and snow fall only while time moves (frozen mid-air otherwise), and
+## follow the camera along the street.
+func _update_precipitation(weather: String) -> void:
+	var raining := weather == "rain"
+	var snowing := weather == "snow"
+	for pair in [[rain, raining], [snow, snowing]]:
+		var p: CPUParticles3D = pair[0]
+		p.visible = pair[1]
+		p.emitting = pair[1]
+		p.speed_scale = 1.0 if GameState.world_dt > 0.0 else 0.0
+		p.position.x = camera.position.x
+	snow_cover.visible = snowing
+	snow_cover.position.x = camera.position.x
+	env.fog_enabled = raining or snowing
+	env.fog_light_color = Color(0.6, 0.62, 0.66) if raining else Color(0.9, 0.92, 0.95)
+	env.fog_density = 0.012 if raining else 0.006
 
 
 func _build_clouds() -> void:

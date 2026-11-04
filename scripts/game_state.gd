@@ -37,11 +37,20 @@ const HUNGER_HURTS := 70.0
 const HUNGER_EMPTY_STOMACH := 60.0
 const FOOD_HUNGER := 40.0
 
+const COLD_WEATHER := {"sunny": -0.3, "cloudy": 0.1, "rain": 0.4, "snow": 0.8}
+const COLD_SHIVER := 50.0
+const COLD_HUNGRY := 50.0
+const COLD_HURTS := 80.0
+const COLD_INDOOR_WARM := 4.0
+
 var day := 1
 var promille := PROMILLE_START
 var health := 100.0
 var money := 0
 var hunger := 20.0
+## Cold 0..100 (no meter: the character shivers). Depends on the weather and
+## missing clothes; warms up indoors and on sunny days.
+var cold := 20.0
 var clock_min := float(DAY_START_MIN)
 
 ## Set by the player every frame.
@@ -76,7 +85,7 @@ var confiscated := -1
 ## Where the character wakes up (from day 2 on: never at home).
 var wake_seg := CityMap.START
 var wake_pos := Vector3.ZERO
-## Today's weather: "sunny" or "cloudy" (rain and snow come later).
+## Today's weather: "sunny", "cloudy", "rain" or "snow".
 var weather := "sunny"
 
 ## Phone: battery 0..100 (always low), today's hints.
@@ -102,6 +111,14 @@ func _process(delta: float) -> void:
 		world_dt = 0.0
 		active = false
 		return
+	if modal == "shop":
+		# Warming up inside costs time like anything else: the clock runs,
+		# alcohol drops and hunger grows (but the street outside waits).
+		world_dt = 0.0
+		active = false
+		_tick_body(delta, false)
+		cold = maxf(0.0, cold - COLD_INDOOR_WARM * delta)
+		return
 	if modal != "":
 		world_dt = 0.0
 		active = false
@@ -112,14 +129,10 @@ func _process(delta: float) -> void:
 	if not active:
 		return
 
-	var mult := RUN_DECAY_MULT if running else 1.0
-	promille = maxf(0.0, promille - PROMILLE_DECAY * world_dt * mult)
-	clock_min += float(DAY_END_MIN - DAY_START_MIN) / DAY_ACTIVE_SECONDS * world_dt
-	if promille < PROMILLE_HANGOVER:
-		health -= 1.5 * world_dt
-	hunger = minf(100.0, hunger + HUNGER_RATE * world_dt * mult)
-	if hunger >= HUNGER_HURTS:
-		health -= 1.0 * world_dt
+	_tick_body(world_dt, running)
+	cold = clampf(cold + cold_rate() * world_dt, 0.0, 100.0)
+	if cold >= COLD_HURTS:
+		health -= 0.8 * world_dt
 
 	if promille <= 0.0:
 		_die("HEADLINE_SOBER")
@@ -131,6 +144,33 @@ func _process(delta: float) -> void:
 	elif clock_min >= DAY_END_MIN:
 		sleep_place = "street"
 		_end_day("SLEEP_NIGHT")
+
+
+## Alcohol, clock, hangover and hunger for `dt` seconds of activity.
+func _tick_body(dt: float, is_running: bool) -> void:
+	var mult := RUN_DECAY_MULT if is_running else 1.0
+	promille = maxf(0.0, promille - PROMILLE_DECAY * dt * mult)
+	clock_min += float(DAY_END_MIN - DAY_START_MIN) / DAY_ACTIVE_SECONDS * dt
+	if promille < PROMILLE_HANGOVER:
+		health -= 1.5 * dt
+	# Being cold makes you hungry faster.
+	var hunger_mult := 1.5 if cold >= COLD_HUNGRY else 1.0
+	hunger = minf(100.0, hunger + HUNGER_RATE * dt * mult * hunger_mult)
+	if hunger >= HUNGER_HURTS:
+		health -= 1.0 * dt
+
+
+## How fast the character gets colder (per second of activity; negative =
+## warming up). Missing clothes make it worse; being drunk numbs it.
+func cold_rate() -> float:
+	var r: float = COLD_WEATHER.get(weather, 0.0)
+	if is_lost("jacket"):
+		r += 0.3
+	if is_lost("shoes") and (weather == "rain" or weather == "snow"):
+		r += 0.2
+	if r > 0.0 and promille > PROMILLE_DRUNK:
+		r *= 0.6
+	return r
 
 
 ## Returns how much the per mille went up: more on an empty stomach.
@@ -203,6 +243,7 @@ func new_game() -> void:
 	money = 0
 	confiscated = -1
 	hunger = 20.0
+	cold = 20.0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	bonus = 0
@@ -248,6 +289,8 @@ func new_day() -> void:
 		_:
 			promille = clampf(0.5 + maxf(at_sleep - 1.0, 0.0) * 0.5, 0.3, 2.0)
 			health = minf(100.0, health + 35.0)
+	# Morning cold depends on where the night was spent.
+	cold = {"home": 10.0, "friend": 15.0, "jail": 30.0}.get(sleep_place, 50.0)
 	# Sleeping always burns alcohol and makes you hungry.
 	promille = maxf(minf(promille, at_sleep - SLEEP_MIN_DROP), MORNING_MIN_PROMILLE)
 	var cold_night := sleep_place == "street" or sleep_place == "basement" or sleep_place == "stairs"
@@ -296,7 +339,15 @@ func _choose_wake_place() -> void:
 
 ## Every day has its own weather.
 func _roll_weather() -> void:
-	weather = "sunny" if rng.randf() < 0.6 else "cloudy"
+	var r := rng.randf()
+	if r < 0.4:
+		weather = "sunny"
+	elif r < 0.65:
+		weather = "cloudy"
+	elif r < 0.85:
+		weather = "rain"
+	else:
+		weather = "snow"
 
 
 ## Every night new things get lost; earlier lost ones stay lost.

@@ -186,9 +186,13 @@ func _drunk_states(moving: bool) -> void:
 			_sing_t = 2.0
 			main.player_sings()
 
-	# Tripping over when running very drunk.
-	if running and moving and p > TRIP_PROMILLE:
-		var per_sec := 0.2 + 0.4 * clampf((p - TRIP_PROMILLE) / 0.7, 0.0, 1.0)
+	# Tripping over when running very drunk, or slipping on snow.
+	if running and moving:
+		var per_sec := 0.0
+		if p > TRIP_PROMILLE:
+			per_sec += 0.2 + 0.4 * clampf((p - TRIP_PROMILLE) / 0.7, 0.0, 1.0)
+		if GameState.weather == "snow":
+			per_sec += 0.15 * (2.5 if GameState.is_lost("shoes") else 1.0)
 		if randf() < per_sec * dt:
 			_trip()
 
@@ -277,10 +281,15 @@ func _hunger_signs() -> void:
 	# Hunger slumps forward; the silly walk leans back and bounces.
 	model.rotation.z = (-0.12 if hungry else 0.0) + model.silly_lean
 	model.position.y = model.silly_bounce + (0.15 if _hic_jolt > 0.0 else 0.0)
-	# Hangover shakes.
+	# Hangover shakes; shivering when cold.
+	var shake := 0.0
 	if GameState.promille < GameState.PROMILLE_HANGOVER:
-		model.position.x = randf_range(-0.025, 0.025)
-		model.position.z = randf_range(-0.025, 0.025)
+		shake = 0.025
+	if GameState.cold >= GameState.COLD_SHIVER:
+		shake = maxf(shake, 0.015 + 0.03 * (GameState.cold - GameState.COLD_SHIVER) / 50.0)
+	if shake > 0.0:
+		model.position.x = randf_range(-shake, shake)
+		model.position.z = randf_range(-shake, shake)
 	else:
 		model.position.x = 0.0
 		model.position.z = 0.0

@@ -285,7 +285,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - **Hikka (yli 1,5 ‰):** hahmo hikkaa välillä ("hik!") ja nytkähtää. Hikan hetkellä taskuvarkaus paljastuu aina.
 - **Rakkaus kaikkiin (2,0–2,5 ‰):** hahmo halaa ohikulkijoita, joihin törmää. Halauksen aikana taskuvarkaus onnistuu lähes aina, eikä halattu suutu.
 - **Laulaminen (yli 2,2 ‰):** hahmo alkaa välillä laulaa (nuotteja nousee). Lähellä olevat ohikulkijat voivat suuttua, ja poliisit voivat huomata.
-- **Rohkeus ja ohilyönnit (yli 2,0 ‰):** lyönnit tekevät tuplavahinkoa, mutta menevät sitä useammin ohi, mitä kovempi humala. Poliisit ja vartijat huomaavat rikoksen kaksi kertaa kauempaa myös hiippaillessa. *(Kylmän tunteminen vähemmän tulee, kun kylmä toteutetaan.)*
+- **Rohkeus ja ohilyönnit (yli 2,0 ‰):** lyönnit tekevät tuplavahinkoa, mutta menevät sitä useammin ohi, mitä kovempi humala. Poliisit ja vartijat huomaavat rikoksen kaksi kertaa kauempaa myös hiippaillessa.
 - **Kaatuilu (yli 2,8 ‰):** juostessa hahmo voi kompastua ja kaatua; se vie healthia ja hetken aikaa.
 - **Tuplanäkö (yli 3,0 ‰):** kuva näkyy kahtena.
 - **Krapula (alle 0,5 ‰):** hahmo tärisee, ja joka toinen lyönti on niin heikko, ettei se tee vahinkoa.
@@ -450,7 +450,8 @@ Lisätty prototyyppiin:
 
 - **Koti ja hukatut tavarat:** kodin paikka (kerrostalo, vihreä ovi) arvotaan joka peliin, ja ensimmäinen päivä alkaa kodin ovelta (myöhemmin herätään muualta). Aamulla hukatut tavarat näkyvät hahmon ajatuskuplassa ensimmäisten 5 metrin ajan ja sen jälkeen ylhäällä keskellä "Etsi:"-listassa; humalassa osa ikoneista muuttuu läiskiksi. Tavarat arvotaan kodin lähelle säteellä, joka kasvaa päivä päivältä. Kaukaa ne ovat harmaita möhkäleitä, ja ilman silmälaseja ne erottuvat vasta aivan läheltä. Kotiovella toimintanappi vie nukkumaan, ja kotona nukuttu yö on paras. Ilman avaimia hahmo nukkuu rappukäytävässä, ja ilman kenkiä vauhti on hitaampi. Kun kaikki tavarat löytyvät ennen kotiin menoa, saa 500 pisteen bonuksen.
 
-- **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot) tai pilvinen (pehmeä valo, ei teräviä varjoja). Sade ja lumi puuttuvat vielä.
+- **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot), pilvinen (pehmeä valo), sade (pisarat, harmaa valo, sumu) tai lumi ja pakkanen (hiutaleet, lumikerros kaduilla, juostessa voi liukastua, kengättä paljon helpommin). Sade ja lumi pysähtyvät ilmaan, kun aika on pysähdyksissä.
+- **Kylmä:** ei mittaria; hahmo tärisee, kun on kylmissään. Kylmä kasvaa sateella ja pakkasella, ilman takkia ja märillä/kylmillä jaloilla nopeammin; aurinkoisella säällä hahmo lämpenee. Kylmissään nälkä kasvaa 1,5-kertaisesti, ja kova kylmä kuluttaa healthia. Humalassa (yli 2 ‰) kylmä tuntuu vähemmän. Kioskissa ja baarissa lämpenee, mutta aika kuluu sillä aikaa. Aamun kylmyys riippuu yöpaikasta.
 
 - **Kotityypit:** kerrostaloasunto (ilman avaimia rappukäytävä), kellarikomero (ilman avaimia riippulukko rikotaan kolmella lyönnillä; kylmä yö) ja kaverin sohva (ovikello; juoma kädessä pääsee aina sisään, muuten kaveri nukkuu joskus eikä avaa sinä päivänä).
 - **Tavaroiden haitat:** ilman silmälaseja kadunnimikyltit ovat sumeita (humalassa kirjaimet myös menevät sekaisin), ilman aurinkolaseja aurinko häikäisee aurinkoisella säällä, ilman takkia lyönnit sattuvat 30 % enemmän ja paljain jaloin taskuvarkaus onnistuu paremmin.
