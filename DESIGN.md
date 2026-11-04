@@ -292,7 +292,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - **Hassu kävely:** kunnon humalassa (yli 2,5 ‰, voimakkaimmillaan noin 3,2 ‰) hahmo kävelee absurdin liioitellusti: korkeita potkuja eteen, heiluvat kädet, pomppiva askel ja taaksepäin kallistuva vartalo.
 - **Väärä suunta:** kovassa humalassa (yli 2,5 ‰) hahmo lähtee välillä aivan eri suuntaan kuin nuoli osoittaa (esim. oikealle painettaessa ylös). Pelaaja voi korjata heti painamalla siihen suuntaan, johon hahmo oikeasti menee. Jos hän vain jatkaa alkuperäisen nuolen painamista, väärä suunta menee ohi itsestään noin 1,5–3 sekunnissa. Mitä kovempi humala, sitä useammin näin käy, ja **juostessa paljon useammin** kuin kävellessä. Väärä suunta voi olla mikä tahansa kahdeksasta suunnasta (myös viistoon), mutta **ei koskaan suoraan vastakkainen**. Jos väärä suunta veisi seinää tai reunaa päin, se peruuntuu, jottei hahmo jää kävelemään paikallaan.
 - **Rohkeus:** lyönnit ovat kovempia ja kylmä tuntuu vähemmän, mutta poliisit huomaavat pelaajan helpommin.
-- **Näkökenttä:** kuva sumenee ja näkökenttä lyhenee.
+- **Näkökenttä:** yli 2,0 promillessa pelihahmon ympärillä on terävä ympyrä, jonka ulkopuoli sumenee sitä enemmän, mitä kovempi humala. Ympyrä pienenee koko ruudun kokoisesta (2,0 ‰) 2,5 metrin säteeseen (3,5 ‰). Hahmon lähellä kuva pysyy selkeänä.
 - **Sammuminen:** kun alkoholimittari on täynnä, hahmo sammuu paikalleen. Se lasketaan nukahtamiseksi.
 
 ### Nukahtaminen väsymyksestä

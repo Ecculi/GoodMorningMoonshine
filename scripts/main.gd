@@ -121,8 +121,7 @@ func _process(delta: float) -> void:
 	_update_sun()
 	_update_focus(delta)
 	tilt_mat.set_shader_parameter("double_vision", clampf((GameState.promille - 3.0) / 0.5, 0.0, 1.0))
-	tilt_mat.set_shader_parameter("drunk",
-		clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
+	_update_drunk_circle()
 	_check_lost_pickups()
 	_check_arrest()
 	_update_signs()
@@ -1157,6 +1156,28 @@ func _build_post_process() -> void:
 	tilt_mat.shader = TILT_SHIFT
 	rect.material = tilt_mat
 	layer.add_child(rect)
+
+
+## Drunk: everything outside a circle around the player gets blurrier, and
+## the circle shrinks from the whole screen (2.0 per mille) to a radius of
+## 2.5 m (3.5 per mille).
+const DRUNK_CIRCLE_MAX := 14.0
+const DRUNK_CIRCLE_MIN := 2.5
+
+
+func _update_drunk_circle() -> void:
+	var t := clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
+	tilt_mat.set_shader_parameter("drunk", t)
+	var vs := get_viewport().get_visible_rect().size
+	var c: Vector3 = player.global_position + Vector3(0, 1.0, 0)
+	if camera.is_position_behind(c):
+		return
+	var r_m := lerpf(DRUNK_CIRCLE_MAX, DRUNK_CIRCLE_MIN, t)
+	var cp := camera.unproject_position(c)
+	var ep := camera.unproject_position(c + Vector3(r_m, 0, 0))
+	tilt_mat.set_shader_parameter("circle_center", cp / vs)
+	tilt_mat.set_shader_parameter("circle_radius", (ep - cp).length() / vs.y)
+	tilt_mat.set_shader_parameter("aspect", vs.x / vs.y)
 
 
 ## The sharp tilt-shift band follows the player vertically on screen.

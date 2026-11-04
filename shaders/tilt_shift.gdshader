@@ -1,7 +1,8 @@
 shader_type canvas_item;
 // Tilt-shift: sharp band in the middle, blur towards the top and bottom,
 // boosted colours so the city looks like a miniature model.
-// `drunk` adds blur everywhere and a slight wobble.
+// `drunk` adds a slight wobble and blurs everything outside a sharp
+// circle around the player; the circle shrinks as the drinking goes on.
 
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear, repeat_disable;
 uniform float focus_center = 0.58;
@@ -11,6 +12,10 @@ uniform float max_blur = 7.0;
 uniform float saturation = 1.25;
 uniform float contrast = 1.12;
 uniform float drunk = 0.0;
+// Sharp circle around the player (screen UV, radius in screen heights).
+uniform vec2 circle_center = vec2(0.5, 0.5);
+uniform float circle_radius = 2.0;
+uniform float aspect = 1.7778;
 // Sun glare without sunglasses (0..1), strongest towards the top.
 uniform float glare = 0.0;
 // Double vision when very drunk (0..1): a second, shifted image.
@@ -21,7 +26,10 @@ void fragment() {
 	uv.x += sin(uv.y * 9.0 + TIME * 1.7) * 0.004 * drunk;
 	float d = abs(uv.y - focus_center);
 	float amount = smoothstep(focus_half, focus_half + falloff, d);
-	amount = clamp(amount + drunk * 0.6, 0.0, 1.0);
+	// Drunk blur only outside the circle, with a soft edge.
+	float dc = length((SCREEN_UV - circle_center) * vec2(aspect, 1.0));
+	float outside = smoothstep(circle_radius, circle_radius * 1.6, dc);
+	amount = clamp(max(amount, outside * drunk), 0.0, 1.0);
 	vec2 step_px = SCREEN_PIXEL_SIZE * max_blur * amount;
 	vec3 col = vec3(0.0);
 	float wsum = 0.0;
@@ -37,7 +45,8 @@ void fragment() {
 	if (double_vision > 0.0) {
 		vec2 shift = vec2(0.025 + 0.01 * sin(TIME * 0.7), 0.006) * double_vision;
 		vec3 ghost = texture(screen_tex, uv + shift).rgb;
-		col = mix(col, ghost, 0.45 * double_vision);
+		// Double vision is weaker near the player.
+		col = mix(col, ghost, 0.45 * double_vision * mix(0.3, 1.0, outside));
 	}
 	float l = dot(col, vec3(0.299, 0.587, 0.114));
 	col = mix(vec3(l), col, saturation);
