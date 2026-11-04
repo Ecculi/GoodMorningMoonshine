@@ -29,7 +29,8 @@ void fragment() {
 	// Drunk blur only outside the circle, with a soft edge.
 	float dc = length((SCREEN_UV - circle_center) * vec2(aspect, 1.0));
 	float outside = smoothstep(circle_radius, circle_radius * 1.6, dc);
-	amount = clamp(max(amount, outside * drunk), 0.0, 1.0);
+	// Some blur also inside the circle, stronger outside it.
+	amount = clamp(max(amount, mix(0.3, 1.0, outside) * drunk), 0.0, 1.0);
 	vec2 step_px = SCREEN_PIXEL_SIZE * max_blur * amount;
 	vec3 col = vec3(0.0);
 	float wsum = 0.0;

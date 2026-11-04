@@ -14,6 +14,7 @@ const BlockBuilder = preload("res://scripts/block_builder.gd")
 const LostItemNode = preload("res://scripts/lost_item_node.gd")
 const ModalUI = preload("res://scripts/modal_ui.gd")
 const DebugTools = preload("res://scripts/debug_tools.gd")
+const Car = preload("res://scripts/car.gd")
 
 ## Battery use per second while the phone is open, by page.
 const PHONE_DRAIN := [1.2, 1.8, 3.5]
@@ -63,6 +64,8 @@ var segment: Vector3i = CityMap.START
 var npcs: Array = []
 var items: Array = []
 var lost_nodes: Array = []
+var cars: Array = []
+var _car_timer := 3.0
 var rng := RandomNumberGenerator.new()
 
 ## Items left on the ground in blocks visited today: key -> [[kind, pos, value], ...].
@@ -116,6 +119,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_process_modal(delta)
 	_check_transitions()
+	_update_traffic()
 	var target_x := clampf(player.position.x, -10.0, 10.0)
 	camera.position.x = lerpf(camera.position.x, target_x, 1.0 - exp(-4.0 * delta))
 	_update_sun()
@@ -196,6 +200,10 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 
 
 func _clear_block_content() -> void:
+	for c in cars:
+		c.queue_free()
+	cars.clear()
+	_car_timer = rng.randf_range(2.0, 8.0)
 	for ln in lost_nodes:
 		ln.queue_free()
 	lost_nodes.clear()
@@ -870,6 +878,50 @@ func _spawn_npc(at_edge: bool, role := "civ"):
 	return n
 
 
+# --- Traffic ----------------------------------------------------------------------
+
+## Cars come now and then from either end of the block. No cars on the
+## pedestrian street (Rotuaari).
+func _update_traffic() -> void:
+	var dt := GameState.world_dt
+	if dt <= 0.0 or GameState.over or _is_pedestrian_street():
+		return
+	_car_timer -= dt
+	if _car_timer <= 0.0:
+		_car_timer = rng.randf_range(6.0, 16.0)
+		var d := 1 if rng.randf() < 0.5 else -1
+		var c = Car.new()
+		c.main = self
+		c.setup(rng, d, -Car.EDGE_X * d + d * 0.5)
+		add_child(c)
+		cars.append(c)
+
+
+func _is_pedestrian_street() -> bool:
+	return CityMap.street_name(segment) == "Kauppurienkatu"
+
+
+func remove_car(c) -> void:
+	cars.erase(c)
+	c.queue_free()
+
+
+## The zebra crossings are at both ends of the block, across this street.
+func crosswalk_xs() -> Array:
+	return [-(BLOCK_HALF + 1.6), BLOCK_HALF + 1.6]
+
+
+func someone_on_crosswalk(cw_x: float) -> bool:
+	var people: Array = [player]
+	for n in npcs:
+		if not n.is_down():
+			people.append(n)
+	for pp in people:
+		if absf(pp.position.x - cw_x) < 1.4 and pp.position.z > -5.0 and pp.position.z < 2.5:
+			return true
+	return false
+
+
 # --- Police -----------------------------------------------------------------------
 
 ## How long police must hold on to the player (seconds of world time).
@@ -1158,9 +1210,9 @@ func _build_post_process() -> void:
 	layer.add_child(rect)
 
 
-## Drunk: everything outside a circle around the player gets blurrier, and
-## the circle shrinks from the whole screen (2.0 per mille) to a radius of
-## 2.5 m (3.5 per mille).
+## Drunk: everything gets blurrier (a little inside a circle around the
+## player, more outside it), and the circle shrinks quickly from the whole
+## screen (2.0 per mille) to a radius of 2.5 m (3.0 per mille and up).
 const DRUNK_CIRCLE_MAX := 14.0
 const DRUNK_CIRCLE_MIN := 2.5
 
@@ -1172,7 +1224,8 @@ func _update_drunk_circle() -> void:
 	var c: Vector3 = player.global_position + Vector3(0, 1.0, 0)
 	if camera.is_position_behind(c):
 		return
-	var r_m := lerpf(DRUNK_CIRCLE_MAX, DRUNK_CIRCLE_MIN, t)
+	var shrink := pow(clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.0, 0.0, 1.0), 0.6)
+	var r_m := lerpf(DRUNK_CIRCLE_MAX, DRUNK_CIRCLE_MIN, shrink)
 	var cp := camera.unproject_position(c)
 	var ep := camera.unproject_position(c + Vector3(r_m, 0, 0))
 	tilt_mat.set_shader_parameter("circle_center", cp / vs)

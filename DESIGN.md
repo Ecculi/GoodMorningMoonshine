@@ -64,7 +64,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - Katujen järjestys on tiedostossa `scripts/city_map.gd`, jossa sitä on helppo korjata. *Avoinna:* osittaisten katujen (Ojakatu, Vaarankatu, Kajaaninkatu, Linnankatu, Heikinkatu) ja puistojen toteutus.
 - **Maamerkit:** Kauppatori, kauppahalli, Rotuaari, tuomiokirkko, poliisiasema, rautatieasema, puistot (Snellmanin, Otto Karhin, Franzénin, Vaaranpuisto, Mannerheimin) ja kanava. Meri on luoteessa.
 - Käytetään **oikeita kadunnimiä ja julkisia paikkoja**. **Yritysten nimet** (ravintolat, hotellit, kauppakeskukset) korvataan keksityillä nimillä.
-- **Autoja liikkuu kaduilla tosi harvoin.** Auto tönäisee ja vie healthia, ja humalassa sitä on vaikeampi väistää. **Kävelykadulla (Rotuaari) ei ole autoja lainkaan.**
+- **Autoja liikkuu kaduilla harvakseltaan** (oikeanpuoleinen liikenne, satunnaisesti kumpaankin suuntaan). Autot pysähtyvät, jos joku (pelaaja tai muu hahmo) on suojatiellä, ja toisen auton taakse. Muualla tiellä kävelevän päälle auto ajaa: pelaajalta se vie healthia (20), ohikulkija kaatuu. Humalassa autoa on vaikeampi väistää. **Kävelykadulla (Rotuaari eli Kauppurienkatu) ei ole autoja lainkaan.**
 - **Veteen voi pudota:** humalassa horjuva hahmo voi pudota rannasta, laiturilta tai kanavaan. Hän pääsee ylös, mutta on läpimärkä: **tulee todella kylmä**, ja vaatteet toimivat kuin ne olisivat hukassa, kunnes ne kuivuvat sisätiloissa. Kylmä vesi myös **piristää**, joten väsymys vähenee vähän. **Tavarat eivät huku** veteen pudotessa.
 - **Rakennuksiin pääsee sisälle**, esimerkiksi kioskiin ja rautatieasemalle.
 - Osassa rakennuksista on ovet kahdelle eri kadulle. Ne toimivat **oikoteinä**: yhdestä ovesta sisään, toisesta ulos eri kadulle.
@@ -292,7 +292,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - **Hassu kävely:** kunnon humalassa (yli 2,5 ‰, voimakkaimmillaan noin 3,2 ‰) hahmo kävelee absurdin liioitellusti: korkeita potkuja eteen, heiluvat kädet, pomppiva askel ja taaksepäin kallistuva vartalo.
 - **Väärä suunta:** kovassa humalassa (yli 2,5 ‰) hahmo lähtee välillä aivan eri suuntaan kuin nuoli osoittaa (esim. oikealle painettaessa ylös). Pelaaja voi korjata heti painamalla siihen suuntaan, johon hahmo oikeasti menee. Jos hän vain jatkaa alkuperäisen nuolen painamista, väärä suunta menee ohi itsestään noin 1,5–3 sekunnissa. Mitä kovempi humala, sitä useammin näin käy, ja **juostessa paljon useammin** kuin kävellessä. Väärä suunta voi olla mikä tahansa kahdeksasta suunnasta (myös viistoon), mutta **ei koskaan suoraan vastakkainen**. Jos väärä suunta veisi seinää tai reunaa päin, se peruuntuu, jottei hahmo jää kävelemään paikallaan.
 - **Rohkeus:** lyönnit ovat kovempia ja kylmä tuntuu vähemmän, mutta poliisit huomaavat pelaajan helpommin.
-- **Näkökenttä:** yli 2,0 promillessa pelihahmon ympärillä on terävä ympyrä, jonka ulkopuoli sumenee sitä enemmän, mitä kovempi humala. Ympyrä pienenee koko ruudun kokoisesta (2,0 ‰) 2,5 metrin säteeseen (3,5 ‰). Hahmon lähellä kuva pysyy selkeänä.
+- **Näkökenttä:** yli 2,0 promillessa kuva sumenee: pelihahmon ympärillä olevan ympyrän sisällä vähän, ulkopuolella enemmän, ja sitä enemmän mitä kovempi humala. Ympyrä pienenee nopeasti koko ruudun kokoisesta (2,0 ‰) 2,5 metrin säteeseen (3,0 ‰ ja enemmän). Hahmon lähellä kuva pysyy selvimpänä.
 - **Sammuminen:** kun alkoholimittari on täynnä, hahmo sammuu paikalleen. Se lasketaan nukahtamiseksi.
 
 ### Nukahtaminen väsymyksestä
