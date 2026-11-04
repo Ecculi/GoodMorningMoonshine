@@ -106,7 +106,8 @@ func _draw() -> void:
 	if _hurt > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0.8, 0.0, 0.0, _hurt * 0.5))
 
-	_draw_heart(Vector2(46, 46), 58.0, clampf(GameState.health / 100.0, 0.0, 1.0))
+	_draw_heart(Vector2(46, 46), 58.0, clampf(GameState.health / 100.0, 0.0, 1.0),
+		clampf(GameState.strain / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_charge()
@@ -134,17 +135,26 @@ func _heart_points(center: Vector2, size: float) -> PackedVector2Array:
 	return pts
 
 
-func _draw_heart(center: Vector2, size: float, frac: float) -> void:
+## Red = health, light pink on top = the part temporarily used up by
+## punching too fast (comes back after resting).
+func _draw_heart(center: Vector2, size: float, frac: float, strain := 0.0) -> void:
 	var pts := _heart_points(center, size)
 	draw_colored_polygon(pts, Color(0.32, 0.32, 0.36, 0.9))
 	var s := size / 34.0
 	var top := center.y - 13.0 * s
 	var bottom := center.y + 17.0 * s
 	var level := lerpf(bottom, top, frac)
-	var clip := PackedVector2Array([Vector2(center.x - size, level), Vector2(center.x + size, level),
+	var red_level := lerpf(bottom, top, maxf(0.0, frac - strain))
+	var pink_clip := PackedVector2Array([Vector2(center.x - size, level), Vector2(center.x + size, level),
 		Vector2(center.x + size, bottom + 2.0), Vector2(center.x - size, bottom + 2.0)])
-	for poly in Geometry2D.intersect_polygons(pts, clip):
-		draw_colored_polygon(poly, Color(0.9, 0.12, 0.18))
+	if bottom - level > 0.5:
+		for poly in Geometry2D.intersect_polygons(pts, pink_clip):
+			draw_colored_polygon(poly, Color(1.0, 0.65, 0.72))
+	var clip := PackedVector2Array([Vector2(center.x - size, red_level), Vector2(center.x + size, red_level),
+		Vector2(center.x + size, bottom + 2.0), Vector2(center.x - size, bottom + 2.0)])
+	if bottom - red_level > 0.5:
+		for poly in Geometry2D.intersect_polygons(pts, clip):
+			draw_colored_polygon(poly, Color(0.9, 0.12, 0.18))
 	var outline := pts.duplicate()
 	outline.append(pts[0])
 	draw_polyline(outline, Color(0.08, 0.08, 0.1), 2.0, true)

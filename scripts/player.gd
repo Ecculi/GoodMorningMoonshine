@@ -77,6 +77,7 @@ func throw_charge() -> float:
 
 func _process(delta: float) -> void:
 	_clock += delta
+	_update_rest(delta)
 	if GameState.over or GameState.modal != "":
 		GameState.moving = false
 		_press_time = -1.0
@@ -565,6 +566,7 @@ func _short_action() -> void:
 			_consume_hand_item()
 			return
 	model.punch()
+	_punch_strain()
 	if target == null:
 		return
 	var p := GameState.promille
@@ -581,6 +583,36 @@ func _short_action() -> void:
 	elif p < GameState.PROMILLE_HANGOVER and randf() < 0.5:
 		dmg = 0  # hangover: a feeble punch that does no harm
 	target.take_hit(dmg, self)
+
+
+## Fighting system: one punch is free, but punching again right away
+## (within SPAM_WINDOW) uses up health temporarily. It comes back slowly
+## once you have neither punched nor run for REST_DELAY seconds.
+const SPAM_WINDOW := 0.7
+const SPAM_COST := 7.0
+const REST_DELAY := 5.0
+const STRAIN_RECOVERY := 4.0
+var _last_punch := -10.0
+var _rest_t := 0.0
+
+
+func _punch_strain() -> void:
+	if _clock - _last_punch < SPAM_WINDOW:
+		GameState.add_strain(SPAM_COST)
+		if GameState.strain_broke:
+			GameState.strain_broke = false
+			main.hud.flash_hurt()
+			main.popup("-50 %", position + Vector3(0, 2.3, 0), Color(1, 0.4, 0.45))
+	_last_punch = _clock
+	_rest_t = 0.0
+
+
+func _update_rest(delta: float) -> void:
+	if running and GameState.moving:
+		_rest_t = 0.0
+	_rest_t += delta
+	if _rest_t > REST_DELAY:
+		GameState.recover_strain(STRAIN_RECOVERY * delta)
 
 
 func _consume_hand_item() -> void:

@@ -325,6 +325,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 ## Tappelu
 
 - Pelissä on tappelua. Pelaaja voi lyödä muita, ja muut voivat hyökätä pelaajan kimppuun.
+- **Rämpytys ei kannata:** yksi lyönti on ilmainen, mutta jos lyö uudestaan heti perään (alle 0,7 s), health kuluu väliaikaisesti (7 / lyönti). Väliaikainen kulutus näkyy sydämessä vaaleanpunaisena. Kun pelaaja ei ole lyönyt eikä juossut 5 sekuntiin, vaaleanpunainen osa palautuu hitaasti. Väliaikainen kulutus ei voi koskaan tappaa: jos se kuluttaisi kaiken jäljellä olevan healthin, pelaaja menettää pysyvästi puolet sen hetkisestä healthista ja vaaleanpunainen osa nollautuu.
 - **Erillistä torjuntaa ei ole.** Iskuja voi väistää liikkumalla, esimerkiksi ylös tai alas kadun syvyyssuunnassa.
 - Osalla hahmoista isku näkyy hetkeä ennen osumaa (esim. käsi nousee), mutta **kaikista hahmoista ei näe, milloin ne ovat lyömässä**.
 - **Heittäminen:** heitetyn esineen vaikutus riippuu esineestä:
