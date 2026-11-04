@@ -296,13 +296,14 @@ func is_helpless() -> bool:
 const CURB_Z := [-5.0, 2.5]
 
 
-func _stumble_chance(base: float) -> float:
+## `low`/`high`: chance at 2.0 and at 3.5 per mille.
+func _stumble_chance(low: float, high: float) -> float:
 	var p := GameState.promille
 	var c := 0.0
 	if p > GameState.PROMILLE_DRUNK:
-		c += base + 0.5 * clampf((p - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
+		c += lerpf(low, high, clampf((p - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
 	if GameState.weather == "snow":
-		c += 0.15 * (2.0 if GameState.is_lost("shoes") else 1.0)
+		c += 0.05 * (2.0 if GameState.is_lost("shoes") else 1.0)
 	if running:
 		c *= 1.5
 	return clampf(c, 0.0, 0.9)
@@ -313,7 +314,7 @@ func _check_stumbles(before: Vector3) -> void:
 	if absf(position.x) < BLOCK_HALF_X:
 		for cz in CURB_Z:
 			if (before.z - cz) * (position.z - cz) < 0.0:
-				if randf() < _stumble_chance(0.1):
+				if randf() < _stumble_chance(0.02, 0.15):
 					_trip()
 					return
 	# Into an obstacle: blocked; maybe down.
@@ -325,7 +326,7 @@ func _check_stumbles(before: Vector3) -> void:
 			position.x = o[0] + out.x * min_d
 			position.z = o[1] + out.y * min_d
 			if Vector2(before.x - o[0], before.z - o[1]).length() >= min_d - 0.01:
-				if randf() < _stumble_chance(0.25):
+				if randf() < _stumble_chance(0.08, 0.35):
 					_trip()
 			return
 
