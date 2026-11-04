@@ -25,6 +25,11 @@ var _hit_cool := 0.0
 var _brake_in := -1.0
 var braking := false
 var _stop_t := 0.0
+## Stopped because the driver got out to fight; `driver` is that NPC.
+var parked := false
+var driver = null
+## Half the car's width (for bumping into its side).
+const HALF_WIDTH := 0.85
 
 
 func setup(rng: RandomNumberGenerator, d: int, x: float) -> void:
@@ -61,6 +66,13 @@ func _process(_delta: float) -> void:
 	if dt <= 0.0:
 		return
 	_hit_cool = maxf(0.0, _hit_cool - dt)
+	if parked:
+		speed = 0.0
+		# The driver is gone (block change etc.): drive on.
+		if driver == null or not is_instance_valid(driver):
+			parked = false
+			driver = null
+		return
 	var want := MAX_SPEED
 	if _brake_in >= 0.0:
 		_brake_in -= dt
@@ -102,10 +114,27 @@ func _process(_delta: float) -> void:
 			want = minf(want, maxf(0.0, (gap - FOLLOW_GAP) * 2.0))
 	speed = move_toward(speed, want, ACCEL * dt)
 	position.x += dir * speed * dt
-	if speed > 2.0 and _hit_cool <= 0.0:
+	if speed > 2.0 and _hit_cool <= 0.0 and not parked:
 		_check_hits()
 	if absf(position.x) > EDGE_X:
 		main.remove_car(self)
+
+
+## Someone walked into the side: sometimes the car stops and the driver
+## gets out to fight.
+func side_bump(p: Node3D) -> void:
+	if parked or driver != null or main.rng.randf() > 0.33:
+		return
+	parked = true
+	speed = 0.0
+	var side := signf(p.position.z - position.z)
+	driver = main.spawn_driver(self, Vector3(position.x, 0.0, position.z + side * (HALF_WIDTH + 0.45)))
+
+
+## The driver is back in the car: drive on.
+func driver_back() -> void:
+	driver = null
+	parked = false
 
 
 ## Anyone in the car's way on the road gets hit.

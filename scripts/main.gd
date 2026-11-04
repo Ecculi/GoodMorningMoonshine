@@ -902,6 +902,17 @@ func _is_pedestrian_street() -> bool:
 	return CityMap.street_name(segment) == "Kauppurienkatu"
 
 
+## A driver gets out of `car` angry and starts a fight.
+func spawn_driver(car, pos: Vector3):
+	var n = _spawn_npc(false)
+	n.position = pos
+	n.car_ref = car
+	n.state = n.S.FIGHT
+	n._mark.visible = true
+	popup("!", pos + Vector3(0, 2.3, 0), Color(1, 0.3, 0.2))
+	return n
+
+
 func remove_car(c) -> void:
 	cars.erase(c)
 	c.queue_free()

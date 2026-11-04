@@ -143,6 +143,7 @@ func _process(delta: float) -> void:
 	position = main.clamp_walkable(position)
 	if moving:
 		_check_stumbles(before)
+	_collide_cars(before)
 	# A wrong way that runs into a wall or the curb would leave the
 	# character silly-walking on the spot: drop it instead.
 	if wrong_way != Vector2.ZERO and moving:
@@ -358,6 +359,27 @@ func _check_stumbles(before: Vector3) -> void:
 				if randf() < _stumble_chance(0.08, 0.35):
 					_trip()
 			return
+
+
+## Cars are solid: no walking through them. Walking into a side can make
+## the driver stop and get out.
+func _collide_cars(before: Vector3) -> void:
+	for c in main.cars:
+		var hx: float = main.Car.HALF_LEN + 0.25
+		var hz: float = main.Car.HALF_WIDTH + 0.25
+		var dx: float = position.x - c.position.x
+		var dz: float = position.z - c.position.z
+		if absf(dx) >= hx or absf(dz) >= hz:
+			continue
+		var pen_x := hx - absf(dx)
+		var pen_z := hz - absf(dz)
+		if pen_z < pen_x:
+			position.z = c.position.z + (1.0 if dz >= 0.0 else -1.0) * hz
+			var was_out := absf(before.z - c.position.z) >= hz - 0.02
+			if was_out:
+				c.side_bump(self)
+		else:
+			position.x = c.position.x + (1.0 if dx >= 0.0 else -1.0) * hx
 
 
 func _trip() -> void:

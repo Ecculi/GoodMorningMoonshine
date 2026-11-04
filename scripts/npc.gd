@@ -45,6 +45,9 @@ var hit_damage := HIT_DAMAGE
 var stationary := false
 var _far_t := 0.0
 var _hug_t := 0.0
+## A driver who got out of this car; goes back to it when done.
+var car_ref = null
+var _driver_far_t := 0.0
 
 var _windup := -1.0
 var _cooldown := 0.0
@@ -171,6 +174,21 @@ func _process(_delta: float) -> void:
 					hp = 3
 					notice()
 		S.LEAVE:
+			if car_ref != null and is_instance_valid(car_ref):
+				# A driver walks back to the car and drives off.
+				var to := Vector2(car_ref.position.x - position.x, car_ref.position.z - position.z)
+				dir = 1 if to.x >= 0.0 else -1
+				if to.length() < 1.3:
+					car_ref.driver_back()
+					main.npcs.erase(self)
+					queue_free()
+					return
+				var stp := to.normalized() * minf(1.4 * dt, to.length())
+				position.x += stp.x
+				position.z += stp.y
+				model.animate(0.8, dt, 0.8)
+				model.rotation.y = 0.0 if dir > 0 else PI
+				return
 			# Limp away from the player towards the nearer block end.
 			position.x += dir * LEAVE_SPEED * dt
 			model.animate(0.6, dt, 0.6)
@@ -228,6 +246,16 @@ func _fight(dt: float) -> void:
 	var p = main.player
 	var dx: float = p.position.x - position.x
 	var dz: float = p.position.z - position.z
+	# A driver gives up when the player gets away, and goes back to the car.
+	if car_ref != null:
+		if Vector2(dx, dz).length() > 10.0:
+			_driver_far_t += dt
+			if _driver_far_t > 3.0:
+				state = S.LEAVE
+				_mark.visible = false
+				return
+		else:
+			_driver_far_t = 0.0
 	if _windup < 0.0:
 		dir = 1 if dx >= 0.0 else -1
 	_cooldown -= dt
