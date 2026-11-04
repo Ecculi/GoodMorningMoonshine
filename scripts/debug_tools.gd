@@ -1,9 +1,9 @@
 extends CanvasLayer
 ## Debug helpers (only in debug builds, e.g. when run from the editor):
-## F1 = health full, F2 = alcohol +0.5 per mille per press (no limit),
+## F1 = health full, F2 = alcohol +0.1 per mille per press (no limit),
 ## F3 = money +100 €. The same as small on-screen buttons for touch screens.
 
-const DEBUG_PROMILLE_STEP := 0.5
+const DEBUG_PROMILLE_STEP := 0.1
 
 
 func _ready() -> void:
