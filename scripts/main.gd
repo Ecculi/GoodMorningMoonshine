@@ -1242,6 +1242,8 @@ func _update_drunk_circle() -> void:
 	var t := clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
 	tilt_mat.set_shader_parameter("drunk", t)
 	tilt_mat.set_shader_parameter("heavy", clampf((GameState.promille - 3.0) / 0.5, 0.0, 1.0))
+	# The edges of the view darken from 1.5 per mille on.
+	tilt_mat.set_shader_parameter("vignette", clampf((GameState.promille - 1.5) / 2.0, 0.0, 1.0))
 	var vs := get_viewport().get_visible_rect().size
 	var c: Vector3 = player.global_position + Vector3(0, 1.0, 0)
 	if camera.is_position_behind(c):

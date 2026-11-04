@@ -18,6 +18,8 @@ uniform float circle_radius = 2.0;
 uniform float aspect = 1.7778;
 // Above 3 per mille (0..1): much stronger blur outside the circle.
 uniform float heavy = 0.0;
+// Drunk vignette (0..1): the edges of the view darken.
+uniform float vignette = 0.0;
 // Sun glare without sunglasses (0..1), strongest towards the top.
 uniform float glare = 0.0;
 // Double vision when very drunk (0..1): a second, shifted image.
@@ -60,5 +62,10 @@ void fragment() {
 	col = mix(vec3(l), col, saturation);
 	col = (col - 0.5) * contrast + 0.5;
 	col = mix(col, vec3(1.0, 0.97, 0.88), glare * (0.45 + 0.55 * (1.0 - SCREEN_UV.y)));
+	if (vignette > 0.0) {
+		float r = length((SCREEN_UV - vec2(0.5)) * vec2(aspect, 1.0)) / (0.5 * length(vec2(aspect, 1.0)));
+		float inner = mix(0.8, 0.3, vignette);
+		col *= 1.0 - smoothstep(inner, inner + 0.55, r) * mix(0.35, 0.85, vignette);
+	}
 	COLOR = vec4(col, 1.0);
 }

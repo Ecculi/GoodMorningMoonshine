@@ -282,6 +282,7 @@ Krapula ei kovene päivien mukaan.
 Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 
 - **Horjuminen:** ohjaus ei mene aivan suoraan, ja lyönnit menevät joskus ohi.
+- **Vinjetti (yli 1,5 ‰):** näkökentän reunat tummuvat, ja tummuus voimistuu ja leviää kohti keskustaa promillejen noustessa (voimakkaimmillaan 3,5 ‰).
 - **Hikka (yli 1,5 ‰):** hahmo hikkaa välillä ("hik!") ja nytkähtää. Hikan hetkellä taskuvarkaus paljastuu aina.
 - **Rakkaus kaikkiin (2,0–2,5 ‰):** hahmo halaa ohikulkijoita, joihin törmää. Halauksen aikana taskuvarkaus onnistuu lähes aina, eikä halattu suutu.
 - **Laulaminen (yli 2,2 ‰):** hahmo alkaa välillä laulaa (nuotteja nousee). Lähellä olevat ohikulkijat voivat suuttua, ja poliisit voivat huomata.
