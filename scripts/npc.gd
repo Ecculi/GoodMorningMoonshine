@@ -145,6 +145,7 @@ func _process(_delta: float) -> void:
 	if _rise_t > 0.0:
 		_rise_t -= dt
 		return
+	var start_pos := position
 	match state:
 		S.WALK:
 			_walk(dt)
@@ -189,7 +190,7 @@ func _process(_delta: float) -> void:
 				position.x += stp.x
 				position.z += stp.y
 				model.animate(0.8, dt, 0.8)
-				model.rotation.y = 0.0 if dir > 0 else PI
+				_turn(position - start_pos, dt)
 				return
 			# Limp away from the player towards the nearer block end.
 			position.x += dir * LEAVE_SPEED * dt
@@ -203,7 +204,22 @@ func _process(_delta: float) -> void:
 	if state != S.KO:
 		position = main.push_out_of_cars(position)
 	if state != S.KO:
-		model.rotation.y = 0.0 if dir > 0 else PI
+		_turn(position - start_pos - Vector3(_knock * dt, 0, 0), dt)
+
+
+## Turn smoothly towards where this person is going (any direction, like
+## the player). Standing still: face along `dir` (towards the player when
+## fighting).
+func _turn(moved: Vector3, dt: float) -> void:
+	var target: float
+	if Vector2(moved.x, moved.z).length() > 0.2 * dt:
+		target = atan2(-moved.z, moved.x)
+	elif state == S.FIGHT or state == S.CHASE:
+		var p = main.player
+		target = atan2(-(p.position.z - position.z), p.position.x - position.x)
+	else:
+		target = 0.0 if dir > 0 else PI
+	model.rotation.y = lerp_angle(model.rotation.y, target, 1.0 - exp(-10.0 * dt))
 
 
 func _walk(dt: float) -> void:

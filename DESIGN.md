@@ -143,7 +143,7 @@ Krapula ei kovene päivien mukaan.
 
 ### Tavara kädessä ja muovipussit
 
-- **Hahmo kääntyy pehmeästi kulkusuuntaan**, myös ylös, alas ja viistoon (heittoa tähdätessä tähtäyssuuntaan).
+- **Hahmo kääntyy pehmeästi kulkusuuntaan**, myös ylös, alas ja viistoon (heittoa tähdätessä tähtäyssuuntaan). Samoin kaikki muut hahmot (ohikulkijat, poliisit, vartijat, kuljettajat); paikallaan tappeluun valmistautuessaan ne katsovat pelaajaa.
 - **Kontrollit ovat helpot.** Tavarat poimitaan automaattisesti kävelemällä niiden päälle.
 - Hahmolla on **yksi tavara kädessä**. Kun hän koskee uuteen tavaraan, käden tavara **vaihtuu automaattisesti** uuteen.
 - Kadulla voi olla **muovipusseja**, jotka hahmo nappaa käteen automaattisesti päälle kävellessään.
