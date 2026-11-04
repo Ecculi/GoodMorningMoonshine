@@ -267,7 +267,7 @@ func take_hit(dmg: int, attacker: Node3D) -> void:
 		# Cars throw people much further than fists.
 		# Knocked away from the punch.
 		var away := signf(position.x - attacker.position.x)
-		var push := Vector3(away * randf_range(5.0, 7.0), randf_range(2.0, 3.0), randf_range(-0.6, 0.6))
+		var push := Vector3(away * randf_range(1.3, 1.8), randf_range(1.3, 1.8), randf_range(-0.3, 0.3))
 		if attacker.has_method("_check_hits"):
 			push = Vector3(attacker.dir * 7.0, 3.5, randf_range(-0.8, 0.8))
 		_knock_out(push)
