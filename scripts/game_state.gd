@@ -44,6 +44,10 @@ const COLD_SHIVER := 50.0
 const COLD_HUNGRY := 50.0
 const COLD_HURTS := 80.0
 const COLD_INDOOR_WARM := 4.0
+## Ways to warm up when cold: running (per second), each punch thrown,
+## and a strong drink (see Item.DRINK_WARMTH).
+const COLD_RUN_WARM := 1.5
+const COLD_PUNCH_WARM := 3.0
 
 const TIRED_RATE := 0.5
 const COFFEE_AWAKE := 35.0
@@ -216,7 +220,15 @@ func cold_rate() -> float:
 		r += 0.2
 	if r > 0.0 and promille > PROMILLE_DRUNK:
 		r *= 0.6
+	# Running keeps you warm.
+	if running and moving:
+		r -= COLD_RUN_WARM
 	return r
+
+
+## Warms the character up right away (a punch, a strong drink).
+func warm_up(amount: float) -> void:
+	cold = maxf(0.0, cold - amount)
 
 
 ## Coffee or an energy drink: less tired; two in a short time = jitters.
@@ -535,6 +547,14 @@ func format_promille(p: float) -> String:
 func _die(cause: String) -> void:
 	over = true
 	player_died.emit(cause)
+
+
+## Falls asleep on the spot (e.g. after a fall when drowsy).
+func fall_asleep(cause: String) -> void:
+	if over:
+		return
+	sleep_place = "street"
+	_end_day(cause)
 
 
 func _end_day(cause: String) -> void:

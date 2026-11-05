@@ -17,7 +17,8 @@ const DebugTools = preload("res://scripts/debug_tools.gd")
 const Car = preload("res://scripts/car.gd")
 
 ## Battery use per second while the phone is open, by page.
-const PHONE_DRAIN := [1.2, 1.8, 3.5]
+## Battery per second of use, by page. Drains only while the phone is open.
+const PHONE_DRAIN := [0.6, 0.9, 1.75]
 const KIOSK_OPTIONS := [
 	{"kind": "bottle", "price": 3, "alcohol": true},
 	{"kind": "food", "price": 2, "alcohol": false},
@@ -728,6 +729,7 @@ func _new_day() -> void:
 	_searched_bins.clear()
 	_friend_refused = false
 	arrest = 0.0
+	player.wake_up()
 	_enter_block(GameState.wake_seg, GameState.wake_pos, 1 if rng.randf() < 0.5 else -1)
 	hud.show_pocket_check()
 	if GameState.sleep_place == "jail":

@@ -27,6 +27,8 @@ const DRINK_PROMILLE := {Drink.BOTTLE: 0.4, Drink.BEER: 0.25, Drink.SPIRITS: 0.6
 const DRINK_COLOR := {Drink.BOTTLE: Color(0.18, 0.42, 0.2), Drink.BEER: Color(0.45, 0.25, 0.08),
 	Drink.SPIRITS: Color(0.85, 0.9, 0.95), Drink.MYSTERY: Color(0.55, 0.2, 0.7)}
 var drink: Drink = Drink.BOTTLE
+## How much a drink warms up a cold character: strong stuff burns warm.
+const DRINK_WARMTH := {Drink.BOTTLE: 5.0, Drink.BEER: 0.0, Drink.SPIRITS: 25.0, Drink.MYSTERY: 20.0}
 
 
 func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:

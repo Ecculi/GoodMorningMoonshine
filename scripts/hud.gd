@@ -86,6 +86,47 @@ func blackout(seconds: float) -> void:
 	_fade_speed = 1.0 / maxf(seconds, 0.1)
 
 
+## Phone icon in the top right corner: tap or click it to open the phone;
+## the key is written under it.
+func _phone_icon_rect(vs: Vector2) -> Rect2:
+	return Rect2(Vector2(vs.x - 66, 12), Vector2(48, 78))
+
+
+func _draw_phone_icon(vs: Vector2, font: Font) -> void:
+	if mode != "" or GameState.modal != "":
+		return
+	var r := _phone_icon_rect(vs)
+	var body := Rect2(r.position + Vector2(10, 0), Vector2(28, 48))
+	var col := Color(0.12, 0.12, 0.14)
+	for c in [Vector2(3, 3), Vector2(25, 3), Vector2(3, 45), Vector2(25, 45)]:
+		draw_circle(body.position + c, 3.0, col)
+	draw_rect(Rect2(body.position + Vector2(0, 3), Vector2(28, 42)), col)
+	draw_rect(Rect2(body.position + Vector2(3, 0), Vector2(22, 48)), col)
+	# Screen and home button.
+	draw_rect(Rect2(body.position + Vector2(4, 6), Vector2(20, 32)), Color(0.45, 0.7, 0.95))
+	draw_circle(body.position + Vector2(14, 43), 2.0, Color(0.6, 0.6, 0.65))
+	# The key that opens it.
+	var text := "P / Tab"
+	var tp := Vector2(r.position.x - 12, r.end.y - 6)
+	draw_string_outline(font, tp, text, HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 24, 15, 4, Color.BLACK)
+	draw_string(font, tp, text, HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 24, 15, Color.WHITE)
+
+
+func _input(event: InputEvent) -> void:
+	if main == null or mode != "" or GameState.modal != "" or GameState.over:
+		return
+	var pos := Vector2(-1, -1)
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		pos = event.position
+	elif event is InputEventScreenTouch and event.pressed:
+		pos = event.position
+	else:
+		return
+	if _phone_icon_rect(get_viewport_rect().size).has_point(pos):
+		main.open_phone()
+		get_viewport().set_input_as_handled()
+
+
 func _process(delta: float) -> void:
 	_hurt = maxf(0.0, _hurt - delta)
 	_fade = maxf(0.0, _fade - delta * _fade_speed)
@@ -124,6 +165,7 @@ func _draw() -> void:
 		clampf(GameState.strain / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
+	_draw_phone_icon(vs, font)
 	_draw_charge()
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
