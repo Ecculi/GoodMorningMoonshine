@@ -81,3 +81,14 @@ HL_CAR_6,Jalankulkija hävisi kohtaamisen farmariauton kanssa
 CAP_CAR_4,"Kuljettaja: ""En ehtinyt jarruttaa, koska en nähnyt häntä. Ja vaikka näinkin, niin mitä sitten?"""
 CAP_CAR_5,"Kuljettaja: ""Hän oli tiellä, ja tie on autoja varten."""
 CAP_CAR_6,"Poliisi muistuttaa, että suojatietä käyttävät myös elävät."
+HELP_TITLE,Ohje
+HELP_GOAL,"Heräät krapulassa, ja tavaroita on hukassa. Etsi ne ja pääse kotiin nukkumaan. Pidä humala sopivana: selvänä kuolet, liikaa juotuasi sammut kadulle."
+HELP_KEY_1,"Liiku: nuolet tai WASD (ohjain: ristiohjain / vasen tatti, puhelin: ohjaussauva)"
+HELP_KEY_2,Juokse: Shift + nuoli tai nuolen kaksoisnapautus (ohjain: RB)
+HELP_KEY_3,"Toiminto: välilyönti, Z tai Enter – lyö, juo, syö, penko roskista, mene ovesta (ohjain: A)"
+HELP_KEY_4,Heitä tai lataa lyönti: pidä toimintonappi pohjassa
+HELP_KEY_5,"Puhelin (viestit, kuva, kartta): P tai Tab (ohjain: Y), selaa vasen / oikea"
+HELP_KEY_6,Tavarat poimitaan kävelemällä niiden päälle.
+HELP_KEY_7,Ohje: F1 (ohjain: Back)
+HELP_CLOSE,Sulje: F1 tai Esc
+HELP_DEBUG,"Debug päällä: F5 health täyteen, F6 +0,1 ‰, F7 +100 €, F8 akku +25 %, F9 ei nälkää, kylmää eikä väsymystä. F12 pois."

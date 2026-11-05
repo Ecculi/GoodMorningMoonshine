@@ -762,6 +762,7 @@ func _setup_input() -> void:
 	_add_action("phone", [KEY_P, KEY_TAB], [JOY_BUTTON_Y])
 	# Hold to run while moving (besides double-tapping an arrow).
 	_add_action("run", [KEY_SHIFT], [JOY_BUTTON_RIGHT_SHOULDER])
+	_add_action("help", [KEY_F1], [JOY_BUTTON_BACK])
 	_add_axis("move_left", JOY_AXIS_LEFT_X, -1.0)
 	_add_axis("move_right", JOY_AXIS_LEFT_X, 1.0)
 	_add_axis("move_up", JOY_AXIS_LEFT_Y, -1.0)

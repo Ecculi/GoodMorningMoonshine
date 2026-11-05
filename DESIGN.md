@@ -430,6 +430,8 @@ Hahmoideat:
 
 ## Pelin opettaminen
 
+- **Ohje (F1, peliohjaimella Back):** lyhyt tavoite ja näppäimet näppäimistölle, ohjaimelle ja puhelimelle; peli odottaa ohjeen ajan. Debug-työkalut ovat piilossa: ne kytketään päälle painamalla ohjeessa F12, jonka jälkeen F5–F9 toimivat.
+
 - Erillistä opetusosiota ei ole.
 - **Poikkeus: käden esineen vihje.** Kun pelaaja poimii esineen käteen, pään yläpuolelle tulee viideksi sekunniksi ikonivihje ilman tekstiä: napin kuva (näppäimistöllä välilyönti, kosketusnäytöllä iso pyöreä nappi) → toiminnon kuva (juo: kallistettu pullo, syö: makkara, lyö: nyrkki), ja alla napin kuva kellon kanssa (pidä pohjassa) → heittokaari. Tämä näkyy joka kerta.
 - **Vihjeet näkyvät vain pelin ensimmäisenä päivänä**: pieniä ikonivihjeitä oikealla hetkellä, esimerkiksi oven kohdalla napin kuva ja nuoli sisään tai ensimmäisen esineen kohdalla kävelevä jalka. Kukin vihje näkyy kerran.
