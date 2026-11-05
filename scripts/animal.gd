@@ -58,6 +58,11 @@ var _led := false
 var _bark_t := 0.0
 var _food_item = null
 var _knock := 0.0
+## Angry dog: pause after a bite (seconds), sideways offset while backing
+## off, and how hard the next charge is.
+var _rest_t := 0.0
+var _rest_z := 0.0
+var _charge_k := 0.85
 var _rng := RandomNumberGenerator.new()
 
 
@@ -284,6 +289,20 @@ func _feathers() -> void:
 		f.spin = Vector3(_rng.randf_range(-6, 6), _rng.randf_range(-6, 6), _rng.randf_range(-6, 6))
 
 
+## Hit by a thrown thing: a dog runs off whimpering (any angry dog is
+## got rid of this way), a gull flies away.
+func hit_by_item(_kind: int) -> void:
+	if state == A.FLEE:
+		return
+	if kind == "gull":
+		dir = 1 if position.x >= main.player.position.x else -1
+		state = A.FLEE
+		main.popup("*", position + Vector3(0, 0.5, 0), Color(1, 1, 1))
+		return
+	angry = false
+	_run_off("Vink!")
+
+
 ## A punch at the gull: it flies off without the food.
 func swat() -> void:
 	if kind == "gull":
@@ -370,12 +389,27 @@ func _dog(dt: float) -> void:
 				return
 			var p: Vector3 = main.player.position
 			var side := signf(position.x - p.x) if position.x != p.x else 1.0
-			var spot := p + Vector3(side * 0.6, 0, 0)
-			_move_to(spot, speed, dt)
-			if _cooldown <= 0.0 and _player_dist() < 0.9:
-				_cooldown = 1.2
+			if _rest_t > 0.0:
+				# After a bite: back off a couple of steps, then stand
+				# barking for a moment before going again.
+				_rest_t -= dt
+				var back := p + Vector3(side * 2.2, 0, _rest_z)
+				_move_to(back, speed * 0.5, dt)
+				_bark_t -= dt
+				if _bark_t <= 0.0:
+					_bark_t = _rng.randf_range(0.7, 1.3)
+					main.popup("Hau!", position + Vector3(0, 0.9, 0), Color(1, 0.5, 0.4))
+				return
+			# Charge, not always flat out and not in a dead straight line.
+			var spot := p + Vector3(side * 0.6, 0, sin(_t * 2.3) * 0.4)
+			_move_to(spot, speed * _charge_k, dt)
+			if _player_dist() < 0.9:
 				main.player.take_hit(breed["bite"], position.x)
 				main.popup("Hau!", position + Vector3(0, 0.9, 0), Color(1, 0.5, 0.4))
+				_rest_t = _rng.randf_range(1.5, 3.0)
+				_rest_z = _rng.randf_range(-0.8, 0.8)
+				_bark_t = 0.4
+				_charge_k = _rng.randf_range(0.7, 1.0)
 		A.EAT:
 			if _food_item == null or not is_instance_valid(_food_item) or not _food_item.can_be_eaten():
 				_food_item = null

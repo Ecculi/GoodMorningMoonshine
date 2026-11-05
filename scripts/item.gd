@@ -98,8 +98,13 @@ func _fly(delta: float) -> void:
 	global_position = p
 	_root.rotation.z += delta * 14.0
 	var npc = main.npc_at(global_position, 0.6)
+	var animal = main.animal_at(global_position, 0.5)
 	if npc != null and global_position.y < 2.2:
 		npc.hit_by_item(kind)
+		_land()
+	elif animal != null and global_position.y < 1.2 and kind != Kind.FOOD:
+		# Food is left to land (a dog goes for it); anything else hits.
+		animal.hit_by_item(kind)
 		_land()
 	elif _t >= 1.0:
 		_land()

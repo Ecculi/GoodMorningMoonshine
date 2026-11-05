@@ -1207,6 +1207,14 @@ func animal_in_front(pos: Vector3, facing: int, reach: float):
 	return null
 
 
+## An animal near `pos` (a thrown thing hitting it).
+func animal_at(pos: Vector3, r: float):
+	for a in animals:
+		if Vector2(a.position.x - pos.x, a.position.z - pos.z).length() < r and absf(a.position.y - pos.y) < 1.2:
+			return a
+	return null
+
+
 ## Food lying on the street within `r` metres (for dogs).
 func food_on_ground_near(pos: Vector3, r: float):
 	for it in items:
