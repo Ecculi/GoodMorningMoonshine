@@ -359,6 +359,15 @@ func _launch(d: int) -> void:
 
 
 ## Run over: straight under the car, which doesn't even slow down.
+## Hit by the front of a car: no bonnet ride, the impact throws the
+## character straight away as a rag doll in the car's direction.
+func hit_by_car_front(car_dir: int, car_speed: float) -> void:
+	running = false
+	_press_time = -1.0
+	var push := Vector3(car_dir * (2.5 + car_speed * 0.55), 1.8 + car_speed * 0.12, randf_range(-0.8, 0.8))
+	_knock_out(40.0, push)
+
+
 func run_over(car_dir: int) -> void:
 	running = false
 	_press_time = -1.0

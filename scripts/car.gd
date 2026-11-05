@@ -142,12 +142,18 @@ func _check_hits() -> void:
 	var p = main.player
 	if not p.is_helpless() and p.car_grace <= 0.0 and absf(p.position.x - position.x) < HALF_LEN + 0.3 and absf(p.position.z - position.z) < 1.1:
 		_hit_cool = 1.0
-		if main.rng.randf() < 0.6:
-			# Onto the bonnet; brake after a random while.
+		var r: float = main.rng.randf()
+		if r < 0.65:
+			# The bumper hits: thrown at once as a rag doll, further the
+			# faster the car; the driver slams on the brakes.
+			p.hit_by_car_front(dir, speed)
+			_brake_in = 0.15
+		elif r < 0.9:
+			# Sometimes up onto the bonnet; brake after a random while.
 			p.start_bonnet_ride(self)
 			_brake_in = main.rng.randf_range(0.3, 0.9)
 		else:
-			# Straight under the wheels; the car doesn't slow down.
+			# Rarely straight under the wheels; the car doesn't slow down.
 			p.run_over(dir)
 	for n in main.npcs:
 		if n.is_down():
