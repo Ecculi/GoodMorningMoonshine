@@ -24,6 +24,10 @@ const PROMILLE_MAX_SHOWN := 4.0
 const PROMILLE_DECAY := 0.0135
 const RUN_DECAY_MULT := 1.6
 const DRINK_AMOUNT := 0.4
+## Highest per mille today and yesterday: yesterday's peak sets how bad
+## the hangover shakes are. The first morning follows a big night.
+var today_max := PROMILLE_START
+var yesterday_max := 2.2
 ## Health per 1.0 per mille drunk (beer +7, spirits +18).
 const DRINK_HEALTH := 30.0
 ## Share of damage that being drunk numbs away at 2.0 per mille and above.
@@ -247,6 +251,16 @@ func player_time_scale() -> float:
 	return CHARGE_TIME_SCALE if charging and focus_t <= 0.0 else 1.0
 
 
+## Hangover shakes 0..1: only below the hangover limit, stronger the
+## bigger yesterday's peak was and the soberer you are now.
+func hangover_shake() -> float:
+	if promille >= PROMILLE_HANGOVER:
+		return 0.0
+	var peak := clampf((yesterday_max - 0.8) / 2.4, 0.15, 1.0)
+	var sober := clampf((PROMILLE_HANGOVER - promille) / PROMILLE_HANGOVER, 0.0, 1.0)
+	return peak * lerpf(0.5, 1.0, sober)
+
+
 func caffeinate(awake: float) -> void:
 	tired = maxf(0.0, tired - awake)
 	caffeine += 1.0
@@ -259,6 +273,7 @@ func drink(amount := DRINK_AMOUNT) -> float:
 	if hunger >= HUNGER_EMPTY_STOMACH:
 		amount *= 1.4
 	promille += amount
+	today_max = maxf(today_max, promille)
 	# A drink brings health back too (more from stronger stuff).
 	health = minf(100.0, health + amount * DRINK_HEALTH)
 	return amount
@@ -359,6 +374,8 @@ func search_radius() -> float:
 func new_game() -> void:
 	day = 1
 	promille = PROMILLE_START
+	today_max = PROMILLE_START
+	yesterday_max = 2.2
 	health = 100.0
 	money = 0
 	confiscated = -1
@@ -392,6 +409,7 @@ func new_game() -> void:
 ## A short or bad sleep leaves more alcohol in the blood and heals less.
 func new_day() -> void:
 	var at_sleep := promille
+	yesterday_max = maxf(today_max, at_sleep)
 	day += 1
 	match sleep_place:
 		"home":
@@ -426,6 +444,7 @@ func new_day() -> void:
 	cold = {"home": 10.0, "friend": 15.0, "jail": 30.0}.get(sleep_place, 50.0)
 	# Sleeping always burns alcohol and makes you hungry.
 	promille = maxf(minf(promille, at_sleep - SLEEP_MIN_DROP), MORNING_MIN_PROMILLE)
+	today_max = promille
 	var cold_night := sleep_place == "street" or sleep_place == "basement" or sleep_place == "stairs"
 	hunger = minf(100.0, hunger + HUNGER_SLEEP + (8.0 if cold_night else 0.0))
 	clock_min = DAY_START_MIN

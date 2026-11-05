@@ -20,6 +20,13 @@ const HIT_DAMAGE := 9.0
 ## A knocked-out passer-by lies this long (world time), then gets up and
 ## limps away out of the block. They never just vanish.
 const KO_TIME := 10.0
+## Hit by a hard thrown thing: chance to black out for a moment.
+const DAZE_CHANCE := {Item.Kind.BOTTLE: 0.6, Item.Kind.ENERGY: 0.4}
+const DAZE_TIME_MIN := 3.0
+const DAZE_TIME_MAX := 5.0
+var _ko_time := KO_TIME
+## True while out only briefly (thrown item): gets up and carries on.
+var _dazed := false
 const LEAVE_SPEED := 0.9
 const PICKPOCKET_CHANCE := 0.6
 const POLICE_SPEED := 3.4
@@ -163,7 +170,18 @@ func _process(_delta: float) -> void:
 			if _ragdoll != null:
 				var t: Vector3 = _ragdoll.torso_position()
 				position = Vector3(t.x, 0.0, clampf(t.z, -7.4, 5.2))
-			if _timer > KO_TIME:
+			if _timer > _ko_time and _dazed:
+				# Came round after a thrown hit: back up and angry.
+				_dazed = false
+				_ko_time = KO_TIME
+				_end_ragdoll()
+				if role == "civ":
+					state = S.FIGHT
+					_mark.visible = true
+				else:
+					state = S.WALK
+					notice()
+			elif _timer > _ko_time:
 				if role == "civ":
 					# Face away from the player before rising, then limp off.
 					dir = 1 if position.x >= main.player.position.x else -1
@@ -340,6 +358,20 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 
 func hit_by_item(kind: int) -> void:
 	if state == S.KO:
+		return
+	# Hard things can knock them out for a moment.
+	if randf() < DAZE_CHANCE.get(kind, 0.0):
+		if kind == Item.Kind.BOTTLE:
+			hp -= 1
+		if hp <= 0:
+			take_hit(0, main.player)  # out for good: the usual knockout
+			return
+		var away := signf(position.x - main.player.position.x)
+		_dazed = true
+		_ko_time = randf_range(DAZE_TIME_MIN, DAZE_TIME_MAX)
+		main.popup("*", position + Vector3(0, 1.9, 0), Color(1, 0.9, 0.4))
+		_knock_out(Vector3(away * 2.0, 1.2, 0))
+		main.report_crime(position, false)
 		return
 	match kind:
 		Item.Kind.BOTTLE:

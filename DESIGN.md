@@ -250,7 +250,7 @@ Humalan vaikutukset alkavat matalammalla kuin alussa suunniteltiin (kaikki rajat
 | Promillet | Tila |
 |---|---|
 | **0 ‰** | kuolema |
-| **alle 0,5 ‰** | krapula: hahmo tärisee, lyönnit ovat heikkoja ja health kuluu hitaasti. Varoitus, että juotavaa pitää löytää. |
+| **alle 0,5 ‰** | krapula: hahmo tärisee (sitä pahemmin, mitä kovempi edellispäivän humala oli; ks. Krapulatärinä), lyönnit ovat heikkoja ja health kuluu hitaasti. Varoitus, että juotavaa pitää löytää. |
 | **0,5–1,3 ‰** | sopiva alue, hahmo toimii normaalisti |
 | **1,3 ‰ – sammumisraja** | humalan haitat (horjuminen, sumea näkökenttä, rohkeus) voimistuvat vähitellen |
 | **yli 3,2–4,0 ‰** | hahmo sammuu (raja arvotaan joka päivä 3,2 ja 4,0 ‰ väliltä, joten sitä ei voi tietää tarkasti) |
@@ -340,7 +340,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - Osalla hahmoista isku näkyy hetkeä ennen osumaa (esim. käsi nousee), mutta **kaikista hahmoista ei näe, milloin ne ovat lyömässä**.
 - **Heittäminen:** heitetyn esineen vaikutus riippuu esineestä:
   - **Kevyt esine** (tölkki, tyhjä muovipussi) ärsyttää kohdetta mutta ei juuri satuta.
-  - **Raskas esine** (pullo, täysi pussi) tainnuttaa kohteen hetkeksi.
+  - **Raskas esine** (pullo, täysi pussi) tainnuttaa kohteen hetkeksi. Prototyypissä: pullo 60 % ja täysi energiajuomatölkki 40 % todennäköisyydellä (tyhjä tölkki on kevyt); kohde makaa 3–5 sekuntia ja nousee vihaisena.
   - **Ruoka** houkuttelee lokit ja koirat paikalle. Sillä voi harhauttaa vihaisen koiran.
 
 ### Ryöstely
@@ -417,6 +417,7 @@ Hahmoideat:
 ## Pelin opettaminen
 
 - Erillistä opetusosiota ei ole.
+- **Poikkeus: käden esineen vihje.** Kun pelaaja poimii esineen käteen, pään yläpuolelle tulee viideksi sekunniksi teksti siitä, mitä nappi tekee (esim. "Välilyönti: juo" ja "Pidä pohjassa: heitä"; kosketusnäytöllä "Iso nappi"). Tämä näkyy joka kerta.
 - **Vihjeet näkyvät vain pelin ensimmäisenä päivänä**: pieniä ikonivihjeitä oikealla hetkellä, esimerkiksi oven kohdalla napin kuva ja nuoli sisään tai ensimmäisen esineen kohdalla kävelevä jalka. Kukin vihje näkyy kerran.
 - Vihjeet näkyvät **jokaisen pelin ensimmäisenä päivänä**, mutta **ei uudelleen saman peli-istunnon aikana**. Jos pelaaja kuolee ja aloittaa uuden pelin sovellusta sulkematta, vihjeitä ei näytetä. Kun sovellus käynnistetään uudelleen, ne näkyvät taas.
 
@@ -462,9 +463,11 @@ Lisätty prototyyppiin:
 
 - **Koti ja hukatut tavarat:** kodin paikka (kerrostalo, vihreä ovi) arvotaan joka peliin, ja ensimmäinen päivä alkaa kodin ovelta (myöhemmin herätään muualta). Aamulla hukatut tavarat näkyvät hahmon ajatuskuplassa ensimmäisten 5 metrin ajan ja sen jälkeen ylhäällä keskellä "Etsi:"-listassa; humalassa osa ikoneista muuttuu läiskiksi. Tavarat arvotaan kodin lähelle säteellä, joka kasvaa päivä päivältä. Kaukaa ne ovat harmaita möhkäleitä, ja ilman silmälaseja ne erottuvat vasta aivan läheltä. Kotiovella toimintanappi vie nukkumaan, ja kotona nukuttu yö on paras. Ilman avaimia hahmo nukkuu rappukäytävässä, ja ilman kenkiä vauhti on hitaampi. Kun kaikki tavarat löytyvät ennen kotiin menoa, saa 500 pisteen bonuksen.
 
+- **Krapulatärinä:** erottuu kylmätärinästä: hitaampaa, epätasaista huojuntaa koko vartalossa ja välillä äkillinen nykäisy, kasvot kalpean vihertävät. Voimakkuus riippuu edellispäivän suurimmasta promillemäärästä (ensimmäisenä aamuna oletetaan rankka edellisilta) ja kasvaa, mitä selvempi hahmo on.
+- **Tuulessa lentävät lehdet:** kaduilla on syksyn lehtiä (ei lumella). Tuulella on hitaasti vaihteleva perussuunta ja välillä puuskia. Maassa makaavat lehdet liukuvat nykien ja kääntyilevät tuulen voimistuessa ja nousevat ilmaan kovassa puuskassa. Ilmassa lehti putoaa hitaasti heilurimaisesti puolelta toiselle (hidastuu heilahduksen päissä ja kallistuu sen mukana) ja pyörii kovassa tuulessa. Välillä puuska nostaa pienen kasan lehtiä yhdessä pyörteeksi. Sateella lehdet ovat märkiä ja raskaita. Lehdet liikkuvat vain, kun pelin aika kulkee.
 - **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot), pilvinen (pehmeä valo), sade (pisarat, harmaa valo, sumu) tai lumi ja pakkanen (hiutaleet, lumikerros kaduilla, reunakiven yli tai esteeseen törmätessä voi liukastua, kengättä helpommin). Sade ja lumi pysähtyvät ilmaan, kun aika on pysähdyksissä.
 - **Lumi on liukas:** lumisateella hahmo liukuu napin päästämisen jälkeen (selvin päin noin 0,3 s, humalassa pidempään: 0,3 s + 0,5 s jokaista promillea kohti) ja kääntyy laiskasti; liu'un aikana aika kulkee. Yli 1,1 promillessa jyrkkä käännös voi kaataa hahmon perseelleen: suoraan kävellessä tuskin koskaan, todennäköisyys kasvaa käännöksen jyrkkyyden mukaan ja on suurin, kun kääntyy yhtäkkiä vastakkaiseen suuntaan (humala, juoksu ja kengättömyys lisäävät).
-- **Kylmä:** ei mittaria; hahmo tärisee, kun on kylmissään. Kylmä kasvaa sateella ja pakkasella, ilman takkia ja märillä/kylmillä jaloilla nopeammin; aurinkoisella säällä hahmo lämpenee. Kylmissään nälkä kasvaa 1,5-kertaisesti, ja kova kylmä kuluttaa healthia. Humalassa (yli 1,3 ‰) kylmä tuntuu vähemmän. Kioskissa ja baarissa lämpenee, mutta aika kuluu sillä aikaa. **Kylmissään voi myös lämmitellä:** juokseminen lämmittää (kylmä vähenee juostessa, myös sateella ja pakkasella), jokainen lyönti lämmittää vähän, ja tiukka viina lämmittää heti (viina paljon, tuntematon aine melkein yhtä paljon, tavallinen pullo vähän, olut ei lainkaan). Aamun kylmyys riippuu yöpaikasta.
+- **Kylmä:** ei mittaria; hahmo tärisee, kun on kylmissään: nopea, pieni värinä, kädet halaavat vartaloa, kasvot sinertävät ja suusta nousee höyryä. Kylmä kasvaa sateella ja pakkasella, ilman takkia ja märillä/kylmillä jaloilla nopeammin; aurinkoisella säällä hahmo lämpenee. Kylmissään nälkä kasvaa 1,5-kertaisesti, ja kova kylmä kuluttaa healthia. Humalassa (yli 1,3 ‰) kylmä tuntuu vähemmän. Kioskissa ja baarissa lämpenee, mutta aika kuluu sillä aikaa. **Kylmissään voi myös lämmitellä:** juokseminen lämmittää (kylmä vähenee juostessa, myös sateella ja pakkasella), jokainen lyönti lämmittää vähän, ja tiukka viina lämmittää heti (viina paljon, tuntematon aine melkein yhtä paljon, tavallinen pullo vähän, olut ei lainkaan). Aamun kylmyys riippuu yöpaikasta.
 
 - **Kotityypit:** kerrostaloasunto (ilman avaimia rappukäytävä), kellarikomero (ilman avaimia riippulukko rikotaan kolmella lyönnillä; kylmä yö) ja kaverin sohva (ovikello; juoma kädessä pääsee aina sisään, muuten kaveri nukkuu joskus eikä avaa sinä päivänä).
 - **Tavaroiden haitat:** ilman silmälaseja kadunnimikyltit ovat sumeita (humalassa kirjaimet myös menevät sekaisin), ilman aurinkolaseja aurinko häikäisee aurinkoisella säällä, ilman takkia lyönnit sattuvat 30 % enemmän ja paljain jaloin taskuvarkaus onnistuu paremmin.

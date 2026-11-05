@@ -9,6 +9,7 @@ const Npc = preload("res://scripts/npc.gd")
 const Item = preload("res://scripts/item.gd")
 const Hud = preload("res://scripts/hud.gd")
 const TouchControls = preload("res://scripts/touch_controls.gd")
+const Leaves = preload("res://scripts/leaves.gd")
 const CityMap = preload("res://scripts/city_map.gd")
 const BlockBuilder = preload("res://scripts/block_builder.gd")
 const LostItemNode = preload("res://scripts/lost_item_node.gd")
@@ -237,6 +238,10 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	_cloud_sun_set = false
 	level = BlockBuilder.build(seg, GameState.home_x if seg == GameState.home_seg else INF, GameState.home_type)
 	add_child(level)
+	# Wind-blown leaves on the street.
+	var leaves = Leaves.new()
+	level.add_child(leaves)
+	leaves.setup(seg, GameState.weather)
 	player.position = pos
 	player.facing = facing
 	camera.position.x = clampf(pos.x, -10.0, 10.0)

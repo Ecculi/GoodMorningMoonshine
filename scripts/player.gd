@@ -131,6 +131,7 @@ func punch_charge() -> float:
 func _process(delta: float) -> void:
 	_clock += delta
 	_punch_cooldown = maxf(0.0, _punch_cooldown - delta)
+	hand_hint_t = maxf(0.0, hand_hint_t - delta)
 	# _handle_action sets these again while the button is held.
 	GameState.charging = false
 	model.set_windup(-1.0)
@@ -614,6 +615,9 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 ## No hunger meter: when hungry the stomach growls now and then and the
 ## character slumps a little.
 var _growl_t := 0.0
+var _cold_puff_t := 0.0
+var _hang_jerk := 0.0
+var _hang_jerk_cd := 2.0
 var _zzz_t := 0.0
 
 
@@ -651,12 +655,40 @@ func _hunger_signs() -> void:
 	# Hunger slumps forward; the silly walk leans back and bounces.
 	model.rotation.z = (-0.12 if hungry else 0.0) + model.silly_lean
 	model.position.y = model.silly_bounce + (0.15 if _hic_jolt > 0.0 else 0.0)
-	# Hangover shakes; shivering when cold.
+	# Cold and hangover shake differently:
+	# - cold: fast fine shivering, arms hugging the body, bluish face and
+	#   breath puffs;
+	# - hangover: slower, uneven trembling of the whole body with a jerk
+	#   now and then, pale greenish face. How bad depends on yesterday's
+	#   peak per mille.
 	var shake := 0.0
-	if GameState.promille < GameState.PROMILLE_HANGOVER:
-		shake = 0.025
-	if GameState.cold >= GameState.COLD_SHIVER:
-		shake = maxf(shake, 0.015 + 0.03 * (GameState.cold - GameState.COLD_SHIVER) / 50.0)
+	var rt := Time.get_ticks_msec() / 1000.0
+	var cold_k := clampf((GameState.cold - GameState.COLD_SHIVER) / 50.0, 0.0, 1.0)
+	if GameState.cold < GameState.COLD_SHIVER:
+		cold_k = 0.0
+	model.cold_hug = move_toward(model.cold_hug, 1.0 if cold_k > 0.0 else 0.0, get_process_delta_time() * 3.0)
+	if cold_k > 0.0:
+		shake = 0.012 + 0.02 * cold_k
+		_cold_puff_t += GameState.world_dt
+		if _cold_puff_t > 2.2:
+			_cold_puff_t = 0.0
+			main.popup_icon(main.breath_texture(), position + Vector3(0.3 * facing, 1.72, 0.3))
+	var hang := GameState.hangover_shake()
+	if hang > 0.0:
+		# Uneven tremor (two mixed frequencies) and occasional jerks.
+		var tremor := (sin(rt * 8.3) * 0.6 + sin(rt * 13.1 + 1.7) * 0.4) * 0.045 * hang
+		_hang_jerk_cd -= get_process_delta_time()
+		if _hang_jerk_cd <= 0.0:
+			_hang_jerk_cd = randf_range(1.5, 4.0) / maxf(hang, 0.3)
+			_hang_jerk = 0.12 * hang
+		_hang_jerk = move_toward(_hang_jerk, 0.0, get_process_delta_time() * 0.6)
+		model.rotation.z += tremor + _hang_jerk * sin(rt * 40.0)
+	if cold_k > 0.0:
+		model.set_face_tint(Color(0.65, 0.78, 1.0), 0.45 * cold_k)
+	elif hang > 0.0:
+		model.set_face_tint(Color(0.78, 0.86, 0.62), 0.5 * hang)
+	else:
+		model.set_face_tint(Color.WHITE, 0.0)
 	if GameState.jitter_t > 0.0:
 		shake = maxf(shake, 0.03)
 	# Tired: eyes close, the body slumps, Zzz now and then.
@@ -911,6 +943,27 @@ func _pickup(it) -> void:
 		old.drop_at(Vector3(position.x, 0.0, position.z))
 	it.hold(model.hand)
 	hand_item = it
+	hand_hint_t = HAND_HINT_TIME
+
+
+## After picking something up, a hint above the head tells what the
+## action button does with it (short press / hold).
+const HAND_HINT_TIME := 5.0
+var hand_hint_t := 0.0
+
+
+## Translation key for what a short press does now with the held item.
+func hand_short_action_key() -> String:
+	if hand_item == null:
+		return "ACT_PUNCH"
+	if main.find_npc_in_front(position, facing, PUNCH_RANGE) != null or main.nearest_npc_distance(position) <= 2.5:
+		return "ACT_PUNCH"
+	match hand_item.kind:
+		Item.Kind.BOTTLE, Item.Kind.COFFEE, Item.Kind.ENERGY:
+			return "ACT_DRINK"
+		Item.Kind.FOOD:
+			return "ACT_EAT"
+	return "ACT_PUNCH"
 
 
 func take_hit(dmg: float, from_x: float) -> void:

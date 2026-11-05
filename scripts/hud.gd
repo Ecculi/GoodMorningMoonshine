@@ -167,6 +167,7 @@ func _draw() -> void:
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_phone_icon(vs, font)
 	_draw_charge()
+	_draw_hand_hint(font)
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
 	_draw_lost_list(vs)
@@ -265,6 +266,27 @@ func _draw_arrest() -> void:
 	draw_arc(sp, 34.0, 0, TAU, 40, Color(0, 0, 0, 0.35), 7.0, true)
 	var col := Color(0.25, 0.45, 1.0) if int(Time.get_ticks_msec() / 150) % 2 == 0 else Color(1.0, 0.25, 0.25)
 	draw_arc(sp, 34.0, -PI * 0.5, -PI * 0.5 + TAU * main.arrest, 40, col, 7.0, true)
+
+
+## Held item: what a short press and a hold do, above the head for a few
+## seconds after picking it up.
+func _draw_hand_hint(font: Font) -> void:
+	if main == null or main.player == null or mode != "" or GameState.modal != "":
+		return
+	var pl = main.player
+	if pl.hand_item == null or pl.hand_hint_t <= 0.0 or pl.is_aiming():
+		return
+	var p: Vector3 = pl.global_position + Vector3(0, 2.75, 0)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	var a := clampf(pl.hand_hint_t, 0.0, 1.0)
+	var key := tr("HINT_KEY_TOUCH") if DisplayServer.is_touchscreen_available() else tr("HINT_KEY")
+	var lines := ["%s: %s" % [key, tr(pl.hand_short_action_key())], "%s: %s" % [tr("HINT_HOLD"), tr("ACT_THROW")]]
+	for i in lines.size():
+		var pos := sp + Vector2(-150, -22 + i * 22)
+		draw_string_outline(font, pos, lines[i], HORIZONTAL_ALIGNMENT_CENTER, 300, 17, 5, Color(0, 0, 0, a))
+		draw_string(font, pos, lines[i], HORIZONTAL_ALIGNMENT_CENTER, 300, 17, Color(1, 1, 1, a))
 
 
 func delta_draw() -> float:
