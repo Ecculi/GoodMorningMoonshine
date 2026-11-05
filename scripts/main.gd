@@ -1145,9 +1145,9 @@ func beggar_tip(pos: Vector3) -> void:
 	if candidates.is_empty():
 		popup("?", pos + Vector3(0, 1.6, 0), Color(0.9, 0.9, 0.9))
 		return
-	var id: String = candidates[rng.randi() % candidates.size()]
-	var seg: Vector3i = GameState.placements[id][0]
-	hud.think([id])
+	var pick: String = candidates[rng.randi() % candidates.size()]
+	var seg: Vector3i = GameState.placements[pick][0]
+	hud.think([pick])
 	popup(CityMap.street_name(seg), player.position + Vector3(0, 3.2, 0), Color(0.8, 0.9, 1.0))
 
 
