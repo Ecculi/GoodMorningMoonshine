@@ -277,6 +277,7 @@ Krapula ei kovene päivien mukaan.
 Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 
 - **Horjuminen:** ohjaus ei mene aivan suoraan, ja lyönnit menevät joskus ohi.
+- **Kaatuminen:** tasaisella maalla hahmo ei juuri kaadu. Kun hahmo siirtyy alustalta toiselle (esim. ajoradalta jalkakäytävälle reunakiven yli), **juostessa** on aina pieni kaatumisen riski, ja mitä suurempi humala, sitä todennäköisempää kaatuminen on. **Kävellen** eteneminen on suhteellisen turvallista: riski on olemassa vain kovassa humalassa (yli 2 ‰). Kaatuminen vie vähän healthia, käden tavara putoaa maahan ja ylös nouseminen vie hetken.
 - **Rohkeus:** lyönnit ovat kovempia ja kylmä tuntuu vähemmän, mutta poliisit huomaavat pelaajan helpommin.
 - **Näkökenttä:** kuva sumenee ja näkökenttä lyhenee.
 - **Sammuminen:** kun alkoholimittari on täynnä, hahmo sammuu paikalleen. Se lasketaan nukahtamiseksi.

@@ -68,6 +68,11 @@ func lie_down() -> void:
 	position.y = 0.16
 
 
+func stand_up() -> void:
+	rotation.z = 0.0
+	position.y = 0.0
+
+
 func _mat(c: Color) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = c

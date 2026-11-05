@@ -21,6 +21,16 @@ const PUNCH_CHARGE_TIME := 1.2
 ## Out of breath: punches only this often, runs only this long at a time.
 const WINDED_PUNCH_COOLDOWN := 2.0
 const WINDED_RUN_TIME := 0.8
+## Tripping over a curb (street <-> sidewalk). Never on flat ground.
+## Running: chance grows with per mille. Walking is fairly safe and only
+## risky when very drunk.
+const TRIP_RUN_BASE := 0.04
+const TRIP_RUN_PER_PROMILLE := 0.11
+const TRIP_RUN_MAX := 0.6
+const TRIP_WALK_FROM := 2.0  # per mille where walking starts to be risky
+const TRIP_WALK_PER_PROMILLE := 0.04
+const FALL_TIME := 1.4
+const FALL_DAMAGE := 4.0
 
 const MOVE_ACTIONS := ["move_left", "move_right", "move_up", "move_down"]
 
@@ -40,6 +50,8 @@ var _knock := Vector3.ZERO
 var _sway := 0.0
 var _punch_cooldown := 0.0
 var _winded_run := WINDED_RUN_TIME
+var _fall_time := 0.0
+var _on_sidewalk := false
 
 
 func _ready() -> void:
@@ -55,6 +67,9 @@ func reset(pos: Vector3) -> void:
 	_press_time = -1.0
 	_punch_cooldown = 0.0
 	_winded_run = WINDED_RUN_TIME
+	_fall_time = 0.0
+	model.stand_up()
+	_on_sidewalk = main.is_sidewalk(position)
 	_knock = Vector3.ZERO
 	if hand_item != null and is_instance_valid(hand_item):
 		hand_item.queue_free()
@@ -85,6 +100,9 @@ func _process(delta: float) -> void:
 		_press_time = -1.0
 		return
 	_punch_cooldown = maxf(0.0, _punch_cooldown - delta)
+	if _fall_time > 0.0:
+		_lie_on_ground(delta)
+		return
 
 	var dir := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
 	var moving := dir.length() > 0.2
@@ -112,6 +130,12 @@ func _process(delta: float) -> void:
 	_knock = _knock.move_toward(Vector3.ZERO, 12.0 * delta)
 	position.x = clampf(position.x, -X_LIMIT, X_LIMIT)
 	position.z = clampf(position.z, Z_MIN, Z_MAX)
+	var sidewalk: bool = main.is_sidewalk(position)
+	if sidewalk != _on_sidewalk and moving:
+		_maybe_trip()
+	_on_sidewalk = sidewalk
+	if _fall_time > 0.0:
+		return
 
 	GameState.moving = moving
 	GameState.running = running and moving
@@ -143,6 +167,50 @@ func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
 	_last_dir = dir
 	if _hold_time > HOLD_TO_RUN:
 		running = true
+
+
+## Called when the character crosses a curb.
+func _maybe_trip() -> void:
+	var p := GameState.promille
+	var chance := 0.0
+	if running:
+		chance = minf(TRIP_RUN_MAX, TRIP_RUN_BASE + TRIP_RUN_PER_PROMILLE * p)
+	else:
+		chance = maxf(0.0, p - TRIP_WALK_FROM) * TRIP_WALK_PER_PROMILLE
+	if main.rng.randf() < chance:
+		_fall()
+
+
+func _fall() -> void:
+	_fall_time = FALL_TIME
+	running = false
+	_hold_time = 0.0
+	_press_time = -1.0
+	GameState.moving = false
+	GameState.running = false
+	GameState.charging = false
+	model.set_windup(-1.0)
+	model.lie_down()
+	# Whatever was in the hand drops on the ground.
+	if hand_item != null:
+		var it = hand_item
+		hand_item = null
+		it.drop_at(Vector3(position.x + 0.5 * facing, 0.0, position.z))
+	main.hud.flash_hurt()
+	GameState.damage(FALL_DAMAGE)
+
+
+## Lying on the ground after a fall; time runs while getting up.
+func _lie_on_ground(delta: float) -> void:
+	GameState.moving = false
+	GameState.running = false
+	GameState.charging = false
+	GameState.busy_time = maxf(GameState.busy_time, 0.1)
+	_press_time = -1.0
+	_fall_time -= delta
+	if _fall_time <= 0.0:
+		_fall_time = 0.0
+		model.stand_up()
 
 
 ## Out of breath: only a few steps of running, then back to walking.

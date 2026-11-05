@@ -121,6 +121,15 @@ func find_npc_in_front(pos: Vector3, facing: int, reach: float):
 	return best
 
 
+## True on a raised sidewalk, false on the street (and at the crossings).
+## Stepping from one to the other means crossing a curb.
+func is_sidewalk(pos: Vector3) -> bool:
+	var ax := absf(pos.x)
+	if ax >= BLOCK_HALF and ax <= CROSS_HALF:
+		return false
+	return pos.z < -5.0 or (pos.z > 2.5 and pos.z < 5.8)
+
+
 func npc_at(pos: Vector3, radius: float):
 	for n in npcs:
 		if n.is_down():
