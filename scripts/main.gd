@@ -630,9 +630,9 @@ func try_search_bin(pos: Vector3) -> bool:
 			player._pickup(spawn_item(Item.Kind.BOTTLE, player.position, 1, drink))
 			popup("!", top, Color(1, 0.85, 0.3))
 		elif r.randf() < 0.15:
-			# Rare: a jar of pills (see GameState.FOCUS_TIME).
-			player._pickup(spawn_item(Item.Kind.PILLS, player.position))
-			popup("!", top, Color(0.9, 0.9, 1.0))
+			# Rare: pills, taken on the spot (see GameState.FOCUS_TIME).
+			GameState.focus_t = GameState.FOCUS_TIME
+			popup("!", top, Color(0.75, 0.85, 1.0))
 		else:
 			popup("-", top, Color(0.8, 0.8, 0.8))
 		return true

@@ -746,11 +746,6 @@ func _short_action() -> void:
 			main.popup("!", position + Vector3(0, 2.1, 0), Color(0.6, 1.0, 0.4))
 			_consume_hand_item()
 			return
-		if hand_item.kind == Item.Kind.PILLS:
-			GameState.focus_t = GameState.FOCUS_TIME
-			main.popup("!", position + Vector3(0, 2.1, 0), Color(0.75, 0.85, 1.0))
-			_consume_hand_item()
-			return
 		if hand_item.kind == Item.Kind.FOOD:
 			GameState.eat()
 			main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
