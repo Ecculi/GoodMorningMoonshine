@@ -611,6 +611,26 @@ var _searched_bins := {}
 ## Short action next to a bin: rummage through it. Half of the bins hide a
 ## bottle (beer, spirits or something mysterious). Each bin can be searched
 ## once a day; the contents are fixed for the day (seeded by day + place).
+## Unsearched bin near `pos` for the hint: {"x": bin x, "reach": true
+## when the action button would search it now}, or {} if none within
+## `near` metres. Searched bins give no hint.
+func bin_hint(pos: Vector3, near := 4.0) -> Dictionary:
+	if level == null or GameState.over:
+		return {}
+	var bins: Array = level.get_meta("bins", [])
+	var best := {}
+	var best_d := INF
+	for i in bins.size():
+		var bx: float = bins[i]
+		if _searched_bins.has("%s:%d" % [_key(segment), i]):
+			continue
+		var d := Vector2(pos.x - bx, pos.z + 7.5).length()
+		if d < near and d < best_d:
+			best_d = d
+			best = {"x": bx, "reach": absf(pos.x - bx) <= 1.0 and pos.z <= -6.4}
+	return best
+
+
 func try_search_bin(pos: Vector3) -> bool:
 	if level == null or GameState.over:
 		return false

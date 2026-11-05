@@ -170,6 +170,7 @@ func _draw() -> void:
 	_draw_phone_icon(vs, font)
 	_draw_charge()
 	_draw_hand_hint(font)
+	_draw_bin_hint()
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
 	_draw_lost_list(vs)
@@ -294,6 +295,30 @@ func _draw_hand_hint(_font: Font) -> void:
 		_hint_action(c + Vector2(32, 0), rows[i][1], a)
 
 
+## Near an unsearched bin: a magnifier above it; next to it (where the
+## button would search) the button picture too: [button] -> magnifier.
+func _draw_bin_hint() -> void:
+	if main == null or main.player == null or mode != "" or GameState.modal != "":
+		return
+	var pl = main.player
+	var h: Dictionary = main.bin_hint(pl.position)
+	if h.is_empty():
+		return
+	# With a hand item and someone close, the button punches instead.
+	var reach: bool = h["reach"] and (pl.hand_item == null or main.nearest_npc_distance(pl.position) > 2.5)
+	var p := Vector3(h["x"], 1.55, -7.5)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	var bob := sin(Time.get_ticks_msec() / 250.0) * 2.0
+	if reach:
+		draw_rect(Rect2(sp - Vector2(36, 15), Vector2(72, 30)), Color(0, 0, 0, 0.4))
+		_hint_button(sp + Vector2(-16, 0), false, 1.0)
+		_hint_action(sp + Vector2(18, bob * 0.5), "SEARCH", 1.0)
+	else:
+		_hint_action(sp + Vector2(0, bob), "SEARCH", 0.6)
+
+
 ## The action button: a space bar on a keyboard, the big round button on
 ## a touch screen. `hold`: a little clock next to it (keep it pressed).
 func _hint_button(c: Vector2, hold: bool, a: float) -> void:
@@ -338,6 +363,11 @@ func _hint_action(c: Vector2, act: String, a: float) -> void:
 			draw_rect(Rect2(c + Vector2(-7, -4), Vector2(14, 8)), col)
 			# A bite out of one end.
 			draw_circle(c + Vector2(11, -2), 2.5, Color(0.1, 0.1, 0.1, 0.6 * a))
+		"SEARCH":
+			# Magnifying glass.
+			draw_circle(c + Vector2(-2, -2), 7.0, Color(0.6, 0.8, 1.0, 0.35 * a))
+			draw_arc(c + Vector2(-2, -2), 7.0, 0.0, TAU, 20, w, 2.5, true)
+			draw_line(c + Vector2(3, 3), c + Vector2(9, 9), w, 3.5)
 		"ACT_THROW":
 			# Dotted arc with an arrow head, a bottle at the start.
 			for k in 6:
