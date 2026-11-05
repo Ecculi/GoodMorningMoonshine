@@ -738,6 +738,7 @@ func _short_action() -> void:
 	if target == null and hand_item != null and main.nearest_npc_distance(position) > 2.5:
 		if hand_item.kind == Item.Kind.BOTTLE:
 			var amount := GameState.drink(Item.DRINK_PROMILLE[hand_item.drink])
+			GameState.warm_up(Item.DRINK_WARMTH[hand_item.drink])
 			main.popup("+" + GameState.format_promille(amount),
 				position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
 			_consume_hand_item()
@@ -775,6 +776,8 @@ func _punch(target, charge: float, charged := false) -> void:
 			return
 		_punch_cooldown = EXHAUSTED_PUNCH_COOLDOWN
 	model.punch(charged)
+	# Fighting warms you up.
+	GameState.warm_up(GameState.COLD_PUNCH_WARM)
 	if charged:
 		GameState.add_strain(lerpf(CHARGED_STRAIN_MIN, CHARGED_STRAIN_MAX, charge))
 		main.hud.show_head_heart()
