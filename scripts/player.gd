@@ -952,7 +952,7 @@ const HAND_HINT_TIME := 5.0
 var hand_hint_t := 0.0
 
 
-## Translation key for what a short press does now with the held item.
+## What a short press does now with the held item (an icon id for the hint).
 func hand_short_action_key() -> String:
 	if hand_item == null:
 		return "ACT_PUNCH"

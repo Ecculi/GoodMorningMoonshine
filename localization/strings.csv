@@ -18,10 +18,3 @@ SIGN_POLICE,POLIISI
 HICCUP,hik!
 SLEEP_TIRED,Nukahti väsymykseen
 SLEEP_FELL,Kaatui ja jäi siihen nukkumaan
-HINT_KEY,Välilyönti
-HINT_KEY_TOUCH,Iso nappi
-HINT_HOLD,Pidä pohjassa
-ACT_PUNCH,lyö
-ACT_DRINK,juo
-ACT_EAT,syö
-ACT_THROW,heitä

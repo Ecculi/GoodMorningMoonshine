@@ -168,7 +168,7 @@ Krapula ei kovene päivien mukaan.
 
 - Kun toimintanappi on pohjassa (lyönnin tai heiton lataus), **koko peli kulkee puolella nopeudella**: ohikulkijat, autot, kello ja myös pelaaja itse.
 - **Lääkkeet:** roskiksesta voi joskus löytää lääkkeitä. Ne vaikuttavat heti löydettäessä: latauksen aikana vain muu maailma hidastuu ja pelaaja liikkuu täydellä nopeudella noin 90 sekunnin ajan (pelin aikaa). Se on vahva etu, jolla ehtii väistää.
-  | **Puhelin auki / kiinni** | oma puhelinnappi (kosketusnäytöllä pieni nappi ison napin yläpuolella, näppäimistöllä P tai Tab, peliohjaimella Y); lisäksi ruudun oikeassa yläkulmassa on puhelinkuvake, jota napauttamalla tai klikkaamalla puhelimen saa auki, ja sen alla lukee näppäin (P / Tab) |
+  | **Puhelin auki / kiinni** | oma puhelinnappi (kosketusnäytöllä pieni nappi ison napin yläpuolella, näppäimistöllä P tai Tab, peliohjaimella Y); lisäksi ruudun oikeassa yläkulmassa on puhelinkuvake, jota napauttamalla tai klikkaamalla puhelimen saa auki, ja sen alla on P-näppäimen kuva (kosketusnäytöllä ei) |
   | **Puhelimen selaus** | vasen / oikea |
 
 ### Näkökenttä ja silmälasit
@@ -417,7 +417,7 @@ Hahmoideat:
 ## Pelin opettaminen
 
 - Erillistä opetusosiota ei ole.
-- **Poikkeus: käden esineen vihje.** Kun pelaaja poimii esineen käteen, pään yläpuolelle tulee viideksi sekunniksi teksti siitä, mitä nappi tekee (esim. "Välilyönti: juo" ja "Pidä pohjassa: heitä"; kosketusnäytöllä "Iso nappi"). Tämä näkyy joka kerta.
+- **Poikkeus: käden esineen vihje.** Kun pelaaja poimii esineen käteen, pään yläpuolelle tulee viideksi sekunniksi ikonivihje ilman tekstiä: napin kuva (näppäimistöllä välilyönti, kosketusnäytöllä iso pyöreä nappi) → toiminnon kuva (juo: kallistettu pullo, syö: makkara, lyö: nyrkki), ja alla napin kuva kellon kanssa (pidä pohjassa) → heittokaari. Tämä näkyy joka kerta.
 - **Vihjeet näkyvät vain pelin ensimmäisenä päivänä**: pieniä ikonivihjeitä oikealla hetkellä, esimerkiksi oven kohdalla napin kuva ja nuoli sisään tai ensimmäisen esineen kohdalla kävelevä jalka. Kukin vihje näkyy kerran.
 - Vihjeet näkyvät **jokaisen pelin ensimmäisenä päivänä**, mutta **ei uudelleen saman peli-istunnon aikana**. Jos pelaaja kuolee ja aloittaa uuden pelin sovellusta sulkematta, vihjeitä ei näytetä. Kun sovellus käynnistetään uudelleen, ne näkyvät taas.
 

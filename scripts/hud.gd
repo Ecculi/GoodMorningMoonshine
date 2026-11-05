@@ -105,11 +105,13 @@ func _draw_phone_icon(vs: Vector2, font: Font) -> void:
 	# Screen and home button.
 	draw_rect(Rect2(body.position + Vector2(4, 6), Vector2(20, 32)), Color(0.45, 0.7, 0.95))
 	draw_circle(body.position + Vector2(14, 43), 2.0, Color(0.6, 0.6, 0.65))
-	# The key that opens it.
-	var text := "P / Tab"
-	var tp := Vector2(r.position.x - 12, r.end.y - 6)
-	draw_string_outline(font, tp, text, HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 24, 15, 4, Color.BLACK)
-	draw_string(font, tp, text, HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 24, 15, Color.WHITE)
+	# The key that opens it: a key cap with a P (touch screens have their
+	# own phone button, so no key there).
+	if not DisplayServer.is_touchscreen_available():
+		var kc := Rect2(Vector2(r.get_center().x - 11, r.end.y - 24), Vector2(22, 20))
+		draw_rect(kc, Color(0.15, 0.15, 0.18, 0.85))
+		draw_rect(kc, Color.WHITE, false, 1.5)
+		draw_string(font, Vector2(kc.position.x, kc.end.y - 5), "P", HORIZONTAL_ALIGNMENT_CENTER, kc.size.x, 15, Color.WHITE)
 
 
 func _input(event: InputEvent) -> void:
@@ -268,9 +270,11 @@ func _draw_arrest() -> void:
 	draw_arc(sp, 34.0, -PI * 0.5, -PI * 0.5 + TAU * main.arrest, 40, col, 7.0, true)
 
 
-## Held item: what a short press and a hold do, above the head for a few
-## seconds after picking it up.
-func _draw_hand_hint(font: Font) -> void:
+## Held item: what a short press and a hold do, as icons above the head
+## for a few seconds after picking it up (no text):
+##   [button] -> drink / eat / punch
+##   [button + clock] -> throw
+func _draw_hand_hint(_font: Font) -> void:
 	if main == null or main.player == null or mode != "" or GameState.modal != "":
 		return
 	var pl = main.player
@@ -281,12 +285,75 @@ func _draw_hand_hint(font: Font) -> void:
 		return
 	var sp: Vector2 = main.camera.unproject_position(p)
 	var a := clampf(pl.hand_hint_t, 0.0, 1.0)
-	var key := tr("HINT_KEY_TOUCH") if DisplayServer.is_touchscreen_available() else tr("HINT_KEY")
-	var lines := ["%s: %s" % [key, tr(pl.hand_short_action_key())], "%s: %s" % [tr("HINT_HOLD"), tr("ACT_THROW")]]
-	for i in lines.size():
-		var pos := sp + Vector2(-150, -22 + i * 22)
-		draw_string_outline(font, pos, lines[i], HORIZONTAL_ALIGNMENT_CENTER, 300, 17, 5, Color(0, 0, 0, a))
-		draw_string(font, pos, lines[i], HORIZONTAL_ALIGNMENT_CENTER, 300, 17, Color(1, 1, 1, a))
+	var rows := [[false, pl.hand_short_action_key()], [true, "ACT_THROW"]]
+	for i in rows.size():
+		var c := sp + Vector2(0, -34 + i * 34)
+		draw_rect(Rect2(c - Vector2(52, 15), Vector2(104, 30)), Color(0, 0, 0, 0.4 * a))
+		_hint_button(c + Vector2(-30, 0), rows[i][0], a)
+		_hint_arrow(c + Vector2(4, 0), a)
+		_hint_action(c + Vector2(32, 0), rows[i][1], a)
+
+
+## The action button: a space bar on a keyboard, the big round button on
+## a touch screen. `hold`: a little clock next to it (keep it pressed).
+func _hint_button(c: Vector2, hold: bool, a: float) -> void:
+	var w := Color(1, 1, 1, a)
+	var bc := c - Vector2(6, 0) if hold else c
+	if DisplayServer.is_touchscreen_available():
+		draw_circle(bc, 10.0, Color(0.15, 0.15, 0.18, 0.8 * a))
+		draw_arc(bc, 10.0, 0.0, TAU, 24, w, 2.0, true)
+	else:
+		var r := Rect2(bc - Vector2(14, 6), Vector2(28, 12))
+		draw_rect(r, Color(0.15, 0.15, 0.18, 0.8 * a))
+		draw_rect(r, w, false, 2.0)
+	if hold:
+		var cc := c + Vector2(13, -6)
+		draw_circle(cc, 6.5, Color(0.15, 0.15, 0.18, 0.9 * a))
+		draw_arc(cc, 6.0, -PI * 0.5, PI, 16, Color(1, 0.85, 0.3, a), 2.0, true)
+		draw_line(cc, cc + Vector2(0, -4), w, 1.5)
+		draw_line(cc, cc + Vector2(3, 0), w, 1.5)
+
+
+func _hint_arrow(c: Vector2, a: float) -> void:
+	var w := Color(1, 1, 1, a)
+	draw_line(c - Vector2(7, 0), c + Vector2(4, 0), w, 2.5)
+	draw_colored_polygon(PackedVector2Array([c + Vector2(9, 0), c + Vector2(3, -5), c + Vector2(3, 5)]), w)
+
+
+func _hint_action(c: Vector2, act: String, a: float) -> void:
+	var w := Color(1, 1, 1, a)
+	match act:
+		"ACT_DRINK":
+			# Bottle tipped up to drink, with a couple of drops.
+			draw_set_transform(c, -0.7, Vector2.ONE)
+			draw_rect(Rect2(Vector2(-4, -2), Vector2(8, 13)), Color(0.3, 0.75, 0.35, a))
+			draw_rect(Rect2(Vector2(-2, -9), Vector2(4, 8)), Color(0.3, 0.75, 0.35, a))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			draw_circle(c + Vector2(-9, -8), 1.8, Color(1, 0.8, 0.3, a))
+			draw_circle(c + Vector2(-11, -3), 1.5, Color(1, 0.8, 0.3, a))
+		"ACT_EAT":
+			var col := Color(0.85, 0.4, 0.3, a)
+			draw_circle(c + Vector2(-7, 0), 4.0, col)
+			draw_circle(c + Vector2(7, 0), 4.0, col)
+			draw_rect(Rect2(c + Vector2(-7, -4), Vector2(14, 8)), col)
+			# A bite out of one end.
+			draw_circle(c + Vector2(11, -2), 2.5, Color(0.1, 0.1, 0.1, 0.6 * a))
+		"ACT_THROW":
+			# Dotted arc with an arrow head, a bottle at the start.
+			for k in 6:
+				var t := float(k) / 5.0
+				var pt := c + Vector2(lerpf(-11, 10, t), 5.0 - sin(PI * t) * 12.0)
+				draw_circle(pt, 1.6, w)
+			draw_colored_polygon(PackedVector2Array([c + Vector2(13, 7), c + Vector2(7, 6), c + Vector2(11, 1)]), w)
+			draw_rect(Rect2(c + Vector2(-15, 2), Vector2(5, 8)), Color(0.3, 0.75, 0.35, a))
+		_:
+			# Fist: knuckles to the front.
+			var skin := Color(0.96, 0.8, 0.68, a)
+			draw_rect(Rect2(c + Vector2(-8, -6), Vector2(16, 13)), skin)
+			draw_circle(c + Vector2(8, -2), 3.5, skin)
+			for k in 3:
+				draw_line(c + Vector2(-4 + k * 4, -6), c + Vector2(-4 + k * 4, -1), Color(0.55, 0.35, 0.25, a), 1.5)
+			draw_rect(Rect2(c + Vector2(-8, -6), Vector2(16, 13)), Color(0.55, 0.35, 0.25, a), false, 1.5)
 
 
 func delta_draw() -> float:
