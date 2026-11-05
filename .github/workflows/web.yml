@@ -1,0 +1,48 @@
+# Checks that the game builds for the browser. (Publishing on GitHub Pages
+# is turned off for now.)
+name: Web build
+
+on:
+  push:
+    branches: [main, docs/oulu-map-hrrfs7]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot and web export templates
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-web
+
+      - name: Download Godot and web export templates
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          cd ~/godot
+          curl -sSL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip && rm godot.zip
+          mv Godot_v${GODOT_VERSION}-stable_linux.x86_64 godot
+          curl -sSL -o templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q -j templates.tpz "templates/web_nothreads_*" "templates/version.txt" -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
+          rm templates.tpz
+
+      - name: Export (debug build, so the F1-F3 test buttons are on screen)
+        run: |
+          mkdir -p build/web
+          ~/godot/godot --headless --path . --import || true
+          ~/godot/godot --headless --path . --export-debug "Web" build/web/index.html
+          test -f build/web/index.wasm
