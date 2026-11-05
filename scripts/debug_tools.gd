@@ -87,13 +87,24 @@ func _build_achievements() -> void:
 func _refresh_achievements() -> void:
 	for c in _ach_grid.get_children():
 		c.queue_free()
+	# Not yet done: only the name shows (no spoilers), except one random
+	# one each time the list opens, whose description shows in white.
+	var todo: Array = []
+	for id in GameState.ACHIEVEMENTS:
+		if not GameState.achieved.has(id):
+			todo.append(id)
+	var hint_id: String = todo[randi() % todo.size()] if not todo.is_empty() else ""
 	var got := 0
 	for id in GameState.ACHIEVEMENTS:
 		var have: bool = GameState.achieved.has(id)
 		if have:
 			got += 1
-		var text := ("✔ " if have else "○ ") + tr("ACH_" + id) + " – " + tr("ACH_%s_DESC" % id)
-		_label(_ach_grid, text, 14, Color(0.95, 0.9, 0.6) if have else Color(0.6, 0.6, 0.65), 360)
+			_label(_ach_grid, "✔ " + tr("ACH_" + id) + " – " + tr("ACH_%s_DESC" % id), 14,
+				Color(0.95, 0.9, 0.6), 360)
+		elif id == hint_id:
+			_label(_ach_grid, "○ " + tr("ACH_" + id) + " – " + tr("ACH_%s_DESC" % id), 14, Color.WHITE, 360)
+		else:
+			_label(_ach_grid, "○ " + tr("ACH_" + id), 14, Color(0.55, 0.55, 0.6), 360)
 	_ach_title.text = tr("ACH_LIST") % [got, GameState.ACHIEVEMENTS.size()]
 
 
