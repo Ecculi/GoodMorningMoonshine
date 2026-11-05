@@ -92,3 +92,33 @@ HELP_KEY_6,Tavarat poimitaan kävelemällä niiden päälle.
 HELP_KEY_7,Ohje: F1 (ohjain: Back)
 HELP_CLOSE,Sulje: F1 tai Esc
 HELP_DEBUG,"Debug päällä: F5 health täyteen, F6 +0,1 ‰, F7 +100 €, F8 akku +25 %, F9 ei nälkää, kylmää eikä väsymystä. F12 pois."
+HL_SOBER_5,Raitis päivä osoittautui liian raskaaksi
+HL_SOBER_6,Tutkimus: selvä olotila voi olla hengenvaarallinen
+HL_SOBER_7,Mies kokeili tipattomuutta – tulokset murskaavia
+HL_SOBER_8,"""Hän oli aina juhlien sielu"" – nyt juhlat ohi"
+HL_FIGHT_5,Keskustelu eteni käsirysyksi – käsirysy eteni loppuun
+HL_FIGHT_6,"Mies hävisi väittelyn, nyrkkeilyn ja lopulta kaiken"
+HL_FIGHT_7,"""Mitä sä tuijotat?"" – viimeinen keskustelu"
+HL_FIGHT_8,Ohikulkija sai osuman – ja toisen – ja kolmannen
+HL_FIGHT_9,Sovittelu epäonnistui Kirkkokadulla
+HL_CAR_7,Liikennevalot olivat vihreät – mutta väärälle osapuolelle
+HL_CAR_8,Mies yritti pysäyttää auton – onnistui vain osittain
+HL_CAR_9,Tiellä tapahtui – auto ei edes hidastanut
+HL_DOG_4,Mies kaatui koiran vuoksi – koira tyytyväinen
+HL_DOG_5,"""Se on vain pentu"", kertoo omistaja"
+HL_DOG_6,Rakki voitti – makkara jäi syömättä
+HL_BOUNCER_4,Portsari teki työnsä – liiankin hyvin
+HL_BOUNCER_5,Jonon ohittaminen ei kannattanut
+HL_FALL_4,Painovoima voitti jälleen
+HL_FALL_5,Mies kompastui omiin jalkoihinsa – ja viimeisen kerran
+HL_FALL_6,Katu tuli vastaan odotettua nopeammin
+HL_COLD_4,Oululainen ei uskonut säätiedotusta
+HL_COLD_5,Mies pukeutui kevätsään mukaan – oli marraskuu
+HL_COLD_6,Viima vei miehen ennen kuin takki ehti
+HL_HUNGER_3,Nälkä yllätti kesken kaiken
+HL_HUNGER_4,Mies unohti syödä – ja vähän muutakin
+HL_HANGOVER_4,Huono olo paheni yllättäen lopulliseksi
+HL_HANGOVER_5,Darra voitti ottelun selvin luvuin
+HL_HANGOVER_6,Mies lupasi lopettaa – maailmankaikkeus otti hänet sanasta
+HL_EXHAUST_3,Mies juoksi itsensä hengiltä – ei edes kilpailussa
+HL_EXHAUST_4,"Liikunta vaarallista, toteaa paikallinen"

@@ -853,8 +853,8 @@ func _on_day_ended(cause: String) -> void:
 
 ## How many headlines and captions there are per cause (keys HL_<CAUSE>_n
 ## and CAP_<CAUSE>_n in the translations).
-const HEADLINES := {"SOBER": [4, 3], "FIGHT": [4, 3], "CAR": [6, 6], "DOG": [3, 3], "BOUNCER": [3, 2],
-	"FALL": [3, 2], "COLD": [3, 2], "HUNGER": [2, 2], "HANGOVER": [3, 2], "EXHAUST": [2, 2]}
+const HEADLINES := {"SOBER": [8, 3], "FIGHT": [9, 3], "CAR": [9, 6], "DOG": [6, 3], "BOUNCER": [5, 2],
+	"FALL": [6, 2], "COLD": [6, 2], "HUNGER": [4, 2], "HANGOVER": [6, 2], "EXHAUST": [4, 2]}
 
 
 ## Captions that fit any death (CAP_ANY_n), used now and then.
