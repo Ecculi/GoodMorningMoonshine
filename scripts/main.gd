@@ -1088,7 +1088,8 @@ func stomach_texture() -> ImageTexture:
 ## Extra street characters: a beggar by a wall, a drunk, a punk gang,
 ## seagulls and a loose dog, each only in some blocks.
 func _spawn_street_folk() -> void:
-	if rng.randf() < 0.3:
+	# Without a phone there are more beggars around to ask.
+	if rng.randf() < (0.6 if GameState.is_lost("phone") else 0.3):
 		var b = _spawn_npc(false, "beggar")
 		b.position = Vector3(rng.randf_range(-13.0, 13.0), 0, -7.25)
 	if rng.randf() < 0.25:

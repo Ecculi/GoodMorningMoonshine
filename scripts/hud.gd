@@ -187,6 +187,7 @@ func _draw() -> void:
 		clampf(GameState.strain / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_hangover_warning()
+	_draw_offscreen_lost(vs)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_phone_icon(vs, font)
 	_draw_charge()
@@ -293,6 +294,33 @@ func _draw_arrest() -> void:
 	draw_arc(sp, 34.0, 0, TAU, 40, Color(0, 0, 0, 0.35), 7.0, true)
 	var col := Color(0.25, 0.45, 1.0) if int(Time.get_ticks_msec() / 150) % 2 == 0 else Color(1.0, 0.25, 0.25)
 	draw_arc(sp, 34.0, -PI * 0.5, -PI * 0.5 + TAU * main.arrest, 40, col, 7.0, true)
+
+
+## A lost thing in this block but out of view: an arrow at that edge of
+## the screen with the thing's icon, pointing the way.
+func _draw_offscreen_lost(vs: Vector2) -> void:
+	if main == null or mode != "" or GameState.modal != "":
+		return
+	for ln in main.lost_nodes:
+		if not is_instance_valid(ln):
+			continue
+		var p: Vector3 = ln.global_position + Vector3(0, 0.3, 0)
+		if main.camera.is_position_behind(p):
+			continue
+		var sp: Vector2 = main.camera.unproject_position(p)
+		if sp.x >= 0.0 and sp.x <= vs.x:
+			continue
+		var side := 1.0 if sp.x > vs.x else -1.0
+		var y := clampf(sp.y, 120.0, vs.y - 60.0)
+		var tip := Vector2(vs.x - 14.0 if side > 0.0 else 14.0, y)
+		var bob := sin(Time.get_ticks_msec() / 180.0) * 4.0 * side
+		tip.x += bob
+		var back := tip - Vector2(side * 22.0, 0)
+		draw_colored_polygon(PackedVector2Array([tip, back + Vector2(0, -14), back + Vector2(0, 14)]),
+			Color(1, 0.6, 0.15, 0.9))
+		var ic := back - Vector2(side * 28.0, 0)
+		draw_circle(ic, 22.0, Color(1, 1, 1, 0.85))
+		LostItems.draw_icon(self, ln.id, ic, 30.0, "own")
 
 
 ## Hangover (under 0.5 per mille) drains health: make the link plain.
@@ -710,9 +738,19 @@ func _draw_lost_list(vs: Vector2) -> void:
 	draw_string_outline(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
 	draw_string(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(1, 0.9, 0.4))
 	var x := r.position.x + 18 + label_w + 16 + size * 0.5
+	var no_phone := GameState.is_lost("phone")
 	for id in _today:
 		var c := Vector2(x, r.get_center().y)
 		draw_circle(c, size * 0.55, Color(1, 1, 1, 0.15))
+		# No phone: hot or cold. The nearer the thing (in blocks), the
+		# warmer and faster the glow behind its icon.
+		if no_phone and GameState.is_lost(id) and GameState.placements.has(id):
+			var bd: float = GameState.seg_distance(main.segment, GameState.placements[id][0])
+			var warm := clampf(1.0 - bd / 4.0, 0.0, 1.0)
+			if warm > 0.0:
+				var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * lerpf(2.0, 12.0, warm))
+				var wc := Color(1.0, lerpf(0.7, 0.2, warm), 0.1, (0.25 + 0.5 * pulse) * warm)
+				draw_circle(c, size * (0.6 + 0.12 * pulse * warm), wc)
 		var m := "own"
 		if GameState.is_lost(id):
 			m = "blob" if _forgotten(id) else "lost"

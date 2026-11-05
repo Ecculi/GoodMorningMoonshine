@@ -574,12 +574,24 @@ func _place_lost_items() -> void:
 	placements.clear()
 	var radius := search_radius()
 	var home_c := _seg_center(home_seg)
+	# Where the day starts (home on the first day).
+	var start_seg := home_seg if day == 1 else wake_seg
+	var start_c := _seg_center(start_seg)
 	for id in lost:
 		var seg := home_seg
+		# The phone is always dropped close to where the day starts (about a
+		# block away), so finding it first is an easy start; the rest
+		# lie around home.
+		var near_phone := id == "phone"
 		for attempt in 300:
 			var cand := CityMap.random_segment(rng)
-			var d := absf(_seg_center(cand).x - home_c.x) + absf(_seg_center(cand).y - home_c.y)
-			if d <= radius and cand != home_seg:
+			var c := _seg_center(cand)
+			var ok := false
+			if near_phone:
+				ok = absf(c.x - start_c.x) + absf(c.y - start_c.y) <= 1.0 and cand != home_seg
+			else:
+				ok = absf(c.x - home_c.x) + absf(c.y - home_c.y) <= radius and cand != home_seg
+			if ok:
 				seg = cand
 				break
 		var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
@@ -619,6 +631,13 @@ func _hint_street(seg: Vector3i) -> String:
 	if rng.randf() < 0.6:
 		return CityMap.street_name(seg)
 	return CityMap.cross_name(seg, rng.randf() < 0.5)
+
+
+## Distance between two blocks in map grid units (about blocks walked).
+func seg_distance(a: Vector3i, b: Vector3i) -> float:
+	var ca := _seg_center(a)
+	var cb := _seg_center(b)
+	return absf(ca.x - cb.x) + absf(ca.y - cb.y)
 
 
 func _seg_center(seg: Vector3i) -> Vector2:
