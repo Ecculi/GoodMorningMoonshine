@@ -394,6 +394,9 @@ func _check_lost_pickups() -> void:
 	for ln in lost_nodes.duplicate():
 		if ln.has_meta("flying"):
 			continue
+		# Someone else's shoes: only taken if the player's own are missing.
+		if ln.has_meta("spare") and not GameState.is_lost("shoes"):
+			continue
 		var d := Vector2(ln.position.x - player.position.x, ln.position.z - player.position.z).length()
 		if d < 0.7:
 			GameState.find_item(ln.id)
@@ -1294,12 +1297,26 @@ func shoes_fly_off(from: Vector3, dir: int) -> void:
 	land.y = 0.0
 	GameState.lose_here("shoes", segment, land)
 	hud.add_today("shoes")
+	_fling_shoes(from, land, false)
+
+
+## Someone else hit by a car loses their shoes the same way. A player
+## without shoes can take them (they fit).
+func npc_shoes_fly_off(from: Vector3, dir: int) -> void:
+	var land: Vector3 = clamp_walkable(from + Vector3(dir * rng.randf_range(3.0, 7.0), 0, rng.randf_range(-2.0, 2.0)))
+	land.y = 0.0
+	_fling_shoes(from, land, true)
+
+
+func _fling_shoes(from: Vector3, land: Vector3, spare: bool) -> void:
 	var ln = LostItemNode.new()
 	ln.main = self
 	ln.setup("shoes")
 	add_child(ln)
 	lost_nodes.append(ln)
 	ln.set_meta("flying", true)
+	if spare:
+		ln.set_meta("spare", true)
 	var start := from + Vector3(0, 0.3, 0)
 	ln.position = start
 	var height := rng.randf_range(3.5, 5.5)

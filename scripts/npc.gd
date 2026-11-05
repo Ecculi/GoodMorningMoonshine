@@ -572,6 +572,11 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 		var push := Vector3(away * randf_range(1.3, 1.8), randf_range(1.3, 1.8), randf_range(-0.3, 0.3))
 		if attacker.has_method("_check_hits"):
 			push = Vector3(attacker.dir * 7.0, 3.5, randf_range(-0.8, 0.8))
+			# Run over: half the time the shoes fly off.
+			if not _shoeless and randf() < 0.5:
+				_shoeless = true
+				model.set_shoes(false)
+				main.npc_shoes_fly_off(position, attacker.dir)
 		_knock_out(push)
 	elif role == "bouncer":
 		provoke()
@@ -589,6 +594,8 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 var _sausage_hits := 0
 ## Times punched or hit (for "one punch").
 var times_hit := 0
+## Lost their shoes to a car.
+var _shoeless := false
 
 
 func hit_by_item(kind: int) -> void:
