@@ -5,6 +5,10 @@ extends Node3D
 ## - "police": patrols; chases the player after a crime and arrests them
 ##   (main.gd counts the contact time)
 ## - "guard": stands by a shop; beats the player up after a crime
+## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
+## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
+## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
+##   left alone, they may offer a can of beer
 
 const PersonModel = preload("res://scripts/person_model.gd")
 const Item = preload("res://scripts/item.gd")
@@ -67,6 +71,12 @@ var _knock := 0.0
 var _mark: Label3D
 var _looted := false
 var _ragdoll = null
+## Punks: gang id (shared by the gang) and its members.
+var gang_id := -1
+var gang: Array = []
+## Beggar / drunk: how many trades are left.
+var trades_left := 1
+var _sway_t := 0.0
 
 const SHIRTS := [Color(0.75, 0.2, 0.2), Color(0.2, 0.55, 0.3), Color(0.85, 0.7, 0.2),
 	Color(0.5, 0.3, 0.6), Color(0.9, 0.9, 0.88), Color(0.2, 0.2, 0.25), Color(0.85, 0.45, 0.2)]
@@ -98,6 +108,50 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			stationary = true
 			chase_speed = GUARD_SPEED
 			hit_damage = GUARD_DAMAGE
+		"punk":
+			# Black leather jacket, ripped jeans, a bright mohawk.
+			model = PersonModel.new(Color(0.08, 0.08, 0.09), Color(0.25, 0.3, 0.45), skin,
+				Color(0.1, 0.1, 0.1), rng.randf_range(0.95, 1.05))
+			var mh: Color = [Color(1.0, 0.2, 0.6), Color(0.3, 1.0, 0.3), Color(0.2, 0.6, 1.0), Color(1.0, 0.5, 0.1)][rng.randi() % 4]
+			_head_box(Vector3(-0.02, 1.9, 0), Vector3(0.24, 0.16, 0.05), mh)
+			hp = 3
+		"beggar":
+			model = PersonModel.new(Color(0.42, 0.36, 0.3), Color(0.3, 0.27, 0.22), skin,
+				Color(0.5, 0.5, 0.48), 0.98)
+			_head_box(Vector3(0.0, 1.84, 0), Vector3(0.3, 0.1, 0.34), Color(0.3, 0.35, 0.5))  # beanie
+			stationary = true
+			model.sitting = true
+			# Paper cup in front.
+			var cup := MeshInstance3D.new()
+			var cm := CylinderMesh.new()
+			cm.top_radius = 0.05
+			cm.bottom_radius = 0.04
+			cm.height = 0.12
+			cup.mesh = cm
+			var cmat := StandardMaterial3D.new()
+			cmat.albedo_color = Color(0.92, 0.9, 0.85)
+			cup.material_override = cmat
+			cup.position = Vector3(1.05, 0.88, 0.0)  # on the ground (the model sits 0.82 lower)
+			model.add_child(cup)
+			trades_left = 1
+		"drunk":
+			model = PersonModel.new(Color(0.35, 0.3, 0.22), Color(0.22, 0.22, 0.25), skin.darkened(0.05),
+				Color(0.4, 0.38, 0.35), 1.0)
+			stationary = true
+			# Bottle in hand.
+			var bt := MeshInstance3D.new()
+			var bm := CylinderMesh.new()
+			bm.top_radius = 0.03
+			bm.bottom_radius = 0.045
+			bm.height = 0.26
+			bt.mesh = bm
+			var bmat := StandardMaterial3D.new()
+			bmat.albedo_color = Color(0.18, 0.42, 0.2)
+			bt.material_override = bmat
+			bt.position = Vector3(0, -0.12, 0)
+			model.hand.add_child(bt)
+			trades_left = 2
+			_sway_t = rng.randf_range(0.0, 6.0)
 		_:
 			model = PersonModel.new(SHIRTS[rng.randi() % SHIRTS.size()], PANTS[rng.randi() % PANTS.size()],
 				skin, HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.92, 1.06))
@@ -117,6 +171,85 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 
 func is_down() -> bool:
 	return state == S.KO
+
+
+## Police and guards (everyone else is an ordinary person in a fight).
+func is_lawman() -> bool:
+	return role == "police" or role == "guard"
+
+
+## Beggar or street drunk: the action button trades instead of punching.
+func is_trader() -> bool:
+	return (role == "beggar" or role == "drunk") and state == S.WALK
+
+
+func _head_box(pos: Vector3, size: Vector3, col: Color) -> void:
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = size
+	mi.mesh = bm
+	var m := StandardMaterial3D.new()
+	m.albedo_color = col
+	mi.material_override = m
+	mi.position = pos
+	mi.set_meta("head_extra", true)
+	model.add_child(mi)
+
+
+## Hit one punk and the whole gang comes for you.
+func _alert_gang() -> void:
+	for g in gang:
+		if g != self and is_instance_valid(g) and g.state != S.KO:
+			g.provoke()
+
+
+## Starts a fight with the player (stands up first if sitting).
+func provoke() -> void:
+	if state == S.KO:
+		return
+	if model.sitting:
+		model.sitting = false
+	stationary = false
+	state = S.FIGHT
+	_mark.visible = true
+
+
+## The action button at a beggar or a drunk (instead of a punch).
+## Returns true when it was handled as a trade.
+func offer_trade(p: Node3D) -> bool:
+	if not is_trader():
+		return false
+	var top := position + Vector3(0, 1.4 if model.sitting else 2.2, 0)
+	if trades_left <= 0:
+		main.popup("…", top, Color(0.85, 0.85, 0.85))
+		return true
+	match role:
+		"beggar":
+			if GameState.money < 2:
+				main.popup("€?", top, Color(1, 0.85, 0.3))
+				return true
+			GameState.money -= 2
+			trades_left -= 1
+			main.popup("-2 €", top, Color(1, 0.85, 0.3))
+			main.beggar_tip(position)
+		"drunk":
+			var paid := false
+			if p.hand_item != null and p.hand_item.kind == Item.Kind.FOOD:
+				p._consume_hand_item()
+				paid = true
+			elif GameState.money >= 1:
+				GameState.money -= 1
+				main.popup("-1 €", top, Color(1, 0.85, 0.3))
+				paid = true
+			if not paid:
+				main.popup("€?", top, Color(1, 0.85, 0.3))
+				return true
+			trades_left -= 1
+			model.punch()
+			var amount := GameState.drink(0.3)
+			main.popup("+" + GameState.format_promille(amount), p.position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
+	GameState.busy_time = maxf(GameState.busy_time, 0.6)
+	return true
 
 
 func is_hostile() -> bool:
@@ -141,7 +274,7 @@ func _cap(col: Color, band: Color) -> void:
 
 ## Police and guards react to a crime they noticed.
 func notice() -> void:
-	if state == S.KO or role == "civ":
+	if state == S.KO or not is_lawman():
 		return
 	_mark.modulate = Color(0.3, 0.5, 1.0) if role == "police" else Color(1, 0.25, 0.2)
 	_mark.visible = true
@@ -182,18 +315,18 @@ func _process(_delta: float) -> void:
 				_dazed = false
 				_ko_time = KO_TIME
 				_end_ragdoll()
-				if role == "civ":
+				if not is_lawman():
 					state = S.FIGHT
 					_mark.visible = true
 				else:
 					state = S.WALK
 					notice()
 			elif _timer > _ko_time:
-				if role == "civ":
+				if not is_lawman():
 					# Face away from the player before rising, then limp off.
 					dir = 1 if position.x >= main.player.position.x else -1
 				_end_ragdoll()
-				if role == "civ":
+				if not is_lawman():
 					_get_up()
 				else:
 					# Police and guards get back up angry (leave the KO state
@@ -242,6 +375,8 @@ func _turn(moved: Vector3, dt: float) -> void:
 	elif state == S.FIGHT or state == S.CHASE:
 		var p = main.player
 		target = atan2(-(p.position.z - position.z), p.position.x - position.x)
+	elif model.sitting:
+		target = -PI * 0.5  # sitting against the wall, facing the street
 	else:
 		target = 0.0 if dir > 0 else PI
 	model.rotation.y = lerp_angle(model.rotation.y, target, 1.0 - exp(-10.0 * dt))
@@ -256,7 +391,13 @@ func _walk(dt: float) -> void:
 		return
 	if stationary:
 		model.animate(0.0, dt)
+		if role == "drunk":
+			# Sways on the spot, now and then a swig.
+			_sway_t += dt
+			model.rotation.z = sin(_sway_t * 1.3) * 0.07 + sin(_sway_t * 0.7) * 0.04
 		return
+	if role == "punk":
+		main.punk_meet(self)
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
 	if position.x > EDGE_X:
@@ -344,6 +485,8 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 	main.popup("*", position + Vector3(0, 1.7, 0), Color(1, 0.9, 0.4))
 	if attacker == main.player:
 		main.report_crime(position, false)
+	if attacker == main.player:
+		_alert_gang()
 	if hp <= 0:
 		# Cars throw people much further than fists.
 		# Knocked away from the punch.
@@ -352,10 +495,9 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 		if attacker.has_method("_check_hits"):
 			push = Vector3(attacker.dir * 7.0, 3.5, randf_range(-0.8, 0.8))
 		_knock_out(push)
-	elif role == "civ":
-		state = S.FIGHT
+	elif not is_lawman():
+		provoke()
 		_cooldown = maxf(_cooldown, 0.5)
-		_mark.visible = true
 	else:
 		# Hitting police or a guard only staggers them for a moment.
 		state = S.STUNNED
@@ -379,6 +521,7 @@ func hit_by_item(kind: int) -> void:
 		main.popup("*", position + Vector3(0, 1.9, 0), Color(1, 0.9, 0.4))
 		_knock_out(Vector3(away * 2.0, 1.2, 0))
 		main.report_crime(position, false)
+		_alert_gang()
 		return
 	match kind:
 		Item.Kind.BOTTLE:
@@ -387,9 +530,9 @@ func hit_by_item(kind: int) -> void:
 				state = S.STUNNED
 				_timer = 2.0
 		Item.Kind.CAN:
-			if role == "civ":
-				state = S.FIGHT
-				_mark.visible = true
+			if not is_lawman():
+				provoke()
+				_alert_gang()
 			else:
 				notice()
 
@@ -430,7 +573,7 @@ func check_pickpocket(p: Node3D) -> void:
 		var amount: int = main.rng.randi_range(1, 6)
 		GameState.money += amount
 		main.popup("+%d €" % amount, position + Vector3(0, 2.0, 0), Color(1, 0.85, 0.3))
-	elif role != "civ":
+	elif is_lawman():
 		notice()
 	elif main.rng.randf() < 0.5:
 		_mark.visible = true
@@ -473,6 +616,8 @@ func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
 	_ko_count += 1
 	_mark.visible = false
 	model.raise_arm(false)
+	if model.sitting:
+		model.sitting = false
 	# Fall over as a rag doll.
 	_knock = 0.0
 	_ragdoll = Ragdoll.new()
@@ -483,6 +628,6 @@ func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
 	GameState.busy_time = maxf(GameState.busy_time, 1.2)
 	# Loot only the first time (no farming the same person); never from
 	# police or guards.
-	if not _looted and role == "civ":
+	if not _looted and not is_lawman():
 		_looted = true
 		main.spawn_loot(position)

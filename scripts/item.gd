@@ -73,6 +73,11 @@ func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:
 	_root.scale = Vector3.ONE * 2.0
 
 
+## Food lying on the street (dogs go for it).
+func can_be_eaten() -> bool:
+	return kind == Kind.FOOD and state == St.GROUND
+
+
 func can_pickup() -> bool:
 	return state == St.GROUND and not wait_far
 

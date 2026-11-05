@@ -6,6 +6,7 @@ extends Node3D
 
 const Player = preload("res://scripts/player.gd")
 const Npc = preload("res://scripts/npc.gd")
+const Animal = preload("res://scripts/animal.gd")
 const Item = preload("res://scripts/item.gd")
 const Hud = preload("res://scripts/hud.gd")
 const TouchControls = preload("res://scripts/touch_controls.gd")
@@ -64,6 +65,11 @@ var _cloud_sun_set := false
 var level: Node3D
 var segment: Vector3i = CityMap.START
 var npcs: Array = []
+## Seagulls and dogs in the current block.
+var animals: Array = []
+## Punk gangs that already met the player (each offers a beer at most once).
+var _punk_met := {}
+var _next_gang := 0
 var items: Array = []
 var lost_nodes: Array = []
 var cars: Array = []
@@ -272,6 +278,7 @@ func _update_followers() -> void:
 		n.dir = f["dir"]
 		n.hp = f["hp"]
 		n.stationary = false
+		n.model.sitting = false
 		n.state = f["state"]
 		n._mark.visible = true
 
@@ -305,6 +312,9 @@ func _clear_block_content() -> void:
 	for n in npcs:
 		n.queue_free()
 	npcs.clear()
+	for a in animals:
+		a.queue_free()
+	animals.clear()
 	var keep = player.hand_item
 	for it in items:
 		if is_instance_valid(it) and it != keep:
@@ -355,6 +365,7 @@ func _populate_block() -> void:
 			if rng.randf() < 0.35:
 				var g = _spawn_npc(false, "guard")
 				g.position = Vector3(sh["x"] - 1.2, 0, -6.9)
+	_spawn_street_folk()
 	for id in GameState.placements:
 		var pl: Array = GameState.placements[id]
 		if pl[0] == segment:
@@ -375,6 +386,7 @@ func _check_lost_pickups() -> void:
 		if d < 0.7:
 			GameState.find_item(ln.id)
 			popup("+", ln.position + Vector3(0, 1.2, 0), Color(0.5, 1.0, 0.5))
+			hud.show_found(ln.id)
 			lost_nodes.erase(ln)
 			ln.queue_free()
 
@@ -897,7 +909,9 @@ func respawn_npc(n) -> void:
 	npcs.erase(n)
 	var role: String = n.role
 	n.queue_free()
-	_spawn_npc(true, "civ" if role == "guard" else role)
+	# Guards, beggars and drunks stay put; whoever walks off is replaced
+	# by an ordinary passer-by (punks only come as a gang).
+	_spawn_npc(true, role if role == "police" else "civ")
 
 
 func popup(text: String, pos: Vector3, color: Color) -> void:
@@ -945,9 +959,8 @@ func player_sings() -> void:
 		if n.is_down():
 			continue
 		var d := Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length()
-		if n.role == "civ" and d < 4.0 and n.state == n.S.WALK and rng.randf() < 0.3:
-			n.state = n.S.FIGHT
-			n._mark.visible = true
+		if not n.is_lawman() and not n.is_trader() and d < 4.0 and n.state == n.S.WALK and rng.randf() < 0.3:
+			n.provoke()
 		elif n.role == "police" and d < 10.0 and rng.randf() < 0.5:
 			n.notice()
 
@@ -1066,6 +1079,130 @@ func stomach_texture() -> ImageTexture:
 	return _stomach_tex
 
 
+## Extra street characters: a beggar by a wall, a drunk, a punk gang,
+## seagulls and a loose dog, each only in some blocks.
+func _spawn_street_folk() -> void:
+	if rng.randf() < 0.3:
+		var b = _spawn_npc(false, "beggar")
+		b.position = Vector3(rng.randf_range(-13.0, 13.0), 0, -7.25)
+	if rng.randf() < 0.25:
+		var d = _spawn_npc(false, "drunk")
+		d.position.z = rng.randf_range(-7.0, -5.8) if rng.randf() < 0.5 else rng.randf_range(3.3, 4.8)
+	if GameState.day >= 2 and rng.randf() < 0.2:
+		_spawn_punks()
+	for i in (rng.randi_range(1, 3) if rng.randf() < 0.55 else 0):
+		var z := rng.randf_range(-7.4, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.0, 5.2)
+		_spawn_animal("gull", Vector3(rng.randf_range(-14.0, 14.0), 0, z))
+	if rng.randf() < 0.3:
+		var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
+		_spawn_animal("dog", Vector3(rng.randf_range(-14.0, 14.0), 0, z))
+
+
+func _spawn_punks() -> void:
+	var n := rng.randi_range(2, 3)
+	var d := 1 if rng.randf() < 0.5 else -1
+	var x := rng.randf_range(-12.0, 12.0)
+	if absf(x - player.position.x) < 5.0:
+		x = clampf(x + 10.0 * signf(x - player.position.x + 0.01), -14.0, 14.0)
+	var z := rng.randf_range(-7.0, -5.8) if rng.randf() < 0.5 else rng.randf_range(3.2, 4.8)
+	var gang: Array = []
+	_next_gang += 1
+	var spd := rng.randf_range(1.1, 1.4)
+	for i in n:
+		var p = _spawn_npc(false, "punk")
+		p.position = Vector3(x - d * 0.9 * i, 0, z + (0.35 if i % 2 == 1 else 0.0))
+		p.dir = d
+		p.speed = spd
+		p.gang_id = _next_gang
+		gang.append(p)
+	for p in gang:
+		p.gang = gang
+
+
+## A punk passing close by: the first time a gang meets the player it may
+## offer a can of beer (into an empty hand, else at the feet).
+func punk_meet(p) -> void:
+	if p.gang_id < 0 or _punk_met.has(p.gang_id):
+		return
+	var d := Vector2(p.position.x - player.position.x, p.position.z - player.position.z).length()
+	if d > 1.8:
+		return
+	_punk_met[p.gang_id] = true
+	if rng.randf() < 0.45:
+		var it = spawn_item(Item.Kind.BOTTLE, player.position, 1, Item.Drink.BEER)
+		if player.hand_item == null:
+			player._pickup(it)
+		popup("!", p.position + Vector3(0, 2.3, 0), Color(0.6, 1.0, 0.6))
+		popup_icon(heart_texture(), p.position + Vector3(0, 2.6, 0.3))
+
+
+## Beggar paid: a tip about where one of the lost things is (like the
+## cellmate), or a shrug when nothing is lost.
+func beggar_tip(pos: Vector3) -> void:
+	var candidates: Array = []
+	for id in GameState.placements:
+		candidates.append(id)
+	if candidates.is_empty():
+		popup("?", pos + Vector3(0, 1.6, 0), Color(0.9, 0.9, 0.9))
+		return
+	var id: String = candidates[rng.randi() % candidates.size()]
+	var seg: Vector3i = GameState.placements[id][0]
+	hud.think([id])
+	popup(CityMap.street_name(seg), player.position + Vector3(0, 3.2, 0), Color(0.8, 0.9, 1.0))
+
+
+func _spawn_animal(kind: String, pos: Vector3):
+	var a = Animal.new()
+	a.main = self
+	a.setup(kind, rng, pos)
+	add_child(a)
+	animals.append(a)
+	return a
+
+
+func remove_animal(a) -> void:
+	animals.erase(a)
+	a.queue_free()
+
+
+## A beggar or street drunk within `r` metres, ready to trade.
+func trader_near(pos: Vector3, r: float):
+	for n in npcs:
+		if n.is_trader() and Vector2(n.position.x - pos.x, n.position.z - pos.z).length() < r:
+			return n
+	return null
+
+
+## An animal right in front of the player (for a punch / swat).
+func animal_in_front(pos: Vector3, facing: int, reach: float):
+	for a in animals:
+		var dx: float = (a.position.x - pos.x) * facing
+		if dx >= -0.2 and dx <= reach and absf(a.position.z - pos.z) < 0.6 and a.position.y < 2.0:
+			return a
+	return null
+
+
+## Food lying on the street within `r` metres (for dogs).
+func food_on_ground_near(pos: Vector3, r: float):
+	for it in items:
+		if is_instance_valid(it) and it.can_be_eaten():
+			if Vector2(it.global_position.x - pos.x, it.global_position.z - pos.z).length() < r:
+				return it
+	return null
+
+
+## The lost thing in this block nearest to `pos` (a dog can sniff it out).
+func nearest_lost_node(pos: Vector3):
+	var best = null
+	var best_d := INF
+	for ln in lost_nodes:
+		var d := Vector2(ln.position.x - pos.x, ln.position.z - pos.z).length()
+		if d < best_d:
+			best_d = d
+			best = ln
+	return best
+
+
 func _spawn_npc(at_edge: bool, role := "civ"):
 	var n = Npc.new()
 	n.main = self
@@ -1178,7 +1315,7 @@ func report_crime(pos: Vector3, alarm: bool) -> void:
 	if GameState.promille > GameState.PROMILLE_DRUNK:
 		reach *= 2.0
 	for n in npcs:
-		if n.role == "civ" or n.is_down():
+		if not n.is_lawman() or n.is_down():
 			continue
 		if Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length() < reach:
 			n.notice()

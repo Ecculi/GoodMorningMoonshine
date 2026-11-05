@@ -61,6 +61,17 @@ func show_pocket_check() -> void:
 
 
 ## A short thought bubble, e.g. "my phone is missing" (gone after ~2 m).
+## A lost thing was just found: shown big in the middle of the screen.
+const FOUND_TIME := 2.4
+var _found_id := ""
+var _found_t := 0.0
+
+
+func show_found(id: String) -> void:
+	_found_id = id
+	_found_t = FOUND_TIME
+
+
 func think(items: Array) -> void:
 	_bubble_items = items
 	_bubble_on = true
@@ -172,6 +183,8 @@ func _draw() -> void:
 	_draw_shading_hand(vs)
 	_draw_hand_hint(font)
 	_draw_bin_hint()
+	_draw_trade_hint()
+	_draw_found(vs)
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
 	_draw_lost_list(vs)
@@ -345,6 +358,78 @@ func _draw_shading_hand(vs: Vector2) -> void:
 	for y in [0.0425, 0.0875, 0.1325]:
 		draw_line(pt.call(0.6, y), pt.call(0.82, y + 0.003), leak, 1.5)
 	draw_line(pt.call(0.25, 0.178), pt.call(0.56, 0.182), Color(1, 0.92, 0.72, 0.2 * amt), 2.0)
+
+
+## Found a lost thing: its icon pops up big in the middle with a green
+## tick and a burst of rays, then shrinks away towards the find list at
+## the top.
+func _draw_found(vs: Vector2) -> void:
+	if _found_t <= 0.0 or _found_id == "":
+		return
+	_found_t = maxf(0.0, _found_t - delta_draw_found())
+	var k := 1.0 - _found_t / FOUND_TIME  # 0 -> 1
+	# Pop in (overshoot), hold, then fly up to the list and fade.
+	var pop := minf(k / 0.12, 1.0)
+	var sc := pop * (1.0 + 0.25 * sin(pop * PI))
+	var c := Vector2(vs.x * 0.5, vs.y * 0.38)
+	var a := 1.0
+	if k > 0.75:
+		var f := (k - 0.75) / 0.25
+		c = c.lerp(Vector2(vs.x * 0.5, 40), f)
+		sc *= lerpf(1.0, 0.4, f)
+		a = 1.0 - f
+	var r := 70.0 * sc
+	# Rays.
+	for i in 12:
+		var ang := TAU * float(i) / 12.0 + k * 1.5
+		var d := Vector2.from_angle(ang)
+		draw_line(c + d * r * 1.15, c + d * r * 1.6, Color(1, 0.9, 0.4, 0.8 * a), 5.0)
+	draw_circle(c, r, Color(1, 1, 1, 0.92 * a))
+	draw_arc(c, r, 0.0, TAU, 48, Color(0.3, 0.85, 0.35, a), 6.0, true)
+	LostItems.draw_icon(self, _found_id, c, 90.0 * sc, "own")
+	# Green tick at the lower right.
+	var tc := c + Vector2(r * 0.62, r * 0.62)
+	draw_circle(tc, 22.0 * sc, Color(0.25, 0.75, 0.3, a))
+	draw_polyline(PackedVector2Array([tc + Vector2(-10, 0) * sc, tc + Vector2(-3, 8) * sc, tc + Vector2(11, -8) * sc]),
+		Color(1, 1, 1, a), 5.0 * sc, true)
+
+
+var _found_last_ms := 0
+
+
+func delta_draw_found() -> float:
+	var now := Time.get_ticks_msec()
+	var d := 0.0 if _found_last_ms == 0 else float(now - _found_last_ms) / 1000.0
+	_found_last_ms = now
+	return minf(d, 0.1)
+
+
+## Next to a beggar or a street drunk: what the button does there.
+##   beggar: [button] -> coin -> "?" (a tip)
+##   drunk:  [button] -> coin / sausage -> bottle (a sip)
+func _draw_trade_hint() -> void:
+	if main == null or main.player == null or mode != "" or GameState.modal != "":
+		return
+	var n = main.trader_near(main.player.position, 1.6)
+	if n == null or n.trades_left <= 0:
+		return
+	var p: Vector3 = n.position + Vector3(0, 1.5 if n.model.sitting else 2.5, 0)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	draw_rect(Rect2(sp - Vector2(58, 15), Vector2(116, 30)), Color(0, 0, 0, 0.4))
+	_hint_button(sp + Vector2(-38, 0), false, 1.0)
+	_hint_arrow(sp + Vector2(-8, 0), 1.0)
+	# A coin.
+	var cc := sp + Vector2(14, 0)
+	draw_circle(cc, 9.0, Color(0.95, 0.75, 0.2))
+	draw_arc(cc, 9.0, 0.0, TAU, 20, Color(0.5, 0.35, 0.05), 1.5, true)
+	if n.role == "beggar":
+		var font := get_theme_default_font()
+		draw_string_outline(font, sp + Vector2(28, 8), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 5, Color.BLACK)
+		draw_string(font, sp + Vector2(28, 8), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
+	else:
+		_hint_action(sp + Vector2(40, 0), "ACT_DRINK", 1.0)
 
 
 ## Near an unsearched bin: a magnifier above it; next to it (where the

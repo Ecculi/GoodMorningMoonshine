@@ -802,6 +802,11 @@ func _short_action() -> void:
 			return
 	GameState.busy_time = maxf(GameState.busy_time, 0.35)
 	var target = main.find_npc_in_front(position, facing, PUNCH_RANGE)
+	# Next to a beggar or a street drunk the button trades (a charged punch
+	# still hits them).
+	var trader = main.trader_near(position, 1.6)
+	if trader != null and trader.offer_trade(self):
+		return
 	if target == null and hand_item != null and main.nearest_npc_distance(position) > 2.5:
 		if hand_item.kind == Item.Kind.BOTTLE:
 			var amount := GameState.drink(Item.DRINK_PROMILLE[hand_item.drink])
@@ -853,6 +858,10 @@ func _punch(target, charge: float, charged := false) -> void:
 	else:
 		_punch_strain()
 	if target == null:
+		# Swat a seagull or a dog in front.
+		var an = main.animal_in_front(position, facing, PUNCH_RANGE + 0.3)
+		if an != null:
+			an.swat()
 		return
 	var p := GameState.promille
 	# Drunk: swings miss more often the drunker you are.
