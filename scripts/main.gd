@@ -1090,8 +1090,10 @@ func stomach_texture() -> ImageTexture:
 func _spawn_street_folk() -> void:
 	# Without a phone there are more beggars around to ask.
 	if rng.randf() < (0.6 if GameState.is_lost("phone") else 0.3):
-		var b = _spawn_npc(false, "beggar")
-		b.position = Vector3(rng.randf_range(-13.0, 13.0), 0, -7.25)
+		var bx: float = BlockBuilder.clear_of_doors(level, rng, -13.0, 13.0)
+		if not is_nan(bx):
+			var b = _spawn_npc(false, "beggar")
+			b.position = Vector3(bx, 0, -7.25)
 	if rng.randf() < 0.25:
 		var d = _spawn_npc(false, "drunk")
 		d.position.z = rng.randf_range(-7.0, -5.8) if rng.randf() < 0.5 else rng.randf_range(3.3, 4.8)

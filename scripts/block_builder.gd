@@ -36,6 +36,16 @@ static func build(seg: Vector3i, home_x := INF, home_type := "flat") -> Node3D:
 			_police_station(root)
 		if home_x != INF:
 			_home_door(root, home_x, home_type)
+	# Doors on the far side; bins, trees (and beggars) keep clear of them so
+	# the action button never mixes up a door and a bin.
+	var doors: Array = []
+	for sh in root.get_meta("shops", []):
+		doors.append(sh["x"])
+	if home_x != INF:
+		doors.append(home_x)
+	if seg == CityMap.POLICE_STATION:
+		doors.append(CityMap.POLICE_DOOR_X)
+	root.set_meta("doors", doors)
 	_props(root, rng, sea)
 	_signs(root, seg)
 	return root
@@ -207,6 +217,26 @@ static func _obstacle(root: Node3D, x: float, z: float, r: float) -> void:
 	root.set_meta("obstacles", obs)
 
 
+## Free space kept on both sides of a door (metres).
+const DOOR_CLEAR := 3.0
+
+
+## A random x on the far sidewalk at least DOOR_CLEAR from every door, or
+## NAN if no such spot turned up.
+static func clear_of_doors(root: Node3D, rng: RandomNumberGenerator, lo: float, hi: float) -> float:
+	var doors: Array = root.get_meta("doors", [])
+	for attempt in 30:
+		var x := rng.randf_range(lo, hi)
+		var ok := true
+		for d in doors:
+			if absf(x - float(d)) < DOOR_CLEAR:
+				ok = false
+				break
+		if ok:
+			return x
+	return NAN
+
+
 static func _props(root: Node3D, rng: RandomNumberGenerator, sea: bool) -> void:
 	var x := -40.0
 	while x <= 40.0:
@@ -217,7 +247,9 @@ static func _props(root: Node3D, rng: RandomNumberGenerator, sea: bool) -> void:
 		x += 10.0
 	if not sea:
 		for i in rng.randi_range(2, 4):
-			var tx := rng.randf_range(-BLOCK_HALF + 1.5, BLOCK_HALF - 1.5)
+			var tx := clear_of_doors(root, rng, -BLOCK_HALF + 1.5, BLOCK_HALF - 1.5)
+			if is_nan(tx):
+				continue
 			_cyl(root, Vector3(tx, 1.2, -7.3), 0.15, 2.4, Color(0.35, 0.25, 0.18))
 			_obstacle(root, tx, -7.3, 0.25)
 			_sphere(root, Vector3(tx, 3.3, -7.3), 1.3, Color(0.25, 0.5, 0.24))
@@ -230,7 +262,9 @@ static func _props(root: Node3D, rng: RandomNumberGenerator, sea: bool) -> void:
 			_obstacle(root, bx + ox, 5.4, 0.3)
 		_box(root, Vector3(bx, 0.22, 5.4), Vector3(1.6, 0.44, 0.08), Color(0.2, 0.2, 0.2))
 	for i in rng.randi_range(1, 3):
-		var binx := rng.randf_range(-14.0, 14.0)
+		var binx := clear_of_doors(root, rng, -14.0, 14.0)
+		if is_nan(binx):
+			continue
 		_cyl(root, Vector3(binx, 0.5, -7.5), 0.3, 0.8, Color(0.2, 0.35, 0.25))
 		_obstacle(root, binx, -7.5, 0.35)
 		var bins: Array = root.get_meta("bins", [])
