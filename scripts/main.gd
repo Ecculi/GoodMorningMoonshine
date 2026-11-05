@@ -728,6 +728,7 @@ func _new_day() -> void:
 	_searched_bins.clear()
 	_friend_refused = false
 	arrest = 0.0
+	player.wake_up()
 	_enter_block(GameState.wake_seg, GameState.wake_pos, 1 if rng.randf() < 0.5 else -1)
 	hud.show_pocket_check()
 	if GameState.sleep_place == "jail":

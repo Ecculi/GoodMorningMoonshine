@@ -89,6 +89,27 @@ func reset(pos: Vector3) -> void:
 	car_grace = 0.0
 
 
+## Morning: clear any fall, rag doll or knockout left over from the night
+## (e.g. fell asleep on the ground). Keeps what is in the hand.
+func wake_up() -> void:
+	running = false
+	_press_time = -1.0
+	_block_action = true
+	_knock = Vector3.ZERO
+	_ride_car = null
+	_fall_t = 0.0
+	_rise_t = 0.0
+	_sleep_after_fall = false
+	if _ragdoll != null:
+		_ragdoll.queue_free()
+		_ragdoll = null
+	model.visible = true
+	model.rotation.z = 0.0
+	model.position.y = 0.0
+	model.set_windup(-1.0)
+	GameState.charging = false
+
+
 func is_aiming() -> bool:
 	return _press_time >= LONG_PRESS and hand_item != null
 
