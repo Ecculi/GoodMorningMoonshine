@@ -61,6 +61,10 @@ var hunger := 20.0
 ## health the player is exhausted and can't punch until it has all
 ## come back.
 var strain := 0.0
+## Set by the player while the action button is held down: standing
+## still, time then runs at half speed.
+var charging := false
+const CHARGE_TIME_SCALE := 0.5
 ## Cold 0..100 (no meter: the character shivers). Depends on the weather and
 ## missing clothes; warms up indoors and on sunny days.
 var cold := 20.0
@@ -145,8 +149,13 @@ func _process(delta: float) -> void:
 		active = false
 		return
 	busy_time = maxf(0.0, busy_time - delta)
-	active = moving or busy_time > 0.0
-	world_dt = delta if active else 0.0
+	active = moving or busy_time > 0.0 or charging
+	if moving or busy_time > 0.0:
+		world_dt = delta
+	elif charging:
+		world_dt = delta * CHARGE_TIME_SCALE
+	else:
+		world_dt = 0.0
 	if not active:
 		return
 
@@ -238,9 +247,19 @@ func add_strain(amount: float) -> void:
 	_check_strain()
 
 
-## Exhausted: the temporary loss used up all the health; no punching until
-## it has fully recovered.
+## Exhausted: the temporary loss used up all the health (the whole heart
+## is light pink). Punches only seldom and runs only a few steps until it
+## has fully recovered.
 var exhausted := false
+## How long the heart may stay all pink before health starts to drop:
+## 10 s with a full heart, 1 s with an empty one (world time).
+const EXHAUST_GRACE_MAX := 10.0
+const EXHAUST_GRACE_MIN := 1.0
+const EXHAUST_DAMAGE := 2.0  # health per second after the grace time
+
+
+func exhaust_grace() -> float:
+	return lerpf(EXHAUST_GRACE_MIN, EXHAUST_GRACE_MAX, clampf(health / 100.0, 0.0, 1.0))
 
 
 func _check_strain() -> void:

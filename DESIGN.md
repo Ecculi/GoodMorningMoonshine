@@ -160,10 +160,13 @@ Krapula ei kovene päivien mukaan.
   | Toiminto | Kontrolli |
   |---|---|
   | **Lyö** | lyhyt painallus |
+  | **Ladattu lyönti** (käsi tyhjä) | pitkä painallus: hahmo vetää kättä taaksepäin ja kerää voimaa; mitä pidempään pitää pohjassa, sitä kovempi lyönti. Lyönti lähtee, kun nappi päästetään. |
   | **Syö / juo** käden tavara | lyhyt painallus, kun lähellä ei ole ketään |
   | **Mene sisään** | lyhyt painallus ovella |
   | **Heitä** käden tavara | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää. Latauksen aikana hahmo ei liiku, vaan nuolilla valitaan heiton suunta (myös ylös ja alas). Heitto lähtee, kun nappi päästetään. |
   | **Juokse** | kaksoisnapautus suuntanuolta tai saman suunnan pitäminen hetken pohjassa |
+
+- Kun toimintanappi on pohjassa eikä hahmo liiku, **aika kulkee puolella nopeudella**. Jos hahmo liikkuu samalla, aika kulkee normaalisti.
   | **Puhelin auki / kiinni** | oma puhelinnappi (kosketusnäytöllä pieni nappi ison napin yläpuolella, näppäimistöllä P tai Tab, peliohjaimella Y) |
   | **Puhelimen selaus** | vasen / oikea |
 
@@ -289,7 +292,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - **Rakkaus kaikkiin (1,3–1,8 ‰):** hahmo halaa ohikulkijoita, joihin törmää. Halauksen aikana taskuvarkaus onnistuu lähes aina, eikä halattu suutu.
 - **Laulaminen (yli 1,5 ‰):** hahmo alkaa välillä laulaa (nuotteja nousee). Lähellä olevat ohikulkijat voivat suuttua, ja poliisit voivat huomata.
 - **Rohkeus ja ohilyönnit (yli 1,3 ‰):** lyönnit tekevät tuplavahinkoa, mutta menevät sitä useammin ohi, mitä kovempi humala. Poliisit ja vartijat huomaavat rikoksen kaksi kertaa kauempaa myös hiippaillessa.
-- **Kaatuilu:** hahmo voi kaatua vain, kun alusta vaihtuu (reunakiven yli ajotieltä jalkakäytävälle tai takaisin) tai kun hän kävelee jotain päin (puu, lyhtypylväs, penkki, roskis, kyltin tolppa). Kaatuminen on satunnainen yllätys: reunakiven ylityksessä 2 % (1,3 ‰) – 15 % (2,8 ‰), esteeseen törmätessä 8 % – 35 %; juostessa 1,5-kertaisesti ja lumella lisää 5 prosenttiyksikköä (kengättä 10). Selvin päin kuivalla kadulla hahmo vain törmää esteeseen ja pysähtyy. Esteiden läpi ei voi kävellä.
+- **Kaatuilu:** hahmo voi kaatua vain, kun alusta vaihtuu (reunakiven yli ajotieltä jalkakäytävälle tai takaisin) tai kun hän kävelee jotain päin (puu, lyhtypylväs, penkki, roskis, kyltin tolppa). Kaatuminen on satunnainen yllätys: reunakiven ylityksessä 2 % (1,3 ‰) – 15 % (2,8 ‰), esteeseen törmätessä 8 % – 35 %; juostessa 1,5-kertaisesti ja lumella lisää 5 prosenttiyksikköä (kengättä 10). **Juostessa reunakiven yli** kaatumisen riski on aina olemassa, myös selvin päin, ja kasvaa humalan mukana (lisäksi 3 % + 6 % promillea kohden). Kävellen eteneminen on suhteellisen turvallista. Selvin päin kuivalla kadulla hahmo vain törmää esteeseen ja pysähtyy. Esteiden läpi ei voi kävellä.
 - **Tuplanäkö (yli 2,3 ‰):** kuva näkyy kahtena.
 - **Krapula (alle 0,5 ‰):** hahmo tärisee, ja joka toinen lyönti on niin heikko, ettei se tee vahinkoa.
 - **Hassu kävely:** 2,0 promillesta alkaen hahmo ottaa välillä satunnaisia 1–2 sekunnin hassun kävelyn pätkiä (sitä useammin, mitä kovempi humala), ja yli 2,8 promillessa hän kävelee hassusti koko ajan. Hassu kävely on absurdin liioiteltua: korkeita potkuja eteen, heiluvat kädet, pomppiva askel ja taaksepäin kallistuva vartalo.
@@ -328,7 +331,8 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 ## Tappelu
 
 - Pelissä on tappelua. Pelaaja voi lyödä muita, ja muut voivat hyökätä pelaajan kimppuun.
-- **Rämpytys ei kannata:** yksi lyönti on ilmainen, mutta jos lyö uudestaan heti perään (alle 0,7 s), health kuluu väliaikaisesti (7 / lyönti). Väliaikainen kulutus näkyy sydämessä vaaleanpunaisena, ja jokaisesta liian nopeasta lyönnistä pelaajan pään päälle ilmestyy sydän, joka tyhjenee (punainen vähenee ja vaaleanpunainen kasvaa); se näkyy pari sekuntia viimeisen lyönnin jälkeen ja koko uupumuksen ajan. Kun pelaaja ei ole lyönyt 5 sekuntiin, vaaleanpunainen osa palautuu hitaasti (juostessa puolella nopeudella), mutta vain liikkuessa (paikallaan seisten aika ei kulje, eikä mikään palaudu). Väliaikainen kulutus ei voi tappaa: kun se vie koko healthin, pelaaja on uupunut eikä voi lyödä ennen kuin vaaleanpunainen osa on palautunut kokonaan. Uupunut hahmo hengittää raskaasti (rintakehä nousee ja laskee, hengityshöyryä nousee) myös paikallaan seistessä, ja juoksunopeus puolittuu.
+- **Rämpytys ei kannata:** yksi lyönti on ilmainen, mutta jos lyö uudestaan heti perään (alle 0,7 s), health kuluu väliaikaisesti (7 / lyönti). Väliaikainen kulutus näkyy sydämessä vaaleanpunaisena, ja jokaisesta liian nopeasta lyönnistä pelaajan pään päälle ilmestyy sydän, joka tyhjenee (punainen vähenee ja vaaleanpunainen kasvaa); se näkyy pari sekuntia viimeisen lyönnin jälkeen ja koko uupumuksen ajan. Kun pelaaja ei ole lyönyt 5 sekuntiin, vaaleanpunainen osa palautuu hitaasti (juostessa puolella nopeudella), mutta vain liikkuessa (paikallaan seisten aika ei kulje, eikä mikään palaudu). Kun väliaikainen kulutus vie koko healthin (koko sydän vaaleanpunainen), pelaaja on **uupunut** (hengästynyt), kunnes vaaleanpunainen osa on palautunut kokonaan: hahmo lyö vain noin kerran kahdessa sekunnissa ja jaksaa juosta vain muutaman askeleen kerrallaan. Uupunut hahmo hengittää raskaasti (rintakehä nousee ja laskee, hengityshöyryä nousee) myös paikallaan seistessä.
+- **Healthin koko määrä kuvastaa kuntoa:** sydän saa olla kokonaan vaaleanpunainen vain hetken. Täydellä healthilla aikaa on 10 sekuntia, lähes tyhjällä vain 1 sekunti (pelin aikaa). Sen jälkeen health alkaa vähetä vähitellen, kunnes pelaaja lepää ja punainen alkaa taas nousta.
 - **Erillistä torjuntaa ei ole.** Iskuja voi väistää liikkumalla, esimerkiksi ylös tai alas kadun syvyyssuunnassa.
 - Osalla hahmoista isku näkyy hetkeä ennen osumaa (esim. käsi nousee), mutta **kaikista hahmoista ei näe, milloin ne ovat lyömässä**.
 - **Heittäminen:** heitetyn esineen vaikutus riippuu esineestä:

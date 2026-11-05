@@ -261,12 +261,17 @@ func _draw_charge() -> void:
 	if main == null or main.player == null:
 		return
 	var c: float = main.player.throw_charge()
-	if c < 0.0:
+	var pc: float = main.player.punch_charge()
+	if c < 0.0 and pc < 0.0:
 		return
 	var p: Vector3 = main.player.global_position + Vector3(0, 2.3, 0)
 	if main.camera.is_position_behind(p):
 		return
 	var sp: Vector2 = main.camera.unproject_position(p)
+	if c < 0.0:
+		# Charging a punch with an empty hand: just the ring, no aim arrow.
+		draw_arc(sp, 16.0, -PI * 0.5, -PI * 0.5 + TAU * pc, 32, Color(1, 0.55, 0.3), 5.0, true)
+		return
 	draw_arc(sp, 16.0, -PI * 0.5, -PI * 0.5 + TAU * c, 32, Color(1, 0.9, 0.3), 5.0, true)
 	# Aim arrow on the ground in the throw direction.
 	var a: Vector2 = main.player.aim

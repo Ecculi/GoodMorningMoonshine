@@ -1,6 +1,7 @@
 extends Node3D
 ## The playable character. Arrow keys / d-pad move, one action button:
-## short press = punch / drink / eat, long press = throw the held item.
+## short press = punch / drink / eat, long press = throw the held item
+## (or, with an empty hand, a charged punch).
 
 const PersonModel = preload("res://scripts/person_model.gd")
 const Ragdoll = preload("res://scripts/ragdoll.gd")
@@ -13,6 +14,13 @@ const DOUBLE_TAP := 0.3
 const HOLD_TO_RUN := 1.0
 const PICKUP_RADIUS := 0.6
 const PUNCH_RANGE := 1.3
+## Holding the button with an empty hand pulls the arm back for a
+## stronger punch: full charge hits harder and knocks further.
+const PUNCH_CHARGE_TIME := 1.2
+## Exhausted (heart all light pink): punches only this often and runs
+## only this long at a time.
+const EXHAUSTED_PUNCH_COOLDOWN := 2.0
+const EXHAUSTED_RUN_TIME := 0.8
 
 const MOVE_ACTIONS := ["move_left", "move_right", "move_up", "move_down"]
 
@@ -36,6 +44,10 @@ var _sway := 0.0
 var _block_action := false
 ## Direction the body turns towards (radians; 0 = facing right).
 var _yaw_target := 0.0
+var _punch_cooldown := 0.0
+var _exhausted_run := EXHAUSTED_RUN_TIME
+## World time the heart has been all pink without resting.
+var _exhaust_t := 0.0
 
 
 func _ready() -> void:
@@ -51,6 +63,11 @@ func reset(pos: Vector3) -> void:
 	running = false
 	_press_time = -1.0
 	_block_action = true
+	_punch_cooldown = 0.0
+	_exhausted_run = EXHAUSTED_RUN_TIME
+	_exhaust_t = 0.0
+	GameState.charging = false
+	model.set_windup(-1.0)
 	_knock = Vector3.ZERO
 	if hand_item != null and is_instance_valid(hand_item):
 		hand_item.queue_free()
@@ -78,8 +95,19 @@ func throw_charge() -> float:
 	return clampf((_press_time - LONG_PRESS) / 1.2, 0.0, 1.0)
 
 
+## 0..1 while an empty-handed punch is being charged, otherwise -1.
+func punch_charge() -> float:
+	if _press_time < LONG_PRESS or hand_item != null:
+		return -1.0
+	return clampf((_press_time - LONG_PRESS) / PUNCH_CHARGE_TIME, 0.0, 1.0)
+
+
 func _process(delta: float) -> void:
 	_clock += delta
+	_punch_cooldown = maxf(0.0, _punch_cooldown - delta)
+	# _handle_action sets these again while the button is held.
+	GameState.charging = false
+	model.set_windup(-1.0)
 	_update_rest(delta)
 	if GameState.over or GameState.modal != "":
 		GameState.moving = false
@@ -120,10 +148,8 @@ func _process(delta: float) -> void:
 		dir = Vector2.ZERO
 	var moving := dir.length() > 0.2
 	_update_run(dir, moving, delta)
+	_limit_exhausted_run(moving, delta)
 	var speed := RUN_SPEED if running else WALK_SPEED
-	# Exhausted from punching too fast: running at half speed.
-	if running and GameState.exhausted:
-		speed *= 0.5
 	# Without shoes walking is slower and running much harder.
 	if GameState.is_lost("shoes"):
 		speed *= 0.65 if running else 0.8
@@ -187,6 +213,7 @@ func _process(delta: float) -> void:
 		_yaw_target = atan2(-look.y, look.x)
 	model.rotation.y = lerp_angle(model.rotation.y, _yaw_target, 1.0 - exp(-14.0 * delta))
 	model.animate(1.0 if moving else 0.0, delta, speed / WALK_SPEED, silly_amount())
+	model.set_windup(punch_charge())
 
 	_handle_action(delta)
 	_check_pickups()
@@ -372,12 +399,25 @@ func _stumble_chance(low: float, high: float) -> float:
 	return clampf(c, 0.0, 0.9)
 
 
+## Running over the curb can always trip, more likely the drunker you are.
+## Walking stays fairly safe (only risky when very drunk).
+const CURB_RUN_BASE := 0.03
+const CURB_RUN_PER_PROMILLE := 0.06
+
+
+func _curb_chance() -> float:
+	var c := _stumble_chance(0.02, 0.15)
+	if running:
+		c += CURB_RUN_BASE + CURB_RUN_PER_PROMILLE * maxf(GameState.promille, 0.0)
+	return clampf(c, 0.0, 0.9)
+
+
 func _check_stumbles(before: Vector3) -> void:
 	# Over the curb (only where there is a sidewalk, not in the crossings).
 	if absf(position.x) < BLOCK_HALF_X:
 		for cz in CURB_Z:
 			if (before.z - cz) * (position.z - cz) < 0.0:
-				if randf() < _stumble_chance(0.02, 0.15):
+				if randf() < _curb_chance():
 					_trip()
 					return
 	# Into an obstacle: blocked; maybe down.
@@ -647,14 +687,34 @@ func _handle_action(delta: float) -> void:
 		aim = Vector2(facing, 0)
 	if _press_time < 0.0:
 		return
+	# Real time: the charge fills at the same pace even though the
+	# world runs at half speed meanwhile.
 	_press_time += delta
 	if Input.is_action_pressed("action"):
+		GameState.charging = true
 		return
 	if _press_time >= LONG_PRESS and hand_item != null:
 		_throw(_press_time)
+	elif _press_time >= LONG_PRESS:
+		GameState.busy_time = maxf(GameState.busy_time, 0.35)
+		_punch(main.find_npc_in_front(position, facing, PUNCH_RANGE), punch_charge())
 	else:
 		_short_action()
 	_press_time = -1.0
+
+
+## Exhausted: only a few steps of running, then back to walking.
+func _limit_exhausted_run(moving: bool, delta: float) -> void:
+	if not GameState.exhausted:
+		_exhausted_run = EXHAUSTED_RUN_TIME
+		return
+	if running and moving:
+		_exhausted_run -= delta
+		if _exhausted_run <= 0.0:
+			running = false
+			_hold_time = -10.0  # holding the direction does not restart the run
+	elif not moving:
+		_exhausted_run = minf(EXHAUSTED_RUN_TIME, _exhausted_run + delta * 0.25)
 
 
 func _short_action() -> void:
@@ -683,10 +743,17 @@ func _short_action() -> void:
 			main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
 			_consume_hand_item()
 			return
-	# Exhausted from punching too fast: no strength left to punch.
+	_punch(target, 0.0)
+
+
+## charge 0..1: a fully charged punch hits one harder and knocks further.
+func _punch(target, charge: float) -> void:
+	# Exhausted: the arm only obeys every couple of seconds.
 	if GameState.exhausted:
 		main.hud.show_head_heart()
-		return
+		if _punch_cooldown > 0.0:
+			return
+		_punch_cooldown = EXHAUSTED_PUNCH_COOLDOWN
 	model.punch()
 	_punch_strain()
 	if target == null:
@@ -704,7 +771,9 @@ func _short_action() -> void:
 		dmg = 2  # Dutch courage: harder punches
 	elif p < GameState.PROMILLE_HANGOVER and randf() < 0.5:
 		dmg = 0  # hangover: a feeble punch that does no harm
-	target.take_hit(dmg, self)
+	if dmg > 0:
+		dmg += int(round(charge))
+	target.take_hit(dmg, self, 1.0 + charge)
 
 
 ## Fighting system: one punch is free, but punching again right away
@@ -728,9 +797,18 @@ func _punch_strain() -> void:
 
 
 ## Recovery happens only while time moves (walking), never by just standing.
+## Exhausted, the heart may stay all pink only for a while (10 s at full
+## health, 1 s near empty); after that health drops until resting starts
+## and the red begins to come back.
 func _update_rest(_delta: float) -> void:
 	var dt := GameState.world_dt
 	_rest_t += dt
+	if GameState.exhausted and _rest_t <= REST_DELAY:
+		_exhaust_t += dt
+		if _exhaust_t > GameState.exhaust_grace():
+			GameState.damage(GameState.EXHAUST_DAMAGE * dt)
+	else:
+		_exhaust_t = 0.0
 	if _rest_t > REST_DELAY:
 		# Running (holding an arrow turns into running) recovers at half speed.
 		var rate := STRAIN_RECOVERY * (0.5 if running and GameState.moving else 1.0)
