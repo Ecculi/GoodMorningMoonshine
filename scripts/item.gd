@@ -4,7 +4,6 @@ extends Node3D
 enum Kind { BOTTLE, CAN, FOOD, COIN, COFFEE, ENERGY, PILLS }
 enum St { GROUND, HELD, FLYING }
 
-const FLIGHT_SPEED := 9.0
 
 var main
 var kind: Kind = Kind.CAN
@@ -15,9 +14,6 @@ var state: St = St.GROUND
 var wait_far := false
 var flight_time := 0.5
 
-var _t := 0.0
-var _from := Vector3.ZERO
-var _to := Vector3.ZERO
 var _root: Node3D
 
 
@@ -48,15 +44,7 @@ func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:
 			_cyl(0.055, 0.17, Color(0.78, 0.8, 0.84), Vector3(0, 0.085, 0))
 			_cyl(0.057, 0.07, Color(0.15, 0.35, 0.75), Vector3(0, 0.085, 0))
 		Kind.FOOD:
-			var mi := MeshInstance3D.new()
-			var cm := CapsuleMesh.new()
-			cm.radius = 0.05
-			cm.height = 0.3
-			mi.mesh = cm
-			mi.material_override = _mat(Color(0.78, 0.32, 0.25))
-			mi.rotation.z = PI * 0.5
-			mi.position = Vector3(0, 0.05, 0)
-			_root.add_child(mi)
+			_build_sausage()
 		Kind.COFFEE:
 			_cyl(0.055, 0.14, Color(0.95, 0.95, 0.93), Vector3(0, 0.07, 0))
 			_cyl(0.05, 0.01, Color(0.35, 0.2, 0.1), Vector3(0, 0.142, 0))
@@ -96,35 +84,160 @@ func _process(delta: float) -> void:
 				_root.rotation.y += delta * 3.0
 		St.FLYING:
 			_fly(delta)
+	if kind == Kind.FOOD:
+		_flop(delta)
+
+
+# --- Throwing: a real physics object --------------------------------------------
+
+## Collision shape per kind, in the item's own (unscaled) units:
+## [shape, radius or size, height, centre height].
+const SHAPES := {
+	Kind.BOTTLE: ["cyl", 0.07, 0.42, 0.21],
+	Kind.CAN: ["cyl", 0.057, 0.17, 0.085],
+	Kind.COFFEE: ["cyl", 0.057, 0.15, 0.075],
+	Kind.ENERGY: ["cyl", 0.052, 0.19, 0.095],
+	Kind.FOOD: ["capsule", 0.05, 0.3, 0.05],
+	Kind.PILLS: ["box", 0.12, 0.04, 0.02],
+}
+const MASS := {Kind.BOTTLE: 0.8, Kind.CAN: 0.15, Kind.COFFEE: 0.3, Kind.ENERGY: 0.35, Kind.FOOD: 0.2, Kind.PILLS: 0.05}
+## Items fly on their own collision layer and hit the world only.
+const ITEM_LAYER := 4
+const WORLD_LAYER := 1
+
+var _body: RigidBody3D = null
+var _hit_done := false
+var _still_t := 0.0
+var _air_t := 0.0
+var _frozen := false
+var _saved_lv := Vector3.ZERO
+var _saved_av := Vector3.ZERO
+
+
+func _make_body(start: Vector3) -> RigidBody3D:
+	var rb := RigidBody3D.new()
+	rb.top_level = true
+	rb.mass = MASS.get(kind, 0.3)
+	rb.collision_layer = ITEM_LAYER
+	rb.collision_mask = WORLD_LAYER
+	rb.freeze_mode = RigidBody3D.FREEZE_MODE_STATIC
+	rb.contact_monitor = true
+	rb.max_contacts_reported = 2
+	rb.linear_damp = 0.05
+	rb.angular_damp = 0.4
+	var pm := PhysicsMaterial.new()
+	pm.bounce = 0.35 if kind != Kind.FOOD else 0.05
+	pm.friction = 0.7
+	rb.physics_material_override = pm
+	var spec: Array = SHAPES.get(kind, ["box", 0.1, 0.1, 0.05])
+	var k := 2.0  # the street look is twice the size
+	var cs := CollisionShape3D.new()
+	match spec[0]:
+		"cyl":
+			var cy := CylinderShape3D.new()
+			cy.radius = spec[1] * k
+			cy.height = spec[2] * k
+			cs.shape = cy
+		"capsule":
+			var cp := CapsuleShape3D.new()
+			cp.radius = spec[1] * k
+			cp.height = spec[2] * k
+			cs.shape = cp
+			cs.rotation.z = PI * 0.5
+		_:
+			var bx := BoxShape3D.new()
+			bx.size = Vector3(spec[1], spec[2], spec[1] * 0.7) * k
+			cs.shape = bx
+	cs.position = Vector3(0, spec[3] * k, 0)
+	rb.add_child(cs)
+	add_child(rb)
+	rb.global_position = start
+	rb.body_entered.connect(_on_body_hit)
+	return rb
 
 
 func _fly(delta: float) -> void:
-	_t = minf(_t + delta / flight_time, 1.0)
-	var p := _from.lerp(_to, _t)
-	p.y += sin(PI * _t) * 1.0
-	global_position = p
-	_root.rotation.z += delta * 14.0
-	var npc = main.npc_at(global_position, 0.6)
-	var animal = main.animal_at(global_position, 0.5)
-	if npc != null and global_position.y < 2.2:
-		npc.hit_by_item(kind)
-		_land()
-	elif animal != null and global_position.y < 1.2 and kind != Kind.FOOD:
-		# Food is left to land (a dog goes for it); anything else hits.
-		animal.hit_by_item(kind)
-		_land()
-	elif _t >= 1.0:
-		_land()
+	if _body == null or not is_instance_valid(_body):
+		return
+	# The physics pauses with the game world (like the rag dolls).
+	var freeze := GameState.world_dt <= 0.0 and not GameState.over
+	if freeze != _frozen:
+		_frozen = freeze
+		if freeze:
+			_saved_lv = _body.linear_velocity
+			_saved_av = _body.angular_velocity
+			_body.freeze = true
+		else:
+			_body.freeze = false
+			_body.linear_velocity = _saved_lv
+			_body.angular_velocity = _saved_av
+	global_transform = _body.global_transform
+	if _frozen:
+		return
+	_air_t += delta
+	var centre := _body.global_position + _body.global_transform.basis.y * 0.15
+	if not _hit_done:
+		var npc = main.npc_at(centre, 0.6)
+		var animal = main.animal_at(centre, 0.5)
+		if npc != null and centre.y < 2.2:
+			_hit_done = true
+			npc.hit_by_item(kind)
+			_bounce_off()
+			if kind == Kind.BOTTLE:
+				_break()
+				return
+		elif animal != null and centre.y < 1.2 and kind != Kind.FOOD:
+			# Food is left to land (a dog goes for it); anything else hits.
+			_hit_done = true
+			animal.hit_by_item(kind)
+			_bounce_off()
+			if kind == Kind.BOTTLE:
+				_break()
+				return
+	# At rest (or lost): lie where it ended up.
+	if _body.linear_velocity.length() < 0.25 and _body.angular_velocity.length() < 1.5:
+		_still_t += delta
+	else:
+		_still_t = 0.0
+	if _still_t > 0.3 or _air_t > 6.0 or _body.global_position.y < -2.0:
+		_settle()
 
 
-func _land() -> void:
-	_root.rotation = Vector3.ZERO
-	global_position.y = 0.0
+## Hit someone: it glances back off them.
+func _bounce_off() -> void:
+	var v := _body.linear_velocity
+	_body.linear_velocity = Vector3(-v.x * 0.25, maxf(v.y, 1.0) * 0.5, -v.z * 0.25)
+
+
+## Bottles break on the first thing they hit (street, wall, person).
+func _on_body_hit(_other: Node) -> void:
+	if state == St.FLYING and kind == Kind.BOTTLE and _air_t > 0.05:
+		_break()
+
+
+func _break() -> void:
+	if state != St.FLYING:
+		return
 	state = St.GROUND
-	# Bottles break when they hit something or the ground.
-	if kind == Kind.BOTTLE:
-		main.popup("*", global_position + Vector3(0, 0.4, 0), Color(0.6, 0.9, 0.6))
-		main.remove_item(self)
+	main.popup("*", global_position + Vector3(0, 0.4, 0), Color(0.6, 0.9, 0.6))
+	if _body != null and is_instance_valid(_body):
+		_body.queue_free()
+	_body = null
+	main.remove_item(self)
+
+
+## Lying still: back to an ordinary item on the street, in the pose it
+## landed in.
+func _settle() -> void:
+	var xf := _body.global_transform
+	_body.queue_free()
+	_body = null
+	state = St.GROUND
+	var o := xf.origin
+	o.y = maxf(o.y, 0.0)
+	global_transform = Transform3D(xf.basis.orthonormalized(), o)
+	if kind == Kind.FOOD:
+		_flop_ground()
 
 
 func hold(hand: Node3D) -> void:
@@ -136,25 +249,39 @@ func hold(hand: Node3D) -> void:
 	transform = Transform3D.IDENTITY
 	position = Vector3(0, -0.2, 0)
 	_root.scale = Vector3.ONE
+	_flop_vel = 0.0
+	_flop_off = 0.0
 
 
 func drop_at(pos: Vector3) -> void:
 	_to_world()
 	state = St.GROUND
+	if kind == Kind.FOOD:
+		_flop_ground()
 	wait_far = true
 	global_position = Vector3(pos.x, 0.0, pos.z)
 
 
+## Thrown: a physics body with a start velocity aimed to come down about
+## `dist` metres away, spinning; it bounces and rolls from there.
 func throw_from(start: Vector3, dir: Vector3, dist: float) -> void:
 	_to_world()
 	state = St.FLYING
-	_from = start
+	_hit_done = false
+	_still_t = 0.0
+	_air_t = 0.0
+	_frozen = false
 	var land: Vector3 = main.clamp_walkable(start + dir.normalized() * dist)
-	_to = Vector3(land.x, 0.0, land.z)
-	dist = Vector2(_to.x - start.x, _to.z - start.z).length()
-	flight_time = maxf(dist / FLIGHT_SPEED, 0.2)
-	_t = 0.0
+	var flat := Vector3(land.x - start.x, 0.0, land.z - start.z)
+	var t := clampf(flat.length() / 7.0, 0.3, 0.9)
+	var vy := (0.1 - start.y + 0.5 * 9.8 * t * t) / t
+	flight_time = t
 	global_position = start
+	_body = _make_body(start)
+	_body.linear_velocity = flat / t + Vector3(0, vy, 0)
+	# Tumbling end over end across the throw, plus a little wobble.
+	var spin_axis := Vector3.UP.cross(flat.normalized() if flat.length() > 0.01 else Vector3.RIGHT)
+	_body.angular_velocity = spin_axis * randf_range(6.0, 12.0) + Vector3(randf_range(-2, 2), randf_range(-2, 2), randf_range(-2, 2))
 
 
 func _to_world() -> void:
@@ -185,3 +312,86 @@ func _cyl(r: float, h: float, c: Color, pos: Vector3) -> MeshInstance3D:
 	mi.position = pos
 	_root.add_child(mi)
 	return mi
+
+
+# --- The sausage: floppy ---------------------------------------------------------
+
+## The sausage is four short pieces hinged in the middle and between the
+## pieces, so it can sag. In the hand both ends droop and swing with the
+## movement; in the air it flaps as it tumbles; on the street it lies with
+## a lazy bend.
+var _flop_pivots: Array = []  # [side, inner pivot, outer pivot]
+var _flop_off := 0.0
+var _flop_vel := 0.0
+var _flop_last := Vector3.INF
+var _flop_bend := 0.0
+const SAUSAGE_SEG := 0.075
+const SAUSAGE_R := 0.05
+
+
+func _build_sausage() -> void:
+	var col := Color(0.78, 0.32, 0.25)
+	var centre := Node3D.new()
+	centre.position = Vector3(0, SAUSAGE_R, 0)
+	_root.add_child(centre)
+	for side in [1.0, -1.0]:
+		var p1 := Node3D.new()
+		centre.add_child(p1)
+		_sausage_piece(p1, side, col, false)
+		var p2 := Node3D.new()
+		p2.position = Vector3(side * SAUSAGE_SEG, 0, 0)
+		p1.add_child(p2)
+		_sausage_piece(p2, side, col, true)
+		_flop_pivots.append([side, p1, p2])
+	_flop_bend = randf_range(-0.35, 0.35)
+	_flop_ground()
+
+
+func _sausage_piece(pivot: Node3D, side: float, col: Color, tip: bool) -> void:
+	var mi := MeshInstance3D.new()
+	var cm := CapsuleMesh.new()
+	cm.radius = SAUSAGE_R
+	cm.height = SAUSAGE_SEG + SAUSAGE_R * (1.4 if tip else 0.9)
+	mi.mesh = cm
+	mi.material_override = _mat(col.darkened(0.05 if tip else 0.0))
+	mi.rotation.z = PI * 0.5
+	mi.position = Vector3(side * SAUSAGE_SEG * (0.6 if tip else 0.5), 0, 0)
+	pivot.add_child(mi)
+
+
+## Sets the bend: `down` sags both ends (radians per joint), `sideways`
+## curves the sausage flat.
+func _set_bend(down: float, sideways: float) -> void:
+	for f in _flop_pivots:
+		var side: float = f[0]
+		for p in [f[1], f[2]]:
+			p.rotation.z = -side * down
+			p.rotation.y = side * sideways
+
+
+func _flop(delta: float) -> void:
+	if _flop_pivots.is_empty():
+		return
+	match state:
+		St.HELD:
+			# Hanging from the hand: ends droop, and swing on a spring
+			# when the hand moves up/down or speeds up.
+			var p := global_position
+			if _flop_last != Vector3.INF and delta > 0.0:
+				var v := (p - _flop_last) / delta
+				_flop_vel += (-v.y * 0.6 + absf(v.x) * 0.15) * delta * 6.0
+			_flop_last = p
+			_flop_vel += (-_flop_off * 60.0 - _flop_vel * 7.0) * delta
+			_flop_off += _flop_vel * delta
+			_set_bend(clampf(0.45 + _flop_off, 0.0, 1.1), 0.0)
+		St.FLYING:
+			# Flapping as it tumbles.
+			var spin := _body.angular_velocity.length() if _body != null and is_instance_valid(_body) else 0.0
+			_set_bend(sin(Time.get_ticks_msec() / 1000.0 * 14.0) * 0.5 * clampf(spin / 6.0, 0.2, 1.0), 0.0)
+		_:
+			_flop_last = Vector3.INF
+
+
+## Lying on the street: flat, with a lazy sideways curve.
+func _flop_ground() -> void:
+	_set_bend(0.0, _flop_bend)

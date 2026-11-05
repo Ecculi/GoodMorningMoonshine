@@ -297,6 +297,7 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	# Wind-blown leaves on the street.
 	var leaves = Leaves.new()
 	level.add_child(leaves)
+	leaves.main = self
 	leaves.setup(seg, GameState.weather)
 	player.position = pos
 	player.facing = facing
@@ -1608,7 +1609,10 @@ func _build_physics_ground() -> void:
 	body.collision_layer = 1
 	body.collision_mask = 0
 	add_child(body)
-	for spec in [[Vector3(0, -0.45, -10), Vector3(400, 1.0, 120)], [Vector3(0, 10, -8.6), Vector3(400, 20, 1.0)]]:
+	# Street, facade, and the two raised sidewalks (a kerb higher) so thrown
+	# things and rag dolls rest on top of them.
+	for spec in [[Vector3(0, -0.45, -10), Vector3(400, 1.0, 120)], [Vector3(0, 10, -8.6), Vector3(400, 20, 1.0)],
+			[Vector3(0, -0.38, -6.8), Vector3(400, 1.0, 3.6)], [Vector3(0, -0.38, 4.15), Vector3(400, 1.0, 3.3)]]:
 		var cs := CollisionShape3D.new()
 		var sh := BoxShape3D.new()
 		sh.size = spec[1]

@@ -994,7 +994,8 @@ func _throw(t: float) -> void:
 	var start := global_position + d3 * 0.4 + Vector3(0, 1.1, 0.25)
 	it.throw_from(start, d3, dist)
 	model.punch()
-	GameState.busy_time = maxf(GameState.busy_time, it.flight_time + 0.1)
+	# Keep time running a little past the landing so it can bounce and roll.
+	GameState.busy_time = maxf(GameState.busy_time, it.flight_time + 0.7)
 
 
 func _check_pickups() -> void:
