@@ -82,7 +82,7 @@ CAP_CAR_4,"Kuljettaja: ""En ehtinyt jarruttaa, koska en nähnyt häntä. Ja vaik
 CAP_CAR_5,"Kuljettaja: ""Hän oli tiellä, ja tie on autoja varten."""
 CAP_CAR_6,"Poliisi muistuttaa, että suojatietä käyttävät myös elävät."
 HELP_TITLE,Ohje
-HELP_GOAL,"Etsi hukatut tavarat ja mene kotiin. Juo sopivasti: selvänä kuolet, liikaa juotuasi sammut."
+HELP_GOAL,"Selviä päivästä toiseen. Etsi hukatut tavarat ja mene kotiin. Juo sopivasti: selvänä kuolet, liikaa juotuasi sammut."
 HELP_KEY_1,Nuolet / WASD: liiku  ·  Shift: juokse
 HELP_KEY_2,"Välilyönti: lyö, juo, syö, penko, ovi  ·  pohjassa: heitä"
 HELP_KEY_3,P: puhelin  ·  F1: ohje  ·  F2: saavutukset
