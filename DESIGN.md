@@ -247,12 +247,14 @@ Krapula ei kovene päivien mukaan.
 
 ### Promillerajat
 
+- **Juoma imeytyy hitaasti:** promillet eivät nouse heti juodessa, vaan kukin juoma imeytyy noin 20 sekunnin aikana (pelin aikaa; aluksi nopeammin, lopuksi hitaammin), ja health palautuu samassa tahdissa. Jokaisella juomalla on oma imeytymisensä, joten monta peräkkäin nostaa promilleja nopeammin. Juodessa ei näytetä määrää (vain "glug"), joten pelaaja ei tiedä tarkalleen, mihin humala vielä nousee, ja liikaa voi juoda vahingossa.
+
 Humalan vaikutukset alkavat matalammalla kuin alussa suunniteltiin (kaikki rajat siirrettiin 0,7 ‰ alemmas); sammumisraja arvotaan joka päivä 3,2–4,0 ‰.
 
 | Promillet | Tila |
 |---|---|
 | **0 ‰** | kuolema |
-| **alle 0,5 ‰** | krapula: hahmo tärisee (sitä pahemmin, mitä kovempi edellispäivän humala oli; ks. Krapulatärinä), lyönnit ovat heikkoja ja health kuluu hitaasti. Varoitus, että juotavaa pitää löytää. |
+| **alle 0,5 ‰** | krapula: health kuluu sitä nopeammin, mitä selvempi hahmo on (0,8 / s rajalla, 4 / s lähellä nollaa). Ruudulla pullo vilkkuu punaisena, punainen nuoli sykkii pullosta sydämeen ja sydämestä tippuu punaisia pisaroita; rajan alittuessa hahmon yllä välähtää "‰!". Hahmo tärisee (sitä pahemmin, mitä kovempi edellispäivän humala oli; ks. Krapulatärinä), lyönnit ovat heikkoja ja health kuluu hitaasti. Varoitus, että juotavaa pitää löytää. |
 | **0,5–1,3 ‰** | sopiva alue, hahmo toimii normaalisti |
 | **1,3 ‰ – sammumisraja** | humalan haitat (horjuminen, sumea näkökenttä, rohkeus) voimistuvat vähitellen |
 | **yli 3,2–4,0 ‰** | hahmo sammuu (raja arvotaan joka päivä 3,2 ja 4,0 ‰ väliltä, joten sitä ei voi tietää tarkasti) |
@@ -277,6 +279,7 @@ Humalan vaikutukset alkavat matalammalla kuin alussa suunniteltiin (kaikki rajat
 
 - **Uni:** yöunet palauttavat suurimman osan. Kotona nukkuminen palauttaa eniten.
 - **Ruoka:** syöminen palauttaa vähän.
+- **Hyvä humala korjaa:** 1,0–2,5 promillessa health palautuu itsestään hitaasti (1 / s liikkuessa). Selvempänä tai kovemmassa humalassa ei.
 - **Alkoholi:** juominen palauttaa healthia juoman vahvuuden mukaan (30 healthia promillea kohden: olut noin +7, pullo +12, tuoppi +15, viina +18, tuntematon aine +27; tyhjään mahaan enemmän).
 - **Apteekki:** laastaria tai särkylääkettä saa rahalla, mutta ne palauttavat vain vähän.
 - Päivän aikana health ei palaudu itsestään.

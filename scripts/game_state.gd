@@ -24,6 +24,22 @@ const PROMILLE_MAX_SHOWN := 4.0
 const PROMILLE_DECAY := 0.0135
 const RUN_DECAY_MULT := 1.6
 const DRINK_AMOUNT := 0.4
+## A drink is not in the blood at once: each one is absorbed over
+## ABSORB_TIME seconds of game time (fast at first, then slowing). Every
+## drink runs its own timer, so several in a row make the per mille climb
+## faster, and you never quite know how high it will still go.
+const ABSORB_TIME := 20.0
+## Drinks still being absorbed: [amount, seconds since drinking].
+var _doses: Array = []
+## Hangover: health drains below PROMILLE_HANGOVER, faster the soberer
+## (per second, at the hangover limit and at zero).
+const HANGOVER_DRAIN_MIN := 0.8
+const HANGOVER_DRAIN_MAX := 4.0
+## Nicely drunk (between these): health slowly mends by itself while
+## moving; soberer or drunker, it doesn't.
+const MEND_FROM := 1.0
+const MEND_TO := 2.5
+const MEND_RATE := 1.0
 ## Highest per mille today and yesterday: yesterday's peak sets how bad
 ## the hangover shakes are. The first morning follows a big night.
 var today_max := PROMILLE_START
@@ -209,9 +225,10 @@ func _process(delta: float) -> void:
 func _tick_body(dt: float, is_running: bool) -> void:
 	var mult := RUN_DECAY_MULT if is_running else 1.0
 	promille = maxf(0.0, promille - PROMILLE_DECAY * dt * mult)
+	_absorb(dt)
 	clock_min += float(DAY_END_MIN - DAY_START_MIN) / DAY_ACTIVE_SECONDS * dt
-	if promille < PROMILLE_HANGOVER:
-		health -= 1.5 * dt
+	health -= hangover_drain() * dt
+	health = minf(100.0, health + mend_rate() * dt)
 	# Being cold makes you hungry faster.
 	var hunger_mult := 1.5 if cold >= COLD_HUNGRY else 1.0
 	hunger = minf(100.0, hunger + HUNGER_RATE * dt * mult * hunger_mult)
@@ -275,11 +292,37 @@ func caffeinate(awake: float) -> void:
 func drink(amount := DRINK_AMOUNT) -> float:
 	if hunger >= HUNGER_EMPTY_STOMACH:
 		amount *= 1.4
-	promille += amount
-	today_max = maxf(today_max, promille)
-	# A drink brings health back too (more from stronger stuff).
-	health = minf(100.0, health + amount * DRINK_HEALTH)
+	# Into the stomach now; into the blood (and the health) bit by bit.
+	_doses.append([amount, 0.0])
 	return amount
+
+
+## Absorbs the drinks in the stomach. Each dose follows 1 - (1 - t)^2 over
+## ABSORB_TIME: quick at first, tailing off. Health comes with it.
+func _absorb(dt: float) -> void:
+	for d in _doses.duplicate():
+		var t0: float = clampf(d[1] / ABSORB_TIME, 0.0, 1.0)
+		d[1] += dt
+		var t1: float = clampf(d[1] / ABSORB_TIME, 0.0, 1.0)
+		var got: float = d[0] * ((1.0 - pow(1.0 - t1, 2.0)) - (1.0 - pow(1.0 - t0, 2.0)))
+		promille += got
+		health = minf(100.0, health + got * DRINK_HEALTH)
+		if t1 >= 1.0:
+			_doses.erase(d)
+	today_max = maxf(today_max, promille)
+
+
+## Health lost per second to the hangover (0 when not hungover).
+func hangover_drain() -> float:
+	if promille >= PROMILLE_HANGOVER:
+		return 0.0
+	return lerpf(HANGOVER_DRAIN_MIN, HANGOVER_DRAIN_MAX, (PROMILLE_HANGOVER - promille) / PROMILLE_HANGOVER)
+
+
+## Health mended per second when nicely drunk (soft edges).
+func mend_rate() -> float:
+	var k := smoothstep(MEND_FROM, MEND_FROM + 0.2, promille) * (1.0 - smoothstep(MEND_TO - 0.2, MEND_TO, promille))
+	return MEND_RATE * k
 
 
 func eat() -> void:
@@ -380,6 +423,7 @@ func search_radius() -> float:
 
 
 func new_game() -> void:
+	_doses.clear()
 	day = 1
 	promille = PROMILLE_START
 	today_max = PROMILLE_START
@@ -416,6 +460,7 @@ func new_game() -> void:
 
 ## A short or bad sleep leaves more alcohol in the blood and heals less.
 func new_day() -> void:
+	_doses.clear()
 	var at_sleep := promille
 	yesterday_max = maxf(today_max, at_sleep)
 	day += 1

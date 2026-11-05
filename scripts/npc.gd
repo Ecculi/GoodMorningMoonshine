@@ -268,8 +268,8 @@ func offer_trade(p: Node3D) -> bool:
 				return true
 			trades_left -= 1
 			model.punch()
-			var amount := GameState.drink(0.3)
-			main.popup("+" + GameState.format_promille(amount), p.position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
+			GameState.drink(0.3)
+			main.popup("glug", p.position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
 	GameState.busy_time = maxf(GameState.busy_time, 0.6)
 	return true
 

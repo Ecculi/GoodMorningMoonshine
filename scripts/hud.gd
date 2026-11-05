@@ -140,8 +140,17 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+var _was_hungover := false
+
+
 func _process(delta: float) -> void:
 	_hurt = maxf(0.0, _hurt - delta)
+	# Just slipped under 0.5 per mille: a red warning above the head too.
+	var hung := GameState.hangover_drain() > 0.0 and not GameState.over
+	if hung and not _was_hungover and main != null and main.player != null:
+		main.popup("‰!", main.player.position + Vector3(0, 2.5, 0), Color(1, 0.25, 0.2))
+		flash_hurt()
+	_was_hungover = hung
 	_fade = maxf(0.0, _fade - delta * _fade_speed)
 	if _bubble_on and main != null and main.player != null:
 		var p: Vector3 = main.player.position
@@ -177,6 +186,7 @@ func _draw() -> void:
 	_draw_heart(Vector2(46, 46), heart_size, clampf(GameState.health / 100.0, 0.0, 1.0),
 		clampf(GameState.strain / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
+	_draw_hangover_warning()
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_phone_icon(vs, font)
 	_draw_charge()
@@ -283,6 +293,38 @@ func _draw_arrest() -> void:
 	draw_arc(sp, 34.0, 0, TAU, 40, Color(0, 0, 0, 0.35), 7.0, true)
 	var col := Color(0.25, 0.45, 1.0) if int(Time.get_ticks_msec() / 150) % 2 == 0 else Color(1.0, 0.25, 0.25)
 	draw_arc(sp, 34.0, -PI * 0.5, -PI * 0.5 + TAU * main.arrest, 40, col, 7.0, true)
+
+
+## Hangover (under 0.5 per mille) drains health: make the link plain.
+## The bottle blinks red, a red arrow pulses from the bottle into the
+## heart, and red drops fall from the heart; all faster the soberer.
+func _draw_hangover_warning() -> void:
+	var drain := GameState.hangover_drain()
+	if drain <= 0.0 or mode != "":
+		return
+	var k := clampf(drain / GameState.HANGOVER_DRAIN_MAX, 0.25, 1.0)
+	var t := Time.get_ticks_msec() / 1000.0
+	var blink := 0.5 + 0.5 * sin(t * (5.0 + 6.0 * k))
+	var red := Color(1.0, 0.15, 0.15)
+	# Bottle outline blinking red.
+	var bo := Vector2(118, 10)
+	var pts := PackedVector2Array()
+	for p in [Vector2(-7, 0), Vector2(7, 0), Vector2(7, 20), Vector2(22, 36), Vector2(22, 100),
+			Vector2(-22, 100), Vector2(-22, 36), Vector2(-7, 20), Vector2(-7, 0)]:
+		pts.append(bo + Vector2(22, 0) + p)
+	draw_polyline(pts, Color(red.r, red.g, red.b, 0.4 + 0.6 * blink), 4.0, true)
+	# Arrow from the bottle into the heart.
+	var a0 := Vector2(112, 52)
+	var a1 := Vector2(84, 52)
+	var ac := Color(red.r, red.g, red.b, 0.5 + 0.5 * blink)
+	draw_line(a0, a1 + Vector2(6, 0), ac, 4.0)
+	draw_colored_polygon(PackedVector2Array([a1, a1 + Vector2(9, -7), a1 + Vector2(9, 7)]), ac)
+	# Red glow round the heart and drops falling from it.
+	draw_arc(Vector2(46, 46), 36.0, 0.0, TAU, 40, Color(red.r, red.g, red.b, 0.25 + 0.45 * blink), 3.0, true)
+	for i in 3:
+		var ph := fmod(t * (0.8 + 1.2 * k) + i / 3.0, 1.0)
+		var dp := Vector2(40 + i * 6, 72 + ph * 30)
+		draw_circle(dp, 3.5 * (1.0 - ph * 0.5), Color(0.85, 0.05, 0.1, 1.0 - ph))
 
 
 ## Held item: what a short press and a hold do, as icons above the head

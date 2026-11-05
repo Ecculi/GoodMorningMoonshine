@@ -821,10 +821,11 @@ func _short_action() -> void:
 		return
 	if target == null and hand_item != null and main.nearest_npc_distance(position) > 2.5:
 		if hand_item.kind == Item.Kind.BOTTLE:
-			var amount := GameState.drink(Item.DRINK_PROMILLE[hand_item.drink])
+			# The amount is not shown: it sinks in slowly, and you never
+			# quite know how drunk you are going to get.
+			GameState.drink(Item.DRINK_PROMILLE[hand_item.drink])
 			GameState.warm_up(Item.DRINK_WARMTH[hand_item.drink])
-			main.popup("+" + GameState.format_promille(amount),
-				position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
+			main.popup("glug", position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
 			_consume_hand_item()
 			return
 		if hand_item.kind == Item.Kind.COFFEE or hand_item.kind == Item.Kind.ENERGY:
