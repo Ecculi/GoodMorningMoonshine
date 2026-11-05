@@ -158,7 +158,9 @@ var phone_photo := {}
 ## block (street between two crossings) where the thing lies; where in the
 ## block and on which side is left to find.
 var phone_map_hints: Array = []
-const MAP_HINT_CHANCE := 0.7
+## Every lost thing gets its block on the map (an unmarked one looked
+## like a bug). Lower this to hide some.
+const MAP_HINT_CHANCE := 1.0
 ## Open full-screen thing that freezes the world: "", "phone" or "shop".
 var modal := ""
 var rng := RandomNumberGenerator.new()
