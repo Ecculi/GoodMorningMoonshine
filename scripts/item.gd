@@ -210,9 +210,21 @@ func _bounce_off() -> void:
 
 
 ## Bottles break on the first thing they hit (street, wall, person).
+## Everything else gets rolling resistance once it touches down, so it
+## doesn't roll on like a wheel; the soft sausage stops almost at once.
 func _on_body_hit(_other: Node) -> void:
-	if state == St.FLYING and kind == Kind.BOTTLE and _air_t > 0.05:
+	if state != St.FLYING:
+		return
+	if kind == Kind.BOTTLE and _air_t > 0.05:
 		_break()
+		return
+	if _body != null and is_instance_valid(_body):
+		if kind == Kind.FOOD:
+			_body.angular_damp = 9.0
+			_body.linear_damp = 3.5
+		else:
+			_body.angular_damp = maxf(_body.angular_damp, 1.6)
+			_body.linear_damp = maxf(_body.linear_damp, 0.6)
 
 
 func _break() -> void:
