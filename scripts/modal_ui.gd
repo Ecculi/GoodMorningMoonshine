@@ -221,13 +221,13 @@ func _draw_map(r: Rect2) -> void:
 		else:
 			a = to_screen.call(float(hs2.y), float(hs2.z))
 			b = to_screen.call(float(hs2.y), hs2.z + 1.0)
-		var pulse := 0.6 + 0.25 * sin(Time.get_ticks_msec() / 260.0)
-		draw_line(a, b, Color(0.95, 0.55, 0.15, pulse), 9.0)
-		draw_circle(a, 4.5, Color(0.95, 0.55, 0.15, pulse))
-		draw_circle(b, 4.5, Color(0.95, 0.55, 0.15, pulse))
-		var mid := (a + b) * 0.5
-		draw_circle(mid, 13.0, Color(1, 1, 1, 0.9))
-		LostItems.draw_icon(self, h["id"], mid, 20.0, "own")
+		var hint_a := 0.6 + 0.25 * sin(Time.get_ticks_msec() / 260.0)
+		draw_line(a, b, Color(0.95, 0.55, 0.15, hint_a), 9.0)
+		draw_circle(a, 4.5, Color(0.95, 0.55, 0.15, hint_a))
+		draw_circle(b, 4.5, Color(0.95, 0.55, 0.15, hint_a))
+		var hint_c := (a + b) * 0.5
+		draw_circle(hint_c, 13.0, Color(1, 1, 1, 0.9))
+		LostItems.draw_icon(self, h["id"], hint_c, 20.0, "own")
 	# Where am I.
 	var seg: Vector3i = main.segment
 	var f := clampf((main.player.position.x + 16.0) / 32.0, 0.0, 1.0)
