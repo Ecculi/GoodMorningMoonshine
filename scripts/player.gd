@@ -227,7 +227,6 @@ func _process(delta: float) -> void:
 	_check_pickups()
 	_hunger_signs()
 	_drunk_states(moving)
-	_update_silly(delta)
 	for n in main.npcs:
 		n.check_pickpocket(self)
 
@@ -571,37 +570,14 @@ var _growl_t := 0.0
 var _zzz_t := 0.0
 
 
-## Very drunk: the absurd silly walk (strongest from about 3.2 per mille).
-## From 2.0 per mille there are random bursts of silly steps, more often
-## the drunker you are; from 2.8 it is constant. Blends smoothly in and out.
-const SILLY_START := 2.0
-const SILLY_CONSTANT := 2.8
-var _silly_level := 0.0
-var _silly_burst := 0.0
-var _silly_cd := 3.0
+## Very drunk: the absurd silly walk. It grows gradually with the per
+## mille: starts at 1.8 and is at its strongest from about 2.5.
+const SILLY_START := 1.8
+const SILLY_FULL := 2.5
 
 
 func silly_amount() -> float:
-	return _silly_level
-
-
-func _update_silly(delta: float) -> void:
-	var p := GameState.promille
-	var dt := GameState.world_dt
-	var target := 0.0
-	if p >= SILLY_CONSTANT:
-		target = 1.0
-	elif p >= SILLY_START:
-		if _silly_burst > 0.0:
-			_silly_burst -= dt
-			target = 1.0
-		else:
-			_silly_cd -= dt
-			if _silly_cd <= 0.0:
-				var k := clampf((p - SILLY_START) / (SILLY_CONSTANT - SILLY_START), 0.0, 1.0)
-				_silly_cd = lerpf(6.0, 1.5, k) * randf_range(0.7, 1.3)
-				_silly_burst = randf_range(1.0, 2.0)
-	_silly_level = move_toward(_silly_level, target, delta * 4.0)
+	return clampf((GameState.promille - SILLY_START) / (SILLY_FULL - SILLY_START), 0.0, 1.0)
 
 
 ## Exhausted: heavy breathing, visible even when standing still (real
