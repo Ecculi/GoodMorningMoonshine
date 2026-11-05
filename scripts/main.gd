@@ -856,6 +856,10 @@ const HEADLINES := {"SOBER": [4, 3], "FIGHT": [4, 3], "CAR": [4, 3], "DOG": [3, 
 	"FALL": [3, 2], "COLD": [3, 2], "HUNGER": [2, 2], "HANGOVER": [3, 2], "EXHAUST": [2, 2]}
 
 
+## Captions that fit any death (CAP_ANY_n), used now and then.
+const CAPTIONS_ANY := 1
+
+
 ## Death: the character collapses, a moment later a "reader's photo" is
 ## taken from another angle, and the paper runs the story with a headline
 ## and caption that fit what happened.
@@ -866,6 +870,9 @@ func _on_player_died(cause: String) -> void:
 	var n: Array = HEADLINES[fam]
 	var title := tr("HL_%s_%d" % [fam, rng.randi_range(1, n[0])])
 	var caption := tr("CAP_%s_%d" % [fam, rng.randi_range(1, n[1])])
+	# Now and then a caption that fits any death.
+	if rng.randf() < 0.2:
+		caption = tr("CAP_ANY_%d" % rng.randi_range(1, CAPTIONS_ANY))
 	player.collapse_dead()
 	await get_tree().create_timer(1.4).timeout
 	var photo: ImageTexture = await _take_death_photo()
