@@ -7,6 +7,7 @@ extends Node3D
 const Player = preload("res://scripts/player.gd")
 const Npc = preload("res://scripts/npc.gd")
 const Animal = preload("res://scripts/animal.gd")
+const Vision = preload("res://scripts/vision.gd")
 const Item = preload("res://scripts/item.gd")
 const Hud = preload("res://scripts/hud.gd")
 const TouchControls = preload("res://scripts/touch_controls.gd")
@@ -132,6 +133,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_process_modal(delta)
+	_update_trip(delta)
 	_check_transitions()
 	_update_followers()
 	_update_traffic()
@@ -1188,6 +1190,28 @@ func gull_trampled(victim) -> void:
 func remove_animal(a) -> void:
 	animals.erase(a)
 	a.queue_free()
+
+
+## After a punk's pills: things that aren't there pop up around the
+## player now and then (pink elephants, giant mushrooms, eyes, spirals).
+var _vision_cd := 1.0
+
+
+func _update_trip(delta: float) -> void:
+	var k := GameState.trip_amount()
+	if k <= 0.0 or level == null or GameState.over or GameState.modal != "":
+		return
+	_vision_cd -= delta * k
+	if _vision_cd > 0.0:
+		return
+	_vision_cd = rng.randf_range(1.2, 3.0)
+	var v = Vision.new()
+	v.setup(["elephant", "mushroom", "eye", "spiral"][rng.randi() % 4], rng)
+	# Added to the block so it goes when the street changes.
+	level.add_child(v)
+	var side := -1.0 if rng.randf() < 0.5 else 1.0
+	v.position = Vector3(player.position.x + side * rng.randf_range(2.0, 7.0),
+		rng.randf_range(0.0, 1.2), clampf(player.position.z + rng.randf_range(-3.0, 1.0), -7.5, 5.0))
 
 
 ## A beggar or street drunk within `r` metres, ready to trade.

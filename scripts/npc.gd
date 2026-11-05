@@ -685,4 +685,9 @@ func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
 	# police or guards.
 	if not _looted and not is_lawman():
 		_looted = true
-		main.spawn_loot(position)
+		if role == "punk":
+			# Punks carry pills: a little bag falls out.
+			main.spawn_item(Item.Kind.PILLS, Vector3(position.x + randf_range(-0.4, 0.4), 0.0,
+				position.z + randf_range(0.2, 0.5)))
+		else:
+			main.spawn_loot(position)

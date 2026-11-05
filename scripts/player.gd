@@ -849,6 +849,11 @@ func _short_action() -> void:
 			main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
 			_consume_hand_item()
 			return
+		if hand_item.kind == Item.Kind.PILLS:
+			GameState.take_pills()
+			main.popup("?!", position + Vector3(0, 2.1, 0), Color(1.0, 0.45, 0.85))
+			_consume_hand_item()
+			return
 	_punch(target, 0.0)
 
 
@@ -1007,7 +1012,7 @@ func hand_short_action_key() -> String:
 	match hand_item.kind:
 		Item.Kind.BOTTLE, Item.Kind.COFFEE, Item.Kind.ENERGY:
 			return "ACT_DRINK"
-		Item.Kind.FOOD:
+		Item.Kind.FOOD, Item.Kind.PILLS:
 			return "ACT_EAT"
 	return "ACT_PUNCH"
 

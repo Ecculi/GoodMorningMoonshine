@@ -230,6 +230,7 @@ func _draw() -> void:
 		clampf(GameState.strain / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_hangover_warning()
+	_draw_trip(vs)
 	_draw_splats()
 	_draw_offscreen_lost(vs)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
@@ -365,6 +366,26 @@ func _draw_offscreen_lost(vs: Vector2) -> void:
 		var ic := back - Vector2(side * 28.0, 0)
 		draw_circle(ic, 22.0, Color(1, 1, 1, 0.85))
 		LostItems.draw_icon(self, ln.id, ic, 30.0, "own")
+
+
+## After a punk's pills: rainbow colours wash over the view in slow
+## waves, with soft rings breathing out from the middle.
+func _draw_trip(vs: Vector2) -> void:
+	var k := GameState.trip_amount()
+	if k <= 0.0 or mode != "":
+		return
+	var t := Time.get_ticks_msec() / 1000.0
+	var bands := 6
+	for i in bands:
+		var h := fmod(t * 0.08 + float(i) / float(bands), 1.0)
+		var y0 := vs.y * float(i) / float(bands) + sin(t * 1.3 + float(i)) * 18.0
+		draw_rect(Rect2(Vector2(0, y0), Vector2(vs.x, vs.y / float(bands) + 24.0)),
+			Color.from_hsv(h, 0.7, 1.0, 0.1 * k))
+	var c := vs * 0.5
+	for i in 3:
+		var ph := fmod(t * 0.35 + float(i) / 3.0, 1.0)
+		var r := ph * vs.length() * 0.6
+		draw_arc(c, r, 0.0, TAU, 64, Color.from_hsv(fmod(t * 0.2 + ph, 1.0), 0.6, 1.0, 0.18 * k * (1.0 - ph)), 14.0, true)
 
 
 ## Hangover (under 0.5 per mille) drains health: make the link plain.

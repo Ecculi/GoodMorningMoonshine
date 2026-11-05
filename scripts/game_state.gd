@@ -243,6 +243,7 @@ func _tick_body(dt: float, is_running: bool) -> void:
 	caffeine = maxf(0.0, caffeine - dt / 60.0)
 	jitter_t = maxf(0.0, jitter_t - dt)
 	focus_t = maxf(0.0, focus_t - dt)
+	trip_t = maxf(0.0, trip_t - dt)
 
 
 ## How fast the character gets colder (per second of activity; negative =
@@ -281,6 +282,25 @@ func hangover_shake() -> float:
 	var peak := clampf((yesterday_max - 0.8) / 2.4, 0.15, 1.0)
 	var sober := clampf((PROMILLE_HANGOVER - promille) / PROMILLE_HANGOVER, 0.0, 1.0)
 	return peak * lerpf(0.5, 1.0, sober)
+
+
+## A punk's pills: very drunk (a big dose, absorbed like a drink) and
+## seeing things for a while (see main._update_trip and the HUD).
+const PILLS_PROMILLE := 1.2
+const TRIP_TIME := 60.0
+var trip_t := 0.0
+
+
+func take_pills() -> void:
+	drink(PILLS_PROMILLE)
+	trip_t = TRIP_TIME
+
+
+## 0..1: how strong the visions are (fade in fast, out over the last 15 s).
+func trip_amount() -> float:
+	if trip_t <= 0.0:
+		return 0.0
+	return clampf((TRIP_TIME - trip_t) / 4.0, 0.0, 1.0) * clampf(trip_t / 15.0, 0.0, 1.0)
 
 
 func caffeinate(awake: float) -> void:
@@ -441,6 +461,7 @@ func new_game() -> void:
 	caffeine = 0.0
 	jitter_t = 0.0
 	focus_t = 0.0
+	trip_t = 0.0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	bonus = 0
@@ -493,6 +514,7 @@ func new_day() -> void:
 	caffeine = 0.0
 	jitter_t = 0.0
 	focus_t = 0.0
+	trip_t = 0.0
 	strain = 0.0
 	exhausted = false
 	# Morning cold depends on where the night was spent.
