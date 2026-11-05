@@ -11,7 +11,6 @@ const WALK_SPEED := 2.6
 const RUN_SPEED := 6.4  # one block (~32 m) in about 5 s
 const LONG_PRESS := 0.35
 const DOUBLE_TAP := 0.3
-const HOLD_TO_RUN := 1.0
 const PICKUP_RADIUS := 0.6
 const PUNCH_RANGE := 1.3
 ## Holding the button with an empty hand bends the arm at the elbow and
@@ -39,8 +38,7 @@ var aim := Vector2.RIGHT
 var _press_time := -1.0
 var _last_tap_action := ""
 var _last_tap_time := -10.0
-var _hold_time := 0.0
-var _last_dir := Vector2.ZERO
+var _run_by_stick := false
 var _clock := 0.0
 var _knock := Vector3.ZERO
 var _sway := 0.0
@@ -733,17 +731,17 @@ func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
 			_last_tap_time = _clock
 	if not moving:
 		running = false
-		_hold_time = 0.0
+		_run_by_stick = false
 		return
-	if dir.round() == _last_dir.round():
-		_hold_time += delta
-	else:
-		_hold_time = 0.0
-	_last_dir = dir
-	# Exhausted: holding the arrow keeps walking (no automatic running);
-	# a double tap still gives a short burst.
-	if _hold_time > HOLD_TO_RUN and not GameState.exhausted:
+	# Holding an arrow just walks. Running: a double tap on an arrow, or
+	# the touch stick pushed out to its edge (exhausted, only the short
+	# burst is left).
+	if GameState.stick_run and (not GameState.exhausted or _exhausted_run > 0.0):
 		running = true
+		_run_by_stick = true
+	elif _run_by_stick:
+		running = false
+		_run_by_stick = false
 
 
 func _handle_action(delta: float) -> void:

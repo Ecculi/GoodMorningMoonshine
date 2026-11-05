@@ -30,8 +30,9 @@ var today_max := PROMILLE_START
 var yesterday_max := 2.2
 ## Health per 1.0 per mille drunk (beer +7, spirits +18).
 const DRINK_HEALTH := 30.0
-## Share of damage that being drunk numbs away at 2.0 per mille and above.
-const DRUNK_NUMB := 0.33
+## Share of damage that being drunk numbs away at the passing-out limit
+## (grows evenly from 0.5 per mille; about a quarter at 2.0).
+const DRUNK_NUMB := 0.6
 const FOOD_HEALTH := 12.0
 
 ## Sleep always burns at least this much alcohol...
@@ -76,6 +77,8 @@ var strain := 0.0
 ## Set by the player while the action button is held down: standing
 ## still, time then runs at half speed.
 var charging := false
+## Set by the touch stick: pushed out to the edge = run.
+var stick_run := false
 const CHARGE_TIME_SCALE := 0.5
 ## Pills found in a bin: for a while, while charging only the rest of the
 ## world slows down and the player keeps full speed.
@@ -285,8 +288,9 @@ func eat() -> void:
 
 
 func damage(amount: float) -> void:
-	# Drunk, blows and falls hurt less (up to a third less from 2.0 per mille).
-	amount *= 1.0 - DRUNK_NUMB * clampf((promille - 0.5) / 1.5, 0.0, 1.0)
+	# Drunk, blows and falls hurt less: the drunker, the less (from 0.5 per
+	# mille up to today's passing-out limit).
+	amount *= 1.0 - DRUNK_NUMB * clampf((promille - 0.5) / maxf(pass_out_promille - 0.5, 0.1), 0.0, 1.0)
 	health -= amount
 	if health <= 0.0 and not over:
 		_die("HEADLINE_BEATEN")

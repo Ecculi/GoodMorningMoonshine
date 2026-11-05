@@ -1,7 +1,7 @@
 extends CanvasLayer
 ## Debug helpers (only in debug builds, e.g. when run from the editor):
 ## F1 = health full, F2 = alcohol +0.1 per mille per press (no limit),
-## F3 = money +100 €. The same as small on-screen buttons for touch screens.
+## F3 = money +100 €, F4 = phone battery +25 %. The same as small on-screen buttons for touch screens.
 
 const DEBUG_PROMILLE_STEP := 0.1
 
@@ -17,6 +17,7 @@ func _ready() -> void:
 	_button(box, "F1 HP", _fill_health)
 	_button(box, "F2 +‰", _fill_alcohol)
 	_button(box, "F3 €", _add_money)
+	_button(box, "F4 akku", _charge_phone)
 
 
 func _button(parent: Control, text: String, cb: Callable) -> void:
@@ -38,6 +39,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_fill_alcohol()
 			KEY_F3:
 				_add_money()
+			KEY_F4:
+				_charge_phone()
 
 
 func _fill_health() -> void:
@@ -50,3 +53,7 @@ func _fill_alcohol() -> void:
 
 func _add_money() -> void:
 	GameState.money += 100
+
+
+func _charge_phone() -> void:
+	GameState.battery = minf(100.0, GameState.battery + 25.0)
