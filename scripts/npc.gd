@@ -29,6 +29,9 @@ const HIT_DAMAGE := 9.0
 const KO_TIME := 10.0
 ## Hit by a hard thrown thing: chance to black out for a moment.
 const DAZE_CHANCE := {Item.Kind.BOTTLE: 0.6, Item.Kind.ENERGY: 0.4}
+## A pursuer hit by a thrown thing stops this long (seconds) and staggers.
+const STAGGER_TIME := {Item.Kind.BOTTLE: 2.2, Item.Kind.ENERGY: 1.8, Item.Kind.COFFEE: 1.6,
+	Item.Kind.CAN: 1.2, Item.Kind.FOOD: 0.9, Item.Kind.PILLS: 0.6}
 const DAZE_TIME_MIN := 3.0
 const DAZE_TIME_MAX := 5.0
 var _ko_time := KO_TIME
@@ -578,13 +581,32 @@ func hit_by_item(kind: int) -> void:
 		main.report_crime(position, false)
 		_alert_gang()
 		return
+	# Someone chasing or fighting the player: any hit stops them for a
+	# moment (they stagger back), harder things for longer. A good throw
+	# buys time to get away.
+	if is_hostile():
+		var stop: float = STAGGER_TIME.get(kind, 0.8)
+		if kind == Item.Kind.BOTTLE:
+			hp -= 1
+			if hp <= 0:
+				take_hit(0, main.player)
+				return
+		_knock = 3.0 * signf(position.x - main.player.position.x)
+		_windup = -1.0
+		model.raise_arm(false)
+		state = S.STUNNED
+		_timer = stop
+		main.popup("*", position + Vector3(0, 1.9, 0), Color(1, 0.9, 0.4))
+		_far_t = 0.0
+		return
 	match kind:
 		Item.Kind.BOTTLE:
 			take_hit(1, main.player)
 			if state != S.KO:
 				state = S.STUNNED
 				_timer = 2.0
-		Item.Kind.CAN:
+		_:
+			# Anything else just makes them cross.
 			if not is_lawman():
 				provoke()
 				_alert_gang()
@@ -685,4 +707,9 @@ func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
 	# police or guards.
 	if not _looted and not is_lawman():
 		_looted = true
-		main.spawn_loot(position)
+		if role == "punk":
+			# Punks carry pills: a little bag falls out.
+			main.spawn_item(Item.Kind.PILLS, Vector3(position.x + randf_range(-0.4, 0.4), 0.0,
+				position.z + randf_range(0.2, 0.5)))
+		else:
+			main.spawn_loot(position)

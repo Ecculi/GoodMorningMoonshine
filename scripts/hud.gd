@@ -230,6 +230,7 @@ func _draw() -> void:
 		clampf(GameState.strain / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_hangover_warning()
+	_draw_trip(vs)
 	_draw_splats()
 	_draw_offscreen_lost(vs)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
@@ -365,6 +366,26 @@ func _draw_offscreen_lost(vs: Vector2) -> void:
 		var ic := back - Vector2(side * 28.0, 0)
 		draw_circle(ic, 22.0, Color(1, 1, 1, 0.85))
 		LostItems.draw_icon(self, ln.id, ic, 30.0, "own")
+
+
+## After a punk's pills: rainbow colours wash over the view in slow
+## waves, with soft rings breathing out from the middle.
+func _draw_trip(vs: Vector2) -> void:
+	var k := GameState.trip_amount()
+	if k <= 0.0 or mode != "":
+		return
+	var t := Time.get_ticks_msec() / 1000.0
+	var bands := 6
+	for i in bands:
+		var h := fmod(t * 0.08 + float(i) / float(bands), 1.0)
+		var y0 := vs.y * float(i) / float(bands) + sin(t * 1.3 + float(i)) * 18.0
+		draw_rect(Rect2(Vector2(0, y0), Vector2(vs.x, vs.y / float(bands) + 24.0)),
+			Color.from_hsv(h, 0.7, 1.0, 0.1 * k))
+	var c := vs * 0.5
+	for i in 3:
+		var ph := fmod(t * 0.35 + float(i) / 3.0, 1.0)
+		var r := ph * vs.length() * 0.6
+		draw_arc(c, r, 0.0, TAU, 64, Color.from_hsv(fmod(t * 0.2 + ph, 1.0), 0.6, 1.0, 0.18 * k * (1.0 - ph)), 14.0, true)
 
 
 ## Hangover (under 0.5 per mille) drains health: make the link plain.
@@ -782,15 +803,14 @@ func _draw_lost_list(vs: Vector2) -> void:
 	draw_string_outline(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
 	draw_string(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(1, 0.9, 0.4))
 	var x := r.position.x + 18 + label_w + 16 + size * 0.5
-	var no_phone := GameState.is_lost("phone")
 	for id in _today:
 		var c := Vector2(x, r.get_center().y)
 		draw_circle(c, size * 0.55, Color(1, 1, 1, 0.15))
-		# No phone: hot or cold. The nearer the thing (in blocks), the
+		# Hot or cold: the nearer the thing (within about 2 blocks), the
 		# warmer and faster the glow behind its icon.
-		if no_phone and GameState.is_lost(id) and GameState.placements.has(id):
+		if GameState.is_lost(id) and GameState.placements.has(id):
 			var bd: float = GameState.seg_distance(main.segment, GameState.placements[id][0])
-			var warm := clampf(1.0 - bd / 4.0, 0.0, 1.0)
+			var warm := clampf(1.0 - bd / 2.0, 0.0, 1.0)
 			if warm > 0.0:
 				var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * lerpf(2.0, 12.0, warm))
 				var wc := Color(1.0, lerpf(0.7, 0.2, warm), 0.1, (0.25 + 0.5 * pulse) * warm)

@@ -7,6 +7,7 @@ extends Node3D
 const Player = preload("res://scripts/player.gd")
 const Npc = preload("res://scripts/npc.gd")
 const Animal = preload("res://scripts/animal.gd")
+const Vision = preload("res://scripts/vision.gd")
 const Item = preload("res://scripts/item.gd")
 const Hud = preload("res://scripts/hud.gd")
 const TouchControls = preload("res://scripts/touch_controls.gd")
@@ -132,6 +133,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_process_modal(delta)
+	_update_trip(delta)
 	_check_transitions()
 	_update_followers()
 	_update_traffic()
@@ -650,8 +652,9 @@ func _try_shop(sh: Dictionary) -> bool:
 		# The bouncer: no shoes, no entry; too drunk is turned away, but a
 		# borderline case can be fixed with a fiver.
 		var p := GameState.promille
-		var ok := not GameState.is_lost("shoes") and p <= 1.8
-		if not ok and not GameState.is_lost("shoes") and p <= 2.3 and GameState.money >= 5:
+		# Soiled trousers after a night on the street: not let in at all.
+		var ok := not GameState.is_lost("shoes") and p <= 1.8 and not GameState.soiled
+		if not ok and not GameState.is_lost("shoes") and not GameState.soiled and p <= 2.3 and GameState.money >= 5:
 			GameState.money -= 5
 			popup("-5 €", door, Color(1, 0.85, 0.3))
 			ok = true
@@ -1190,6 +1193,28 @@ func remove_animal(a) -> void:
 	a.queue_free()
 
 
+## After a punk's pills: things that aren't there pop up around the
+## player now and then (pink elephants, giant mushrooms, eyes, spirals).
+var _vision_cd := 1.0
+
+
+func _update_trip(delta: float) -> void:
+	var k := GameState.trip_amount()
+	if k <= 0.0 or level == null or GameState.over or GameState.modal != "":
+		return
+	_vision_cd -= delta * k
+	if _vision_cd > 0.0:
+		return
+	_vision_cd = rng.randf_range(1.2, 3.0)
+	var v = Vision.new()
+	v.setup(["elephant", "mushroom", "eye", "spiral"][rng.randi() % 4], rng)
+	# Added to the block so it goes when the street changes.
+	level.add_child(v)
+	var side := -1.0 if rng.randf() < 0.5 else 1.0
+	v.position = Vector3(player.position.x + side * rng.randf_range(2.0, 7.0),
+		rng.randf_range(0.0, 1.2), clampf(player.position.z + rng.randf_range(-3.0, 1.0), -7.5, 5.0))
+
+
 ## A beggar or street drunk within `r` metres, ready to trade.
 func trader_near(pos: Vector3, r: float):
 	for n in npcs:
@@ -1704,7 +1729,9 @@ func _update_eyelids(dt: float) -> void:
 	if GameState.over:
 		blink = 0.0
 		droop = 0.0
-	tilt_mat.set_shader_parameter("lids", clampf(maxf(droop, blink), 0.0, 1.0))
+	# Dozing off on the street: the lids close over everything.
+	var doze := GameState.doze_lids()
+	tilt_mat.set_shader_parameter("lids", clampf(maxf(maxf(droop, blink), doze), 0.0, 1.0))
 
 
 ## The sharp tilt-shift band follows the player vertically on screen.

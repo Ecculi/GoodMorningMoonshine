@@ -59,6 +59,7 @@ func _ready() -> void:
 
 
 func reset(pos: Vector3) -> void:
+	model.set_soiled(false)
 	position = pos
 	facing = 1
 	_yaw_target = 0.0
@@ -90,6 +91,7 @@ func reset(pos: Vector3) -> void:
 ## Morning: clear any fall, rag doll or knockout left over from the night
 ## (e.g. fell asleep on the ground). Keeps what is in the hand.
 func wake_up() -> void:
+	model.set_soiled(GameState.soiled)
 	running = false
 	_press_time = -1.0
 	_block_action = true
@@ -164,6 +166,18 @@ func _process(delta: float) -> void:
 				GameState.fall_asleep("SLEEP_FELL")
 			else:
 				_get_up()
+		return
+
+	# Dozing off: stand swaying while the eyes close, then collapse onto
+	# the street (the day ends a moment later).
+	if GameState.doze_t >= 0.0:
+		_press_time = -1.0
+		model.set_eyes(1.0)
+		if GameState.doze_t < GameState.DOZE_FALL:
+			model.rotation.z = sin(_clock * 3.0) * 0.06 * (GameState.doze_t / GameState.DOZE_FALL)
+			model.animate(0.0, delta)
+		else:
+			_go_ragdoll(Vector3(facing * 0.6, 0.2, randf_range(-0.3, 0.3)), 30.0)
 		return
 
 	var dir := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
@@ -359,6 +373,15 @@ func _launch(d: int) -> void:
 
 
 ## Run over: straight under the car, which doesn't even slow down.
+## Hit by the front of a car: no bonnet ride, the impact throws the
+## character straight away as a rag doll in the car's direction.
+func hit_by_car_front(car_dir: int, car_speed: float) -> void:
+	running = false
+	_press_time = -1.0
+	var push := Vector3(car_dir * (2.5 + car_speed * 0.55), 1.8 + car_speed * 0.12, randf_range(-0.8, 0.8))
+	_knock_out(40.0, push)
+
+
 func run_over(car_dir: int) -> void:
 	running = false
 	_press_time = -1.0
@@ -752,9 +775,10 @@ func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
 		_run_by_stick = false
 		return
 	# Holding an arrow just walks. Running: a double tap on an arrow, or
-	# the touch stick pushed out to its edge (exhausted, only the short
-	# burst is left).
-	if GameState.stick_run and (not GameState.exhausted or _exhausted_run > 0.0):
+	# the touch stick pushed out to its edge, or Shift (gamepad RB) held
+	# (exhausted, only the short burst is left).
+	var hold_run := GameState.stick_run or Input.is_action_pressed("run")
+	if hold_run and (not GameState.exhausted or _exhausted_run > 0.0):
 		running = true
 		_run_by_stick = true
 	elif _run_by_stick:
@@ -837,6 +861,11 @@ func _short_action() -> void:
 		if hand_item.kind == Item.Kind.FOOD:
 			GameState.eat()
 			main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
+			_consume_hand_item()
+			return
+		if hand_item.kind == Item.Kind.PILLS:
+			GameState.take_pills()
+			main.popup("?!", position + Vector3(0, 2.1, 0), Color(1.0, 0.45, 0.85))
 			_consume_hand_item()
 			return
 	_punch(target, 0.0)
@@ -997,7 +1026,7 @@ func hand_short_action_key() -> String:
 	match hand_item.kind:
 		Item.Kind.BOTTLE, Item.Kind.COFFEE, Item.Kind.ENERGY:
 			return "ACT_DRINK"
-		Item.Kind.FOOD:
+		Item.Kind.FOOD, Item.Kind.PILLS:
 			return "ACT_EAT"
 	return "ACT_PUNCH"
 

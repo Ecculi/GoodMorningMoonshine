@@ -39,13 +39,13 @@ const HANGOVER_DRAIN_MAX := 4.0
 ## moving; soberer or drunker, it doesn't.
 const MEND_FROM := 1.0
 const MEND_TO := 2.5
-const MEND_RATE := 1.0
+const MEND_RATE := 0.4
 ## Highest per mille today and yesterday: yesterday's peak sets how bad
 ## the hangover shakes are. The first morning follows a big night.
 var today_max := PROMILLE_START
 var yesterday_max := 2.2
-## Health per 1.0 per mille drunk (beer +7, spirits +18).
-const DRINK_HEALTH := 30.0
+## Health per 1.0 per mille drunk (beer about +4, spirits +9).
+const DRINK_HEALTH := 15.0
 ## Share of damage that being drunk numbs away at the passing-out limit
 ## (grows evenly from 0.5 per mille; about a quarter at 2.0).
 const DRUNK_NUMB := 0.6
@@ -138,6 +138,9 @@ var lost: Array = []
 var placements := {}
 ## Where the character slept: "home", "stairs" or "street".
 var sleep_place := "home"
+## Wet and soiled trousers after a night on the street (brown at the back,
+## yellow at the front). Washed after a night at home or a friend's.
+var soiled := false
 var bonus := 0
 ## Item kind taken by the police (-1 = nothing); get it back at the police
 ## station with an ID card.
@@ -158,7 +161,9 @@ var phone_photo := {}
 ## block (street between two crossings) where the thing lies; where in the
 ## block and on which side is left to find.
 var phone_map_hints: Array = []
-const MAP_HINT_CHANCE := 0.7
+## Every lost thing gets its block on the map (an unmarked one looked
+## like a bug). Lower this to hide some.
+const MAP_HINT_CHANCE := 1.0
 ## Open full-screen thing that freezes the world: "", "phone" or "shop".
 var modal := ""
 var rng := RandomNumberGenerator.new()
@@ -188,6 +193,18 @@ func _process(delta: float) -> void:
 		world_dt = 0.0
 		active = false
 		return
+	# Dozing off on the street: the eyes close, the character collapses,
+	# and only then the day ends. The world keeps going meanwhile.
+	if doze_t >= 0.0:
+		doze_t += delta
+		active = true
+		world_dt = delta
+		moving = false
+		running = false
+		if doze_t >= DOZE_TIME:
+			doze_t = -1.0
+			_end_day(_doze_cause)
+		return
 	busy_time = maxf(0.0, busy_time - delta)
 	# Holding the action button (charging a punch or a throw) slows the
 	# whole world to half speed, moving or not.
@@ -211,14 +228,38 @@ func _process(delta: float) -> void:
 	elif health <= 0.0:
 		_die("HEADLINE_BEATEN")
 	elif tired >= 100.0:
-		sleep_place = "street"
-		_end_day("SLEEP_TIRED")
+		_start_doze("SLEEP_TIRED")
 	elif promille > pass_out_promille:
-		sleep_place = "street"
-		_end_day("SLEEP_PASSOUT")
+		_start_doze("SLEEP_PASSOUT")
 	elif clock_min >= DAY_END_MIN:
-		sleep_place = "street"
-		_end_day("SLEEP_NIGHT")
+		_start_doze("SLEEP_NIGHT")
+
+
+## Falling asleep on the street happens in steps (seconds from the start):
+## eyes nearly shut by DOZE_EYES, the character collapses at DOZE_FALL,
+## the day ends at DOZE_TIME. -1 = not dozing.
+const DOZE_EYES := 1.5
+const DOZE_FALL := 1.8
+const DOZE_TIME := 4.5
+var doze_t := -1.0
+var _doze_cause := ""
+
+
+func _start_doze(cause: String) -> void:
+	if doze_t >= 0.0:
+		return
+	sleep_place = "street"
+	_doze_cause = cause
+	doze_t = 0.0
+
+
+## 0..1 how far the eyelids are closed while dozing off (0 when awake).
+func doze_lids() -> float:
+	if doze_t < 0.0:
+		return 0.0
+	if doze_t < DOZE_EYES:
+		return 0.92 * smoothstep(0.0, DOZE_EYES, doze_t)
+	return lerpf(0.92, 1.0, clampf((doze_t - DOZE_FALL) / (DOZE_TIME - DOZE_FALL), 0.0, 1.0))
 
 
 ## Alcohol, clock, hangover and hunger for `dt` seconds of activity.
@@ -241,6 +282,7 @@ func _tick_body(dt: float, is_running: bool) -> void:
 	caffeine = maxf(0.0, caffeine - dt / 60.0)
 	jitter_t = maxf(0.0, jitter_t - dt)
 	focus_t = maxf(0.0, focus_t - dt)
+	trip_t = maxf(0.0, trip_t - dt)
 
 
 ## How fast the character gets colder (per second of activity; negative =
@@ -279,6 +321,25 @@ func hangover_shake() -> float:
 	var peak := clampf((yesterday_max - 0.8) / 2.4, 0.15, 1.0)
 	var sober := clampf((PROMILLE_HANGOVER - promille) / PROMILLE_HANGOVER, 0.0, 1.0)
 	return peak * lerpf(0.5, 1.0, sober)
+
+
+## A punk's pills: very drunk (a big dose, absorbed like a drink) and
+## seeing things for a while (see main._update_trip and the HUD).
+const PILLS_PROMILLE := 1.2
+const TRIP_TIME := 60.0
+var trip_t := 0.0
+
+
+func take_pills() -> void:
+	drink(PILLS_PROMILLE)
+	trip_t = TRIP_TIME
+
+
+## 0..1: how strong the visions are (fade in fast, out over the last 15 s).
+func trip_amount() -> float:
+	if trip_t <= 0.0:
+		return 0.0
+	return clampf((TRIP_TIME - trip_t) / 4.0, 0.0, 1.0) * clampf(trip_t / 15.0, 0.0, 1.0)
 
 
 func caffeinate(awake: float) -> void:
@@ -431,6 +492,7 @@ func new_game() -> void:
 	health = 100.0
 	money = 0
 	confiscated = -1
+	soiled = false
 	hunger = 20.0
 	strain = 0.0
 	exhausted = false
@@ -439,6 +501,8 @@ func new_game() -> void:
 	caffeine = 0.0
 	jitter_t = 0.0
 	focus_t = 0.0
+	trip_t = 0.0
+	doze_t = -1.0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	bonus = 0
@@ -462,6 +526,10 @@ func new_game() -> void:
 func new_day() -> void:
 	_doses.clear()
 	var at_sleep := promille
+	if sleep_place == "street":
+		soiled = true
+	elif sleep_place == "home" or sleep_place == "friend":
+		soiled = false
 	yesterday_max = maxf(today_max, at_sleep)
 	day += 1
 	match sleep_place:
@@ -491,6 +559,8 @@ func new_day() -> void:
 	caffeine = 0.0
 	jitter_t = 0.0
 	focus_t = 0.0
+	trip_t = 0.0
+	doze_t = -1.0
 	strain = 0.0
 	exhausted = false
 	# Morning cold depends on where the night was spent.
@@ -679,6 +749,8 @@ func _setup_input() -> void:
 	_add_action("action", [KEY_SPACE, KEY_Z, KEY_ENTER], [JOY_BUTTON_A])
 	# Shortcut for keyboards and gamepads (on touch screens: up + action).
 	_add_action("phone", [KEY_P, KEY_TAB], [JOY_BUTTON_Y])
+	# Hold to run while moving (besides double-tapping an arrow).
+	_add_action("run", [KEY_SHIFT], [JOY_BUTTON_RIGHT_SHOULDER])
 	_add_axis("move_left", JOY_AXIS_LEFT_X, -1.0)
 	_add_axis("move_right", JOY_AXIS_LEFT_X, 1.0)
 	_add_axis("move_up", JOY_AXIS_LEFT_Y, -1.0)
