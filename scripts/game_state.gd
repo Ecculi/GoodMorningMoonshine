@@ -190,6 +190,18 @@ func _process(delta: float) -> void:
 		world_dt = 0.0
 		active = false
 		return
+	# Dozing off on the street: the eyes close, the character collapses,
+	# and only then the day ends. The world keeps going meanwhile.
+	if doze_t >= 0.0:
+		doze_t += delta
+		active = true
+		world_dt = delta
+		moving = false
+		running = false
+		if doze_t >= DOZE_TIME:
+			doze_t = -1.0
+			_end_day(_doze_cause)
+		return
 	busy_time = maxf(0.0, busy_time - delta)
 	# Holding the action button (charging a punch or a throw) slows the
 	# whole world to half speed, moving or not.
@@ -213,14 +225,38 @@ func _process(delta: float) -> void:
 	elif health <= 0.0:
 		_die("HEADLINE_BEATEN")
 	elif tired >= 100.0:
-		sleep_place = "street"
-		_end_day("SLEEP_TIRED")
+		_start_doze("SLEEP_TIRED")
 	elif promille > pass_out_promille:
-		sleep_place = "street"
-		_end_day("SLEEP_PASSOUT")
+		_start_doze("SLEEP_PASSOUT")
 	elif clock_min >= DAY_END_MIN:
-		sleep_place = "street"
-		_end_day("SLEEP_NIGHT")
+		_start_doze("SLEEP_NIGHT")
+
+
+## Falling asleep on the street happens in steps (seconds from the start):
+## eyes nearly shut by DOZE_EYES, the character collapses at DOZE_FALL,
+## the day ends at DOZE_TIME. -1 = not dozing.
+const DOZE_EYES := 1.5
+const DOZE_FALL := 1.8
+const DOZE_TIME := 4.5
+var doze_t := -1.0
+var _doze_cause := ""
+
+
+func _start_doze(cause: String) -> void:
+	if doze_t >= 0.0:
+		return
+	sleep_place = "street"
+	_doze_cause = cause
+	doze_t = 0.0
+
+
+## 0..1 how far the eyelids are closed while dozing off (0 when awake).
+func doze_lids() -> float:
+	if doze_t < 0.0:
+		return 0.0
+	if doze_t < DOZE_EYES:
+		return 0.92 * smoothstep(0.0, DOZE_EYES, doze_t)
+	return lerpf(0.92, 1.0, clampf((doze_t - DOZE_FALL) / (DOZE_TIME - DOZE_FALL), 0.0, 1.0))
 
 
 ## Alcohol, clock, hangover and hunger for `dt` seconds of activity.
@@ -462,6 +498,7 @@ func new_game() -> void:
 	jitter_t = 0.0
 	focus_t = 0.0
 	trip_t = 0.0
+	doze_t = -1.0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	bonus = 0
@@ -515,6 +552,7 @@ func new_day() -> void:
 	jitter_t = 0.0
 	focus_t = 0.0
 	trip_t = 0.0
+	doze_t = -1.0
 	strain = 0.0
 	exhausted = false
 	# Morning cold depends on where the night was spent.

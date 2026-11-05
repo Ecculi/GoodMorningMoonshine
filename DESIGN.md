@@ -312,6 +312,8 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 
 ### Nukahtaminen väsymyksestä
 
+- **Kadulle nukahtaminen etenee vaiheittain** (väsymys täynnä, sammumisraja ylittyy tai kello tulee 24): ensin silmäluomet painuvat noin 1,5 sekunnissa lähes kiinni ja hahmo huojuu paikallaan, sitten hän lysähtää kadulle (rätkänukke), ja vasta hetken päästä silmät menevät kokonaan kiinni ja päivä vaihtuu.
+
 - Kun väsymys on täynnä, pelaaja nukahtaa siihen paikkaan, missä on.
 - Hän herää seuraavana aamuna, eli seuraavasta kentästä.
 - Hän herää aina jostain muualta kuin kotoa (ks. Päivä = kenttä). Nukahtamispaikka vaikuttaa silti aamun promilleihin, healthiin ja nälkään.

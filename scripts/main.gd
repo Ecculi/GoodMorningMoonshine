@@ -1728,7 +1728,9 @@ func _update_eyelids(dt: float) -> void:
 	if GameState.over:
 		blink = 0.0
 		droop = 0.0
-	tilt_mat.set_shader_parameter("lids", clampf(maxf(droop, blink), 0.0, 1.0))
+	# Dozing off on the street: the lids close over everything.
+	var doze := GameState.doze_lids()
+	tilt_mat.set_shader_parameter("lids", clampf(maxf(maxf(droop, blink), doze), 0.0, 1.0))
 
 
 ## The sharp tilt-shift band follows the player vertically on screen.

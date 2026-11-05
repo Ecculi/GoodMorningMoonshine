@@ -166,6 +166,18 @@ func _process(delta: float) -> void:
 				_get_up()
 		return
 
+	# Dozing off: stand swaying while the eyes close, then collapse onto
+	# the street (the day ends a moment later).
+	if GameState.doze_t >= 0.0:
+		_press_time = -1.0
+		model.set_eyes(1.0)
+		if GameState.doze_t < GameState.DOZE_FALL:
+			model.rotation.z = sin(_clock * 3.0) * 0.06 * (GameState.doze_t / GameState.DOZE_FALL)
+			model.animate(0.0, delta)
+		else:
+			_go_ragdoll(Vector3(facing * 0.6, 0.2, randf_range(-0.3, 0.3)), 30.0)
+		return
+
 	var dir := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
 	# While a throw is being charged the arrows aim instead of moving.
 	if is_aiming():
