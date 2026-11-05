@@ -76,3 +76,8 @@ CAP_EXHAUST_1,Viimeiset metrit hän käveli. Sitten ei enää.
 CAP_EXHAUST_2,"Urheiluseura järkyttyi: ""Hän ei ollut edes jäsen."""
 PHOTO_CREDIT,Kuva: lukijan kuva
 CAP_ANY_1,"Silminnäkijät ja korvin kuulijat kertoivat, että viimeisinä tekoinaan uhri pieraisi."
+HL_CAR_5,"Kuljettaja: ""En ehtinyt jarruttaa"""
+HL_CAR_6,Jalankulkija hävisi kohtaamisen farmariauton kanssa
+CAP_CAR_4,"Kuljettaja: ""En ehtinyt jarruttaa, koska en nähnyt häntä. Ja vaikka näinkin, niin mitä sitten?"""
+CAP_CAR_5,"Kuljettaja: ""Hän oli tiellä, ja tie on autoja varten."""
+CAP_CAR_6,"Poliisi muistuttaa, että suojatietä käyttävät myös elävät."

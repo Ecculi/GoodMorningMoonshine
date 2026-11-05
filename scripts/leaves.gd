@@ -145,8 +145,8 @@ func _car_wind(p: Vector3) -> Vector3:
 		if spd < 0.5:
 			continue
 		var d: float = float(c.dir)
-		var along := (p.x - c.position.x) * d  # + ahead of the car, - behind
-		var dz := p.z - c.position.z
+		var along: float = (p.x - c.position.x) * d  # + ahead of the car, - behind
+		var dz: float = p.z - c.position.z
 		# A wake trailing a few metres behind, a little in front, and about
 		# a lane to each side.
 		var fx := exp(-pow(along + 1.5, 2.0) / (2.0 * 2.8 * 2.8))
