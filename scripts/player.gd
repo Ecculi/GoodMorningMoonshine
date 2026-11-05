@@ -740,7 +740,9 @@ func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
 	else:
 		_hold_time = 0.0
 	_last_dir = dir
-	if _hold_time > HOLD_TO_RUN:
+	# Exhausted: holding the arrow keeps walking (no automatic running);
+	# a double tap still gives a short burst.
+	if _hold_time > HOLD_TO_RUN and not GameState.exhausted:
 		running = true
 
 
@@ -784,7 +786,6 @@ func _limit_exhausted_run(moving: bool, delta: float) -> void:
 		_exhausted_run -= delta
 		if _exhausted_run <= 0.0:
 			running = false
-			_hold_time = -10.0  # holding the direction does not restart the run
 	elif not moving:
 		_exhausted_run = minf(EXHAUSTED_RUN_TIME, _exhausted_run + delta * 0.25)
 
@@ -874,8 +875,8 @@ func _punch(target, charge: float, charged := false) -> void:
 const SPAM_WINDOW := 0.7
 const SPAM_COST := 7.0
 ## Temporary health used per second of running: a full heart lasts
-## about 20 s (four blocks) of running.
-const RUN_STRAIN := 5.0
+## about 33 s (six to seven blocks) of running.
+const RUN_STRAIN := 3.0
 const REST_DELAY := 5.0
 const STRAIN_RECOVERY := 4.0
 var _last_punch := -10.0

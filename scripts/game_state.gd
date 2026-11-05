@@ -321,9 +321,13 @@ func _check_strain() -> void:
 		exhausted = true
 
 
+## Exhaustion ends once this share of the health is red again.
+const EXHAUST_RECOVER := 0.3
+
+
 func recover_strain(amount: float) -> void:
 	strain = maxf(0.0, strain - amount)
-	if strain <= 0.0:
+	if strain <= health * (1.0 - EXHAUST_RECOVER):
 		exhausted = false
 
 
