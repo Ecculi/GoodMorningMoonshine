@@ -9,6 +9,7 @@ const Npc = preload("res://scripts/npc.gd")
 const Item = preload("res://scripts/item.gd")
 const Hud = preload("res://scripts/hud.gd")
 const TouchControls = preload("res://scripts/touch_controls.gd")
+const Leaves = preload("res://scripts/leaves.gd")
 const CityMap = preload("res://scripts/city_map.gd")
 const BlockBuilder = preload("res://scripts/block_builder.gd")
 const LostItemNode = preload("res://scripts/lost_item_node.gd")
@@ -18,7 +19,7 @@ const Car = preload("res://scripts/car.gd")
 
 ## Battery use per second while the phone is open, by page.
 ## Battery per second of use, by page. Drains only while the phone is open.
-const PHONE_DRAIN := [0.6, 0.9, 1.75]
+const PHONE_DRAIN := [0.15, 0.225, 0.45]
 const KIOSK_OPTIONS := [
 	{"kind": "bottle", "price": 3, "alcohol": true},
 	{"kind": "food", "price": 2, "alcohol": false},
@@ -83,6 +84,11 @@ var shop_sel := 0
 var shop_flash := ""
 var shop_flash_t := 0.0
 var _glare := 0.0
+
+
+## 0..1: how far the player shades the eyes with a hand (dazzled).
+func shade_amount() -> float:
+	return smoothstep(0.18, 0.4, _glare)
 var _scrambled := {}
 var _friend_refused := false
 var _focus_y := 0.58
@@ -163,6 +169,17 @@ func _check_transitions() -> void:
 	if GameState.over:
 		return
 	var p: Vector3 = player.position
+	# Walked out of the picture at the left or right: on to the next block
+	# as soon as the character has fully disappeared from view.
+	var off := _offscreen_side()
+	if off != 0 and off == player.facing and p.z >= Z_MIN - 0.05 and p.z <= Z_MAX + 0.05 \
+			and CityMap.is_valid(CityMap.next_along(segment, off)):
+		_go_to(CityMap.next_along(segment, off), Vector3(-off * (NEXT_BLOCK_X - 0.5), 0, p.z), off)
+		# Start just outside the view on the other side, walking in.
+		var edge := _view_edge_x(-off, p.z)
+		var x := clampf(edge - off * 0.7, -(NEXT_BLOCK_X - 0.5), NEXT_BLOCK_X - 0.5)
+		player.position.x = x
+		return
 	if p.x >= NEXT_BLOCK_X:
 		_go_to(CityMap.next_along(segment, 1), Vector3(-NEXT_BLOCK_X + 0.5, 0, p.z), 1)
 	elif p.x <= -NEXT_BLOCK_X:
@@ -171,6 +188,36 @@ func _check_transitions() -> void:
 		_turn(p.x > 0.0, true)
 	elif p.z >= TURN_DOWN_Z:
 		_turn(p.x > 0.0, false)
+
+
+## 1 / -1 when the player is completely out of view on the right / left,
+## otherwise 0.
+func _offscreen_side() -> int:
+	var w := get_viewport().get_visible_rect().size.x
+	var side := 0
+	for k in 4:
+		var q: Vector3 = player.global_position + Vector3(0.45 if k % 2 == 0 else -0.45, 0.0 if k < 2 else 1.9, 0)
+		if camera.is_position_behind(q):
+			return 0
+		var sx := camera.unproject_position(q).x
+		var sd := 1 if sx > w else (-1 if sx < 0.0 else 0)
+		if sd == 0 or (side != 0 and sd != side):
+			return 0
+		side = sd
+	return side
+
+
+## World x of the left (-1) or right (1) edge of the view at depth z and
+## about waist height.
+func _view_edge_x(side: int, z: float) -> float:
+	var vs := get_viewport().get_visible_rect().size
+	var sy := camera.unproject_position(Vector3(camera.position.x, 0.9, z)).y
+	var o := camera.project_ray_origin(Vector2(0.0 if side < 0 else vs.x, sy))
+	var d := camera.project_ray_normal(Vector2(0.0 if side < 0 else vs.x, sy))
+	if absf(d.z) < 0.0001:
+		return camera.position.x + side * 15.0
+	var t := (z - o.z) / d.z
+	return o.x + d.x * t
 
 
 func _turn(at_right: bool, up: bool) -> void:
@@ -237,6 +284,10 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	_cloud_sun_set = false
 	level = BlockBuilder.build(seg, GameState.home_x if seg == GameState.home_seg else INF, GameState.home_type)
 	add_child(level)
+	# Wind-blown leaves on the street.
+	var leaves = Leaves.new()
+	level.add_child(leaves)
+	leaves.setup(seg, GameState.weather)
 	player.position = pos
 	player.facing = facing
 	camera.position.x = clampf(pos.x, -10.0, 10.0)
@@ -284,11 +335,11 @@ func _populate_block() -> void:
 				kind = Item.Kind.COFFEE  # rare
 			elif r < 0.06:
 				kind = Item.Kind.ENERGY  # rare
-			elif r < 0.15:
+			elif r < 0.30:
 				kind = Item.Kind.BOTTLE
-			elif r < 0.35:
+			elif r < 0.50:
 				kind = Item.Kind.FOOD
-			elif r < 0.65:
+			elif r < 0.75:
 				kind = Item.Kind.COIN
 			spawn_item(kind, Vector3(rng.randf_range(-15.0, 15.0), 0, _random_z()), rng.randi_range(1, 3))
 	for i in rng.randi_range(2, 5):
@@ -606,6 +657,26 @@ var _searched_bins := {}
 ## Short action next to a bin: rummage through it. Half of the bins hide a
 ## bottle (beer, spirits or something mysterious). Each bin can be searched
 ## once a day; the contents are fixed for the day (seeded by day + place).
+## Unsearched bin near `pos` for the hint: {"x": bin x, "reach": true
+## when the action button would search it now}, or {} if none within
+## `near` metres. Searched bins give no hint.
+func bin_hint(pos: Vector3, near := 4.0) -> Dictionary:
+	if level == null or GameState.over:
+		return {}
+	var bins: Array = level.get_meta("bins", [])
+	var best := {}
+	var best_d := INF
+	for i in bins.size():
+		var bx: float = bins[i]
+		if _searched_bins.has("%s:%d" % [_key(segment), i]):
+			continue
+		var d := Vector2(pos.x - bx, pos.z + 7.5).length()
+		if d < near and d < best_d:
+			best_d = d
+			best = {"x": bx, "reach": absf(pos.x - bx) <= 1.0 and pos.z <= -6.4}
+	return best
+
+
 func try_search_bin(pos: Vector3) -> bool:
 	if level == null or GameState.over:
 		return false
@@ -625,7 +696,7 @@ func try_search_bin(pos: Vector3) -> bool:
 		var r := RandomNumberGenerator.new()
 		r.seed = hash("bin|%d|%s|%s|%d" % [GameState.day, GameState.home_seg, segment, i])
 		r.randi()  # warm up: similar seeds give similar first numbers
-		if r.randf() < 0.5:
+		if r.randf() < 0.7:
 			var roll := r.randf()
 			var drink := Item.Drink.BEER if roll < 0.5 else (Item.Drink.SPIRITS if roll < 0.85 else Item.Drink.MYSTERY)
 			player._pickup(spawn_item(Item.Kind.BOTTLE, player.position, 1, drink))
@@ -1229,7 +1300,8 @@ func _update_sun() -> void:
 		var low := 1.0 - clampf(rad_to_deg(elev) / 45.0, 0.0, 1.0) * 0.5
 		want_glare = clampf(player.facing * to_sun.x * 1.2 + maxf(0.0, -to_sun.z) * 0.5, 0.0, 1.0) * low * 0.8
 	_glare = lerpf(_glare, want_glare, 0.05)
-	tilt_mat.set_shader_parameter("glare", _glare)
+	# The hand shading the eyes takes the worst of it off.
+	tilt_mat.set_shader_parameter("glare", _glare * (1.0 - 0.3 * shade_amount()))
 	# Cloud shadows only on sunny days; they drift while time moves.
 	clouds.visible = not cloudy and day_light > 0.15
 	if clouds.visible:

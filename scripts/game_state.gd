@@ -24,6 +24,15 @@ const PROMILLE_MAX_SHOWN := 4.0
 const PROMILLE_DECAY := 0.0135
 const RUN_DECAY_MULT := 1.6
 const DRINK_AMOUNT := 0.4
+## Highest per mille today and yesterday: yesterday's peak sets how bad
+## the hangover shakes are. The first morning follows a big night.
+var today_max := PROMILLE_START
+var yesterday_max := 2.2
+## Health per 1.0 per mille drunk (beer +7, spirits +18).
+const DRINK_HEALTH := 30.0
+## Share of damage that being drunk numbs away at the passing-out limit
+## (grows evenly from 0.5 per mille; about a quarter at 2.0).
+const DRUNK_NUMB := 0.6
 const FOOD_HEALTH := 12.0
 
 ## Sleep always burns at least this much alcohol...
@@ -68,6 +77,8 @@ var strain := 0.0
 ## Set by the player while the action button is held down: standing
 ## still, time then runs at half speed.
 var charging := false
+## Set by the touch stick: pushed out to the edge = run.
+var stick_run := false
 const CHARGE_TIME_SCALE := 0.5
 ## Pills found in a bin: for a while, while charging only the rest of the
 ## world slows down and the player keeps full speed.
@@ -127,6 +138,11 @@ var battery := 20.0
 var phone_msgs: Array = []
 ## Yesterday's photo: {"id": item id, "seg": Vector3i, "street": String} or {}.
 var phone_photo := {}
+## Map hints: [{"id": item id, "seg": Vector3i}]. The map highlights the
+## block (street between two crossings) where the thing lies; where in the
+## block and on which side is left to find.
+var phone_map_hints: Array = []
+const MAP_HINT_CHANCE := 0.7
 ## Open full-screen thing that freezes the world: "", "phone" or "shop".
 var modal := ""
 var rng := RandomNumberGenerator.new()
@@ -238,6 +254,16 @@ func player_time_scale() -> float:
 	return CHARGE_TIME_SCALE if charging and focus_t <= 0.0 else 1.0
 
 
+## Hangover shakes 0..1: only below the hangover limit, stronger the
+## bigger yesterday's peak was and the soberer you are now.
+func hangover_shake() -> float:
+	if promille >= PROMILLE_HANGOVER:
+		return 0.0
+	var peak := clampf((yesterday_max - 0.8) / 2.4, 0.15, 1.0)
+	var sober := clampf((PROMILLE_HANGOVER - promille) / PROMILLE_HANGOVER, 0.0, 1.0)
+	return peak * lerpf(0.5, 1.0, sober)
+
+
 func caffeinate(awake: float) -> void:
 	tired = maxf(0.0, tired - awake)
 	caffeine += 1.0
@@ -250,6 +276,9 @@ func drink(amount := DRINK_AMOUNT) -> float:
 	if hunger >= HUNGER_EMPTY_STOMACH:
 		amount *= 1.4
 	promille += amount
+	today_max = maxf(today_max, promille)
+	# A drink brings health back too (more from stronger stuff).
+	health = minf(100.0, health + amount * DRINK_HEALTH)
 	return amount
 
 
@@ -259,6 +288,9 @@ func eat() -> void:
 
 
 func damage(amount: float) -> void:
+	# Drunk, blows and falls hurt less: the drunker, the less (from 0.5 per
+	# mille up to today's passing-out limit).
+	amount *= 1.0 - DRUNK_NUMB * clampf((promille - 0.5) / maxf(pass_out_promille - 0.5, 0.1), 0.0, 1.0)
 	health -= amount
 	if health <= 0.0 and not over:
 		_die("HEADLINE_BEATEN")
@@ -293,9 +325,13 @@ func _check_strain() -> void:
 		exhausted = true
 
 
+## Exhaustion ends once this share of the health is red again.
+const EXHAUST_RECOVER := 0.3
+
+
 func recover_strain(amount: float) -> void:
 	strain = maxf(0.0, strain - amount)
-	if strain <= 0.0:
+	if strain <= health * (1.0 - EXHAUST_RECOVER):
 		exhausted = false
 
 
@@ -346,6 +382,8 @@ func search_radius() -> float:
 func new_game() -> void:
 	day = 1
 	promille = PROMILLE_START
+	today_max = PROMILLE_START
+	yesterday_max = 2.2
 	health = 100.0
 	money = 0
 	confiscated = -1
@@ -379,6 +417,7 @@ func new_game() -> void:
 ## A short or bad sleep leaves more alcohol in the blood and heals less.
 func new_day() -> void:
 	var at_sleep := promille
+	yesterday_max = maxf(today_max, at_sleep)
 	day += 1
 	match sleep_place:
 		"home":
@@ -413,6 +452,7 @@ func new_day() -> void:
 	cold = {"home": 10.0, "friend": 15.0, "jail": 30.0}.get(sleep_place, 50.0)
 	# Sleeping always burns alcohol and makes you hungry.
 	promille = maxf(minf(promille, at_sleep - SLEEP_MIN_DROP), MORNING_MIN_PROMILLE)
+	today_max = promille
 	var cold_night := sleep_place == "street" or sleep_place == "basement" or sleep_place == "stairs"
 	hunger = minf(100.0, hunger + HUNGER_SLEEP + (8.0 if cold_night else 0.0))
 	clock_min = DAY_START_MIN
@@ -508,6 +548,7 @@ func _make_phone_hints() -> void:
 	battery = 50.0 if day == 1 else rng.randf_range(8.0, 25.0)
 	phone_msgs.clear()
 	phone_photo = {}
+	phone_map_hints.clear()
 	var candidates: Array = []
 	for id in lost:
 		if id != "phone":
@@ -523,6 +564,10 @@ func _make_phone_hints() -> void:
 		var id: String = candidates[rng.randi() % candidates.size()]
 		var seg: Vector3i = placements[id][0]
 		phone_photo = {"id": id, "seg": seg, "street": _hint_street(seg)}
+	# Map: the block where each of most lost things lies.
+	for id in candidates:
+		if rng.randf() < MAP_HINT_CHANCE:
+			phone_map_hints.append({"id": id, "seg": placements[id][0]})
 
 
 func _hint_street(seg: Vector3i) -> String:

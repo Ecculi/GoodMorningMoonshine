@@ -40,6 +40,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - **Yksi pelinäkymä on yksi kortteli**, eli kadun pätkä kahden risteyksen välillä. Risteykset ovat näkymän reunoilla.
   - Risteyksestä jatketaan suoraan samaa katua seuraavaan kortteliin (näkymä vaihtuu) tai käännytään ylös tai alas poikkikadulle (näyttö vaihtuu ja tulee uusi katu).
   - Lyhyet näkymät ovat kevyitä ladata myös mobiilissa ja selaimessa, ja jokaisella korttelilla voi olla oma tunnelmansa.
+- **Kadun vaihtuminen:** kun hahmo kävelee näytön vasemmasta tai oikeasta reunasta kokonaan ulos, näkymä vaihtuu heti seuraavaan kortteliin, ja hahmo kävelee sisään toisen reunan takaa.
 - **Korttelin ylittää noin 5 sekunnissa**, jos juoksee koko ajan. Kävellen siihen menee kauemmin.
 - **Tavarat ovat lähellä kotia:** koko keskusta on käytössä, mutta koti ja hukatut tavarat arvotaan joka päivä muutaman korttelin säteelle toisistaan. **Säde kasvaa päivä päivältä**, mikä on yksi tapa, jolla peli vaikeutuu.
 - Jokainen peli sijoittuu johonkin kaupunkiin. Kaupungin kartta on aina sama, mutta **kodin sijainti vaihtuu joka pelissä**, mikä lisää uudelleenpelattavuutta.
@@ -155,6 +156,7 @@ Krapula ei kovene päivien mukaan.
 
 - Kontrollien pitää olla niin simppelit, että peliä voi pelata **puhelimella**.
 - Käytössä on **suuntanuolet**, **toimintanappi** ja erillinen **puhelinnappi**.
+- **Puhelimella** suuntanuolten tilalla on **ohjaussauva** näytön vasemmassa alareunassa: sauvan keskiö ilmestyy siihen, mihin sormi osuu, ja sormea liu'uttamalla hahmo kävelee; kun sormen vie reunaan asti (keltaisen renkaan yli), hahmo juoksee.
 - Toimintanapissa on **lyhyt ja pitkä painallus**:
 
   | Toiminto | Kontrolli |
@@ -164,11 +166,11 @@ Krapula ei kovene päivien mukaan.
   | **Syö / juo** käden tavara | lyhyt painallus, kun lähellä ei ole ketään |
   | **Mene sisään** | lyhyt painallus ovella |
   | **Heitä** käden tavara | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää. Latauksen aikana hahmo ei liiku, vaan nuolilla valitaan heiton suunta (myös ylös ja alas). Heitto lähtee, kun nappi päästetään. |
-  | **Juokse** | kaksoisnapautus suuntanuolta tai saman suunnan pitäminen hetken pohjassa |
+  | **Juokse** | kaksoisnapautus suuntanuolta (toisella napautuksella nuoli jää pohjaan); puhelimella ohjaussauva reunaan asti. Pelkkä suunnan pitäminen pohjassa on aina kävelyä. |
 
 - Kun toimintanappi on pohjassa (lyönnin tai heiton lataus), **koko peli kulkee puolella nopeudella**: ohikulkijat, autot, kello ja myös pelaaja itse.
 - **Lääkkeet:** roskiksesta voi joskus löytää lääkkeitä. Ne vaikuttavat heti löydettäessä: latauksen aikana vain muu maailma hidastuu ja pelaaja liikkuu täydellä nopeudella noin 90 sekunnin ajan (pelin aikaa). Se on vahva etu, jolla ehtii väistää.
-  | **Puhelin auki / kiinni** | oma puhelinnappi (kosketusnäytöllä pieni nappi ison napin yläpuolella, näppäimistöllä P tai Tab, peliohjaimella Y); lisäksi ruudun oikeassa yläkulmassa on puhelinkuvake, jota napauttamalla tai klikkaamalla puhelimen saa auki, ja sen alla lukee näppäin (P / Tab) |
+  | **Puhelin auki / kiinni** | oma puhelinnappi (kosketusnäytöllä pieni nappi ison napin yläpuolella, näppäimistöllä P tai Tab, peliohjaimella Y); lisäksi ruudun oikeassa yläkulmassa on puhelinkuvake, jota napauttamalla tai klikkaamalla puhelimen saa auki, ja sen alla on P-näppäimen kuva (kosketusnäytöllä ei) |
   | **Puhelimen selaus** | vasen / oikea |
 
 ### Näkökenttä ja silmälasit
@@ -202,7 +204,7 @@ Krapula ei kovene päivien mukaan.
 
   | Sää | Vaikutus |
   |---|---|
-  | **Aurinkoinen** | häikäisee aurinkoa vasten kuljettaessa, jos aurinkolasit ovat hukassa |
+  | **Aurinkoinen** | häikäisee aurinkoa vasten kuljettaessa, jos aurinkolasit ovat hukassa: hahmo nostaa vasemman käden otsalle lipaksi, ja ruudun yläreunaan laskeutuu vaakasuora käsi lipaksi, joka peittää lähes koko yläreunan (kyynärvarsi vasemmalta, sormet oikealle, valoa siivilöityy sormien välistä) kuin pelaajan omaan näkökenttään (käsi vähentää häikäisyä vähän) |
   | **Pilvinen** | neutraali; aurinkolaseja ei tarvita |
   | **Sade** | kylmettyy nopeammin ilman takkia; lätäköitä, joista pyöräilijät roiskivat; näkyvyys hieman huonompi |
   | **Lumi ja pakkanen** | kova kylmä; liukkaat kadut, joten juostessa voi kaatua ja menettää healthia; kengättä erityisen vaikeaa |
@@ -250,7 +252,7 @@ Humalan vaikutukset alkavat matalammalla kuin alussa suunniteltiin (kaikki rajat
 | Promillet | Tila |
 |---|---|
 | **0 ‰** | kuolema |
-| **alle 0,5 ‰** | krapula: hahmo tärisee, lyönnit ovat heikkoja ja health kuluu hitaasti. Varoitus, että juotavaa pitää löytää. |
+| **alle 0,5 ‰** | krapula: hahmo tärisee (sitä pahemmin, mitä kovempi edellispäivän humala oli; ks. Krapulatärinä), lyönnit ovat heikkoja ja health kuluu hitaasti. Varoitus, että juotavaa pitää löytää. |
 | **0,5–1,3 ‰** | sopiva alue, hahmo toimii normaalisti |
 | **1,3 ‰ – sammumisraja** | humalan haitat (horjuminen, sumea näkökenttä, rohkeus) voimistuvat vähitellen |
 | **yli 3,2–4,0 ‰** | hahmo sammuu (raja arvotaan joka päivä 3,2 ja 4,0 ‰ väliltä, joten sitä ei voi tietää tarkasti) |
@@ -275,6 +277,7 @@ Humalan vaikutukset alkavat matalammalla kuin alussa suunniteltiin (kaikki rajat
 
 - **Uni:** yöunet palauttavat suurimman osan. Kotona nukkuminen palauttaa eniten.
 - **Ruoka:** syöminen palauttaa vähän.
+- **Alkoholi:** juominen palauttaa healthia juoman vahvuuden mukaan (30 healthia promillea kohden: olut noin +7, pullo +12, tuoppi +15, viina +18, tuntematon aine +27; tyhjään mahaan enemmän).
 - **Apteekki:** laastaria tai särkylääkettä saa rahalla, mutta ne palauttavat vain vähän.
 - Päivän aikana health ei palaudu itsestään.
 
@@ -299,6 +302,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - **Hassu kävely:** humalan noustessa kävely muuttuu pikkuhiljaa hassummaksi: alkaen 1,8 promillesta, voimakkaimmillaan noin 2,5 promillessa. Hassu kävely on absurdin liioiteltua: korkeita potkuja eteen, heiluvat kädet, pomppiva askel ja taaksepäin kallistuva vartalo.
 - **Väärä suunta:** kovassa humalassa (yli 1,8 ‰) hahmo lähtee välillä aivan eri suuntaan kuin nuoli osoittaa (esim. oikealle painettaessa ylös). Pelaaja voi korjata heti painamalla siihen suuntaan, johon hahmo oikeasti menee. Jos hän vain jatkaa alkuperäisen nuolen painamista, väärä suunta menee ohi itsestään noin 1,5–3 sekunnissa. Mitä kovempi humala, sitä useammin näin käy, ja **juostessa paljon useammin** kuin kävellessä. Väärä suunta voi olla mikä tahansa kahdeksasta suunnasta (myös viistoon), mutta **ei koskaan suoraan vastakkainen**. Jos väärä suunta veisi seinää tai reunaa päin, se peruuntuu, jottei hahmo jää kävelemään paikallaan.
 - **Rohkeus:** lyönnit ovat kovempia ja kylmä tuntuu vähemmän, mutta poliisit huomaavat pelaajan helpommin.
+- **Turtumus:** humalassa iskut ja kaatumiset sattuvat vähemmän, ja mitä kovempi humala, sitä vähemmän: vahinko pienenee tasaisesti 0,5 promillesta alkaen (2,0 promillessa noin neljänneksen) aina päivän sammumisrajaan asti, jossa se on 60 % pienempi. Ilman humalaa pelaaja kuolee helpommin.
 - **Näkökenttä:** 1,0 promillesta alkaen kuva sumenee (aluksi lievästi): pelihahmon ympärillä olevan ympyrän sisällä vähän, ulkopuolella enemmän, ja sitä enemmän mitä kovempi humala. Ympyrä pienenee nopeasti koko ruudun kokoisesta (1,0 ‰) 1,5 metrin säteeseen (2,3 ‰) ja siitä edelleen 0,8 metriin päivän sammumisrajalla. Yli 2,3 promillessa sumennus ympyrän ulkopuolella voimistuu selvästi. Kaikki näkökentän efektit (sumennus, tuplanäkö, vinjetti) voimistuvat aina sammumisrajaan asti.
 - **Silmäluomet:** noin 2,0 promillesta alkaen ruudun ylä- ja alareunasta painuu välillä tummat, kaarevat silmäluomet (ruudun ylä- ja alareunassa lähes läpinäkymättömät, reunaa kohti läpikuultavammat) (aluksi noin 14 s välein, lähellä sammumista noin 3,6 s välein). Mitä kovempi humala, sitä pidempään ne pysyvät lähes kiinni (0,9 s → 3 s), kuin hahmo meinaisi nukahtaa. Lähellä sammumisrajaa luomet roikkuvat jatkuvasti puoliksi kiinni. Hahmon lähellä kuva pysyy selvimpänä.
 - **Sammuminen:** kun promillet ylittävät päivän sammumisrajan (arvotaan joka päivä 3,2–4,0 ‰), hahmo sammuu paikalleen. Se lasketaan nukahtamiseksi.
@@ -323,7 +327,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - **Ostaminen:** kioskista, baarista ja kauppahallista (vaatii lompakon ja rahaa).
 - **Ryöstely ja taskuvarkaus:** ohikulkija voi pudottaa ruokaa tai alkoholia.
 - **Kadun juoppo:** voi tarjota huikan vaihtokauppana.
-- **Roskiksen penkominen:** toimintanappi roskiksen vieressä. Puolessa roskiksista on pullo: olutta (+0,25 ‰), viinaa (+0,6 ‰) tai tuntematonta huumaavaa ainetta (+0,9 ‰, violetti pullo käsin kirjoitetulla etiketillä). Harvoin (noin joka 13. roskis) löytyy lääkkeitä, jotka vaikuttavat heti (ks. Lääkkeet). Löytö menee käteen. Kukin roskis penkoo kerran päivässä; sisältö pysyy samana koko päivän (myös palatessa kortteliin) ja arvotaan uudelleen seuraavana aamuna. *(Lokit myöhemmin.)*
+- **Roskiksen penkominen:** toimintanappi roskiksen vieressä (jalkakäytävän seinänpuoleisella reunalla). Penkomattoman roskiksen yläpuolella näkyy suurennuslasi, kun pelaaja on lähellä; aivan vieressä näkyy lisäksi napin kuva → suurennuslasi. Penkotussa roskiksessa ei näy vihjettä. Noin 70 %:ssa roskiksista on pullo: olutta (+0,25 ‰), viinaa (+0,6 ‰) tai tuntematonta huumaavaa ainetta (+0,9 ‰, violetti pullo käsin kirjoitetulla etiketillä). Harvoin (noin joka 13. roskis) löytyy lääkkeitä, jotka vaikuttavat heti (ks. Lääkkeet). Löytö menee käteen. Kukin roskis penkoo kerran päivässä; sisältö pysyy samana koko päivän (myös palatessa kortteliin) ja arvotaan uudelleen seuraavana aamuna. *(Lokit myöhemmin.)*
 - **Terassilta varastaminen:** pelaaja nappaa juoman pöydältä ohi kulkiessaan. Asiakas tai portsari voi suuttua.
 - **Hukatut pullot ja eväät:** kadulla on muiden hukkaamia pulloja ja eväitä. Ne näkyvät epäselvinä kuten muutkin esineet.
 - **Ehtoollisviini:** kirkossa sunnuntaisin (ks. Viikonpäivät ja rannekello).
@@ -332,14 +336,15 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 ## Tappelu
 
 - Pelissä on tappelua. Pelaaja voi lyödä muita, ja muut voivat hyökätä pelaajan kimppuun.
-- **Rämpytys ei kannata:** yksi lyönti on ilmainen, mutta jos lyö uudestaan heti perään (alle 0,7 s), health kuluu väliaikaisesti (7 / lyönti). Väliaikainen kulutus näkyy sydämessä vaaleanpunaisena, ja jokaisesta liian nopeasta lyönnistä pelaajan pään päälle ilmestyy sydän, joka tyhjenee (punainen vähenee ja vaaleanpunainen kasvaa); se näkyy pari sekuntia viimeisen lyönnin jälkeen ja koko uupumuksen ajan. Myös **juokseminen** kuluttaa healthia väliaikaisesti (5 / s; täysi sydän riittää noin 20 sekunnin eli neljän korttelin juoksuun). Kun pelaaja ei ole lyönyt eikä juossut 5 sekuntiin, vaaleanpunainen osa palautuu hitaasti, mutta vain liikkuessa (paikallaan seisten aika ei kulje, eikä mikään palaudu). Kun väliaikainen kulutus vie koko healthin (koko sydän vaaleanpunainen), pelaaja on **uupunut** (hengästynyt), kunnes vaaleanpunainen osa on palautunut kokonaan: hahmo lyö vain noin kerran kahdessa sekunnissa ja jaksaa juosta vain muutaman askeleen kerrallaan. Uupunut hahmo hengittää raskaasti (rintakehä nousee ja laskee, hengityshöyryä nousee) myös paikallaan seistessä.
+- **Rämpytys ei kannata:** yksi lyönti on ilmainen, mutta jos lyö uudestaan heti perään (alle 0,7 s), health kuluu väliaikaisesti (7 / lyönti). Väliaikainen kulutus näkyy sydämessä vaaleanpunaisena, ja jokaisesta liian nopeasta lyönnistä pelaajan pään päälle ilmestyy sydän, joka tyhjenee (punainen vähenee ja vaaleanpunainen kasvaa); se näkyy pari sekuntia viimeisen lyönnin jälkeen ja koko uupumuksen ajan. Myös **juokseminen** kuluttaa healthia väliaikaisesti (3 / s; täysi sydän riittää noin 33 sekunnin eli 6–7 korttelin juoksuun). Kun pelaaja ei ole lyönyt eikä juossut 5 sekuntiin, vaaleanpunainen osa palautuu hitaasti, mutta vain liikkuessa (paikallaan seisten aika ei kulje, eikä mikään palaudu). Kun väliaikainen kulutus vie koko healthin (koko sydän vaaleanpunainen), pelaaja on **uupunut** (hengästynyt), kunnes noin 30 % sydämestä on taas punaista: hahmo lyö vain noin kerran kahdessa sekunnissa ja jaksaa juosta vain muutaman askeleen kerrallaan (kaksoisnapautuksella tai ohjaussauvalla). Uupunut hahmo hengittää raskaasti (rintakehä nousee ja laskee, hengityshöyryä nousee) myös paikallaan seistessä.
 - **Healthin koko määrä kuvastaa kuntoa:** sydän saa olla kokonaan vaaleanpunainen vain hetken. Täydellä healthilla aikaa on 10 sekuntia, lähes tyhjällä vain 1 sekunti (pelin aikaa). Sen jälkeen health alkaa vähetä vähitellen, kunnes pelaaja lepää ja punainen alkaa taas nousta.
 - **Erillistä torjuntaa ei ole.** Iskuja voi väistää liikkumalla, esimerkiksi ylös tai alas kadun syvyyssuunnassa.
 - Osalla hahmoista isku näkyy hetkeä ennen osumaa (esim. käsi nousee), mutta **kaikista hahmoista ei näe, milloin ne ovat lyömässä**.
 - **Heittäminen:** heitetyn esineen vaikutus riippuu esineestä:
   - **Kevyt esine** (tölkki, tyhjä muovipussi) ärsyttää kohdetta mutta ei juuri satuta.
-  - **Raskas esine** (pullo, täysi pussi) tainnuttaa kohteen hetkeksi.
+  - **Raskas esine** (pullo, täysi pussi) tainnuttaa kohteen hetkeksi. Prototyypissä: pullo 60 % ja täysi energiajuomatölkki 40 % todennäköisyydellä (tyhjä tölkki on kevyt); kohde makaa 3–5 sekuntia ja nousee vihaisena.
   - **Ruoka** houkuttelee lokit ja koirat paikalle. Sillä voi harhauttaa vihaisen koiran.
+- **Tyrmäysten raja:** kun samaa hahmoa on tyrmätty 2–4 kertaa (raja arvotaan hahmokohtaisesti; myös heiton tainnutukset lasketaan), se jää tajuttomaksi maahan eikä enää nouse ajamaan takaa.
 
 ### Ryöstely
 
@@ -415,6 +420,7 @@ Hahmoideat:
 ## Pelin opettaminen
 
 - Erillistä opetusosiota ei ole.
+- **Poikkeus: käden esineen vihje.** Kun pelaaja poimii esineen käteen, pään yläpuolelle tulee viideksi sekunniksi ikonivihje ilman tekstiä: napin kuva (näppäimistöllä välilyönti, kosketusnäytöllä iso pyöreä nappi) → toiminnon kuva (juo: kallistettu pullo, syö: makkara, lyö: nyrkki), ja alla napin kuva kellon kanssa (pidä pohjassa) → heittokaari. Tämä näkyy joka kerta.
 - **Vihjeet näkyvät vain pelin ensimmäisenä päivänä**: pieniä ikonivihjeitä oikealla hetkellä, esimerkiksi oven kohdalla napin kuva ja nuoli sisään tai ensimmäisen esineen kohdalla kävelevä jalka. Kukin vihje näkyy kerran.
 - Vihjeet näkyvät **jokaisen pelin ensimmäisenä päivänä**, mutta **ei uudelleen saman peli-istunnon aikana**. Jos pelaaja kuolee ja aloittaa uuden pelin sovellusta sulkematta, vihjeitä ei näytetä. Kun sovellus käynnistetään uudelleen, ne näkyvät taas.
 
@@ -442,7 +448,7 @@ Hahmoideat:
 Tavoite: nähdä nopeasti, tuntuuko peli hyvältä, myös puhelimella. Prototyypissä on:
 
 - **Yksi Oulun kortteli** 3D:nä (Kirkkokatu Pakkahuoneenkadun ja Hallituskadun välillä), risteykset näkymän reunoilla ja **tilt-shift-efekti**
-- **Hahmo**, joka kävelee ja juoksee (kaksoisnapautus tai suunnan pitäminen pohjassa)
+- **Hahmo**, joka kävelee ja juoksee (kaksoisnapautus; puhelimella ohjaussauva reunaan)
 - **Toimintanappi** (lyhyt: lyö / juo / syö, pitkä: heitä)
 - **Muutama ohikulkija**: tappelu, tyrmäys ja pudotukset sekä automaattinen taskuvarkaus
 - **Tavarat**: pullo, tölkki, makkara ja kolikot; automaattinen poiminta ja käden tavaran vaihto
@@ -458,16 +464,18 @@ Lisätty prototyyppiin:
 - Kadulle jääneet tavarat pysyvät korttelissa saman päivän ajan. Seuraavana aamuna sisältö arvotaan uudelleen.
 - Uusi peli alkaa satunnaisesta korttelista. Seuraava päivä alkaa siitä korttelista, johon hahmo nukahti.
 
-- **Koti ja hukatut tavarat:** kodin paikka (kerrostalo, vihreä ovi) arvotaan joka peliin, ja ensimmäinen päivä alkaa kodin ovelta (myöhemmin herätään muualta). Aamulla hukatut tavarat näkyvät hahmon ajatuskuplassa ensimmäisten 5 metrin ajan ja sen jälkeen ylhäällä keskellä "Etsi:"-listassa; humalassa osa ikoneista muuttuu läiskiksi. Tavarat arvotaan kodin lähelle säteellä, joka kasvaa päivä päivältä. Kaukaa ne ovat harmaita möhkäleitä, ja ilman silmälaseja ne erottuvat vasta aivan läheltä. Kotiovella toimintanappi vie nukkumaan, ja kotona nukuttu yö on paras. Ilman avaimia hahmo nukkuu rappukäytävässä, ja ilman kenkiä vauhti on hitaampi. Kun kaikki tavarat löytyvät ennen kotiin menoa, saa 500 pisteen bonuksen.
+- **Koti ja hukatut tavarat:** kodin paikka (kerrostalo, vihreä ovi) arvotaan joka peliin, ja ensimmäinen päivä alkaa kodin ovelta (myöhemmin herätään muualta). Aamulla hukatut tavarat näkyvät hahmon ajatuskuplassa ensimmäisten 5 metrin ajan ja sen jälkeen ylhäällä keskellä "Etsi:"-listassa (kun kaikki on löydetty, listan tilalle tulee sykkivä talo ja teksti "Kaikki löytyi – nyt kotiin!"); humalassa osa ikoneista muuttuu läiskiksi. Tavarat arvotaan kodin lähelle säteellä, joka kasvaa päivä päivältä. Kaukaa ne ovat harmaita möhkäleitä, ja ilman silmälaseja ne erottuvat vasta aivan läheltä. Kotiovella toimintanappi vie nukkumaan, ja kotona nukuttu yö on paras. Ilman avaimia hahmo nukkuu rappukäytävässä, ja ilman kenkiä vauhti on hitaampi. Kun kaikki tavarat löytyvät ennen kotiin menoa, saa 500 pisteen bonuksen.
 
+- **Krapulatärinä:** erottuu kylmätärinästä: hitaampaa, epätasaista huojuntaa koko vartalossa ja välillä äkillinen nykäisy, kasvot kalpean vihertävät. Voimakkuus riippuu edellispäivän suurimmasta promillemäärästä (ensimmäisenä aamuna oletetaan rankka edellisilta) ja kasvaa, mitä selvempi hahmo on.
+- **Tuulessa lentävät lehdet:** kaduilla on syksyn lehtiä (ei lumella). Tuulella on hitaasti vaihteleva perussuunta ja välillä puuskia. Maassa makaavat lehdet liukuvat nykien ja kääntyilevät tuulen voimistuessa ja nousevat ilmaan kovassa puuskassa. Ilmassa lehti putoaa hitaasti heilurimaisesti puolelta toiselle (hidastuu heilahduksen päissä ja kallistuu sen mukana) ja pyörii kovassa tuulessa. Välillä tuuli nappaa lehden niin, että se kiepsahtaa kerran ympäri ja tekee samalla pienen silmukan ilmassa (kovassa tuulessa useammin). Välillä puuska nostaa pienen kasan lehtiä yhdessä pyörteeksi. Sateella lehdet ovat märkiä ja raskaita. Lehdet liikkuvat vain, kun pelin aika kulkee.
 - **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot), pilvinen (pehmeä valo), sade (pisarat, harmaa valo, sumu) tai lumi ja pakkanen (hiutaleet, lumikerros kaduilla, reunakiven yli tai esteeseen törmätessä voi liukastua, kengättä helpommin). Sade ja lumi pysähtyvät ilmaan, kun aika on pysähdyksissä.
 - **Lumi on liukas:** lumisateella hahmo liukuu napin päästämisen jälkeen (selvin päin noin 0,3 s, humalassa pidempään: 0,3 s + 0,5 s jokaista promillea kohti) ja kääntyy laiskasti; liu'un aikana aika kulkee. Yli 1,1 promillessa jyrkkä käännös voi kaataa hahmon perseelleen: suoraan kävellessä tuskin koskaan, todennäköisyys kasvaa käännöksen jyrkkyyden mukaan ja on suurin, kun kääntyy yhtäkkiä vastakkaiseen suuntaan (humala, juoksu ja kengättömyys lisäävät).
-- **Kylmä:** ei mittaria; hahmo tärisee, kun on kylmissään. Kylmä kasvaa sateella ja pakkasella, ilman takkia ja märillä/kylmillä jaloilla nopeammin; aurinkoisella säällä hahmo lämpenee. Kylmissään nälkä kasvaa 1,5-kertaisesti, ja kova kylmä kuluttaa healthia. Humalassa (yli 1,3 ‰) kylmä tuntuu vähemmän. Kioskissa ja baarissa lämpenee, mutta aika kuluu sillä aikaa. **Kylmissään voi myös lämmitellä:** juokseminen lämmittää (kylmä vähenee juostessa, myös sateella ja pakkasella), jokainen lyönti lämmittää vähän, ja tiukka viina lämmittää heti (viina paljon, tuntematon aine melkein yhtä paljon, tavallinen pullo vähän, olut ei lainkaan). Aamun kylmyys riippuu yöpaikasta.
+- **Kylmä:** ei mittaria; hahmo tärisee, kun on kylmissään: nopea, pieni värinä, kädet halaavat vartaloa, kasvot sinertävät ja suusta nousee höyryä. Kylmä kasvaa sateella ja pakkasella, ilman takkia ja märillä/kylmillä jaloilla nopeammin; aurinkoisella säällä hahmo lämpenee. Kylmissään nälkä kasvaa 1,5-kertaisesti, ja kova kylmä kuluttaa healthia. Humalassa (yli 1,3 ‰) kylmä tuntuu vähemmän. Kioskissa ja baarissa lämpenee, mutta aika kuluu sillä aikaa. **Kylmissään voi myös lämmitellä:** juokseminen lämmittää (kylmä vähenee juostessa, myös sateella ja pakkasella), jokainen lyönti lämmittää vähän, ja tiukka viina lämmittää heti (viina paljon, tuntematon aine melkein yhtä paljon, tavallinen pullo vähän, olut ei lainkaan). Aamun kylmyys riippuu yöpaikasta.
 
 - **Kotityypit:** kerrostaloasunto (ilman avaimia rappukäytävä), kellarikomero (ilman avaimia riippulukko rikotaan kolmella lyönnillä; kylmä yö) ja kaverin sohva (ovikello; juoma kädessä pääsee aina sisään, muuten kaveri nukkuu joskus eikä avaa sinä päivänä).
 - **Tavaroiden haitat:** ilman silmälaseja kadunnimikyltit ovat sumeita (humalassa kirjaimet myös menevät sekaisin), ilman aurinkolaseja aurinko häikäisee aurinkoisella säällä, ilman takkia lyönnit sattuvat 30 % enemmän ja paljain jaloin taskuvarkaus onnistuu paremmin.
 
-- **Puhelin:** oma puhelinnappi avaa ja sulkee, vasen/oikea selaa. Viestit (tavaran ikoni ja kadunnimen alku), eilinen kuva (katukyltti ja hukattu tavara, hahmon edessä "sattumalta" sumea esine) ja kartta (pohjoinen ylhäällä, oma sijainti ja koti). Ensimmäisenä päivänä akkua on 50 %, jotta pelaaja voi katsoa kartalta, missä on; myöhempinä aamuina akkua on vähän (8–25 %). Akku kuluu reaaliajassa vain puhelimen ollessa auki (viestit 0,6 %/s, kuva 0,9 %/s, kartta 1,75 %/s); kartta kuluttaa eniten. Maailma on pysähdyksissä puhelimen ollessa auki.
+- **Puhelin:** oma puhelinnappi avaa ja sulkee, vasen/oikea selaa. Viestit (tavaran ikoni ja kadunnimen alku), eilinen kuva (katukyltti ja hukattu tavara, hahmon edessä "sattumalta" sumea esine) ja kartta (pohjoinen ylhäällä, oma sijainti ja koti sekä vihjeet: oranssina sykkivä korttelinpätkä (katu kahden risteyksen välillä), jolla hukattu tavara on, ja tavaran ikoni sen keskellä; tarkka kohta ja kadun puoli jäävät etsittäviksi; vihje on aamuisin noin 70 %:lle hukatuista tavaroista, ja se katoaa, kun tavara löytyy). Ensimmäisenä päivänä akkua on 50 %, jotta pelaaja voi katsoa kartalta, missä on; myöhempinä aamuina akkua on vähän (8–25 %). Akku kuluu reaaliajassa vain puhelimen ollessa auki (viestit 0,15 %/s, kuva 0,225 %/s, kartta 0,45 %/s); kartta kuluttaa eniten. Maailma on pysähdyksissä puhelimen ollessa auki.
 - **Kioski ja baari:** joissain kortteleissa (valaistu ovi ja kyltti), auki tai kiinni päivästä riippuen. Kioskista pullo (3 €), makkara (2 €) ja puhelimen lataus (ilmainen, mutta aika harppaa ja promillet laskevat). Baarissa tuoppi (5 €), ja ovella on portsari. Ostaminen vaatii lompakon ja alkoholi henkilökortin.
 - **Nälkä:** kasvaa liikkuessa ja yöllä, kova nälkä kuluttaa healthia ja tyhjään mahaan alkoholi nousee 40 % enemmän. Ei mittaria: hahmosta nousee välillä vatsan kuva (maha kurisee), ja hahmo lysähtää. Makkara vie nälkää.
 

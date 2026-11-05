@@ -105,11 +105,13 @@ func _draw_phone_icon(vs: Vector2, font: Font) -> void:
 	# Screen and home button.
 	draw_rect(Rect2(body.position + Vector2(4, 6), Vector2(20, 32)), Color(0.45, 0.7, 0.95))
 	draw_circle(body.position + Vector2(14, 43), 2.0, Color(0.6, 0.6, 0.65))
-	# The key that opens it.
-	var text := "P / Tab"
-	var tp := Vector2(r.position.x - 12, r.end.y - 6)
-	draw_string_outline(font, tp, text, HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 24, 15, 4, Color.BLACK)
-	draw_string(font, tp, text, HORIZONTAL_ALIGNMENT_CENTER, r.size.x + 24, 15, Color.WHITE)
+	# The key that opens it: a key cap with a P (touch screens have their
+	# own phone button, so no key there).
+	if not DisplayServer.is_touchscreen_available():
+		var kc := Rect2(Vector2(r.get_center().x - 11, r.end.y - 24), Vector2(22, 20))
+		draw_rect(kc, Color(0.15, 0.15, 0.18, 0.85))
+		draw_rect(kc, Color.WHITE, false, 1.5)
+		draw_string(font, Vector2(kc.position.x, kc.end.y - 5), "P", HORIZONTAL_ALIGNMENT_CENTER, kc.size.x, 15, Color.WHITE)
 
 
 func _input(event: InputEvent) -> void:
@@ -167,6 +169,9 @@ func _draw() -> void:
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_phone_icon(vs, font)
 	_draw_charge()
+	_draw_shading_hand(vs)
+	_draw_hand_hint(font)
+	_draw_bin_hint()
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
 	_draw_lost_list(vs)
@@ -265,6 +270,172 @@ func _draw_arrest() -> void:
 	draw_arc(sp, 34.0, 0, TAU, 40, Color(0, 0, 0, 0.35), 7.0, true)
 	var col := Color(0.25, 0.45, 1.0) if int(Time.get_ticks_msec() / 150) % 2 == 0 else Color(1.0, 0.25, 0.25)
 	draw_arc(sp, 34.0, -PI * 0.5, -PI * 0.5 + TAU * main.arrest, 40, col, 7.0, true)
+
+
+## Held item: what a short press and a hold do, as icons above the head
+## for a few seconds after picking it up (no text):
+##   [button] -> drink / eat / punch
+##   [button + clock] -> throw
+func _draw_hand_hint(_font: Font) -> void:
+	if main == null or main.player == null or mode != "" or GameState.modal != "":
+		return
+	var pl = main.player
+	if pl.hand_item == null or pl.hand_hint_t <= 0.0 or pl.is_aiming():
+		return
+	var p: Vector3 = pl.global_position + Vector3(0, 2.75, 0)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	var a := clampf(pl.hand_hint_t, 0.0, 1.0)
+	var rows := [[false, pl.hand_short_action_key()], [true, "ACT_THROW"]]
+	for i in rows.size():
+		var c := sp + Vector2(0, -34 + i * 34)
+		draw_rect(Rect2(c - Vector2(52, 15), Vector2(104, 30)), Color(0, 0, 0, 0.4 * a))
+		_hint_button(c + Vector2(-30, 0), rows[i][0], a)
+		_hint_arrow(c + Vector2(4, 0), a)
+		_hint_action(c + Vector2(32, 0), rows[i][1], a)
+
+
+## Dazzled by the sun: the player's own hand comes down into view and
+## lies flat across the top of the screen like a visor, covering nearly
+## its whole width: forearm in from the left edge, palm, and the fingers
+## stretched out to the right, dark against the light. Thin bright lines
+## of sun leak between the fingers and along the lower edge.
+func _draw_shading_hand(vs: Vector2) -> void:
+	if main == null or mode != "" or GameState.modal != "":
+		return
+	var amt: float = main.shade_amount()
+	if amt <= 0.01:
+		return
+	var W := vs.x
+	var H := vs.y
+	# Slides down from above the screen as the glare grows.
+	var oy := lerpf(-H * 0.26, 0.0, amt)
+	var pt := func(x: float, y: float) -> Vector2:
+		return Vector2(x * W, oy + y * H)
+	var col := Color(0.3, 0.22, 0.19, 0.97 * amt)
+	var soft := Color(col.r, col.g, col.b, col.a * 0.35)
+	var g := 0.008 * H
+	for pass_i in 2:
+		var c := soft if pass_i == 0 else col
+		var e := g if pass_i == 0 else 0.0
+		# Forearm from the left edge, wrist, palm (up to the screen top).
+		draw_colored_polygon(PackedVector2Array([pt.call(-0.02, -0.05) + Vector2(-e, -e),
+			pt.call(0.24, -0.05) + Vector2(e, -e), pt.call(0.25, 0.125) + Vector2(e, e),
+			pt.call(-0.02, 0.15) + Vector2(-e, e)]), c)
+		draw_colored_polygon(PackedVector2Array([pt.call(0.22, -0.05) + Vector2(-e, -e),
+			pt.call(0.56, -0.05) + Vector2(e, -e), pt.call(0.57, 0.175) + Vector2(e, e),
+			pt.call(0.24, 0.17) + Vector2(-e, e)]), c)
+		draw_circle(pt.call(0.56, 0.06), 0.11 * H + e, c)
+		# Four fingers flat to the right, a hair apart, middle one longest.
+		var fingers := [[0.02, 0.86], [0.065, 0.93], [0.11, 0.9], [0.155, 0.8]]
+		var fw := 0.044 * H + e * 2.0
+		for f in fingers:
+			var a: Vector2 = pt.call(0.52, f[0])
+			var b: Vector2 = pt.call(f[1], f[0] + 0.004)
+			draw_line(a, b, c, fw)
+			draw_circle(b, fw * 0.5, c)
+		# Thumb tucked under the palm.
+		var t0: Vector2 = pt.call(0.3, 0.16)
+		var t1: Vector2 = pt.call(0.44, 0.215)
+		draw_line(t0, t1, c, 0.05 * H + e * 2.0)
+		draw_circle(t1, 0.025 * H + e, c)
+	# Sun leaking between the fingers and along the lower edge.
+	var leak := Color(1, 0.92, 0.72, 0.35 * amt)
+	for y in [0.0425, 0.0875, 0.1325]:
+		draw_line(pt.call(0.6, y), pt.call(0.82, y + 0.003), leak, 1.5)
+	draw_line(pt.call(0.25, 0.178), pt.call(0.56, 0.182), Color(1, 0.92, 0.72, 0.2 * amt), 2.0)
+
+
+## Near an unsearched bin: a magnifier above it; next to it (where the
+## button would search) the button picture too: [button] -> magnifier.
+func _draw_bin_hint() -> void:
+	if main == null or main.player == null or mode != "" or GameState.modal != "":
+		return
+	var pl = main.player
+	var h: Dictionary = main.bin_hint(pl.position)
+	if h.is_empty():
+		return
+	# With a hand item and someone close, the button punches instead.
+	var reach: bool = h["reach"] and (pl.hand_item == null or main.nearest_npc_distance(pl.position) > 2.5)
+	var p := Vector3(h["x"], 1.55, -7.5)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	var bob := sin(Time.get_ticks_msec() / 250.0) * 2.0
+	if reach:
+		draw_rect(Rect2(sp - Vector2(36, 15), Vector2(72, 30)), Color(0, 0, 0, 0.4))
+		_hint_button(sp + Vector2(-16, 0), false, 1.0)
+		_hint_action(sp + Vector2(18, bob * 0.5), "SEARCH", 1.0)
+	else:
+		_hint_action(sp + Vector2(0, bob), "SEARCH", 0.6)
+
+
+## The action button: a space bar on a keyboard, the big round button on
+## a touch screen. `hold`: a little clock next to it (keep it pressed).
+func _hint_button(c: Vector2, hold: bool, a: float) -> void:
+	var w := Color(1, 1, 1, a)
+	var bc := c - Vector2(6, 0) if hold else c
+	if DisplayServer.is_touchscreen_available():
+		draw_circle(bc, 10.0, Color(0.15, 0.15, 0.18, 0.8 * a))
+		draw_arc(bc, 10.0, 0.0, TAU, 24, w, 2.0, true)
+	else:
+		var r := Rect2(bc - Vector2(14, 6), Vector2(28, 12))
+		draw_rect(r, Color(0.15, 0.15, 0.18, 0.8 * a))
+		draw_rect(r, w, false, 2.0)
+	if hold:
+		var cc := c + Vector2(13, -6)
+		draw_circle(cc, 6.5, Color(0.15, 0.15, 0.18, 0.9 * a))
+		draw_arc(cc, 6.0, -PI * 0.5, PI, 16, Color(1, 0.85, 0.3, a), 2.0, true)
+		draw_line(cc, cc + Vector2(0, -4), w, 1.5)
+		draw_line(cc, cc + Vector2(3, 0), w, 1.5)
+
+
+func _hint_arrow(c: Vector2, a: float) -> void:
+	var w := Color(1, 1, 1, a)
+	draw_line(c - Vector2(7, 0), c + Vector2(4, 0), w, 2.5)
+	draw_colored_polygon(PackedVector2Array([c + Vector2(9, 0), c + Vector2(3, -5), c + Vector2(3, 5)]), w)
+
+
+func _hint_action(c: Vector2, act: String, a: float) -> void:
+	var w := Color(1, 1, 1, a)
+	match act:
+		"ACT_DRINK":
+			# Bottle tipped up to drink, with a couple of drops.
+			draw_set_transform(c, -0.7, Vector2.ONE)
+			draw_rect(Rect2(Vector2(-4, -2), Vector2(8, 13)), Color(0.3, 0.75, 0.35, a))
+			draw_rect(Rect2(Vector2(-2, -9), Vector2(4, 8)), Color(0.3, 0.75, 0.35, a))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			draw_circle(c + Vector2(-9, -8), 1.8, Color(1, 0.8, 0.3, a))
+			draw_circle(c + Vector2(-11, -3), 1.5, Color(1, 0.8, 0.3, a))
+		"ACT_EAT":
+			var col := Color(0.85, 0.4, 0.3, a)
+			draw_circle(c + Vector2(-7, 0), 4.0, col)
+			draw_circle(c + Vector2(7, 0), 4.0, col)
+			draw_rect(Rect2(c + Vector2(-7, -4), Vector2(14, 8)), col)
+			# A bite out of one end.
+			draw_circle(c + Vector2(11, -2), 2.5, Color(0.1, 0.1, 0.1, 0.6 * a))
+		"SEARCH":
+			# Magnifying glass.
+			draw_circle(c + Vector2(-2, -2), 7.0, Color(0.6, 0.8, 1.0, 0.35 * a))
+			draw_arc(c + Vector2(-2, -2), 7.0, 0.0, TAU, 20, w, 2.5, true)
+			draw_line(c + Vector2(3, 3), c + Vector2(9, 9), w, 3.5)
+		"ACT_THROW":
+			# Dotted arc with an arrow head, a bottle at the start.
+			for k in 6:
+				var t := float(k) / 5.0
+				var pt := c + Vector2(lerpf(-11, 10, t), 5.0 - sin(PI * t) * 12.0)
+				draw_circle(pt, 1.6, w)
+			draw_colored_polygon(PackedVector2Array([c + Vector2(13, 7), c + Vector2(7, 6), c + Vector2(11, 1)]), w)
+			draw_rect(Rect2(c + Vector2(-15, 2), Vector2(5, 8)), Color(0.3, 0.75, 0.35, a))
+		_:
+			# Fist: knuckles to the front.
+			var skin := Color(0.96, 0.8, 0.68, a)
+			draw_rect(Rect2(c + Vector2(-8, -6), Vector2(16, 13)), skin)
+			draw_circle(c + Vector2(8, -2), 3.5, skin)
+			for k in 3:
+				draw_line(c + Vector2(-4 + k * 4, -6), c + Vector2(-4 + k * 4, -1), Color(0.55, 0.35, 0.25, a), 1.5)
+			draw_rect(Rect2(c + Vector2(-8, -6), Vector2(16, 13)), Color(0.55, 0.35, 0.25, a), false, 1.5)
 
 
 func delta_draw() -> float:
@@ -378,6 +549,28 @@ func _draw_lost_list(vs: Vector2) -> void:
 	if _today.is_empty():
 		return
 	var font := get_theme_default_font()
+	# Everything found: now find the way home (pulsing house + text).
+	var all_found := true
+	for id in _today:
+		if GameState.is_lost(id):
+			all_found = false
+	if all_found:
+		var text := tr("GO_HOME")
+		var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
+		var bw := tw + 90.0
+		var br := Rect2(Vector2((vs.x - bw) * 0.5, 10), Vector2(bw, 60))
+		draw_rect(br, Color(0, 0, 0, 0.45))
+		var hc := Vector2(br.position.x + 34, br.get_center().y + 2)
+		var k := 1.0 + 0.08 * sin(Time.get_ticks_msec() / 200.0)
+		var house := Color(0.25, 0.8, 0.4)
+		draw_rect(Rect2(hc + Vector2(-13, -6) * k, Vector2(26, 20) * k), house)
+		draw_colored_polygon(PackedVector2Array([hc + Vector2(-18, -5) * k, hc + Vector2(0, -22) * k,
+			hc + Vector2(18, -5) * k]), house)
+		draw_rect(Rect2(hc + Vector2(-4, 3) * k, Vector2(8, 11) * k), Color(0.1, 0.1, 0.1, 0.8))
+		var tp := Vector2(br.position.x + 64, br.get_center().y + 9)
+		draw_string_outline(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
+		draw_string(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(0.6, 1.0, 0.65))
+		return
 	var size := 44.0
 	var gap := 12.0
 	var label := tr("FIND")

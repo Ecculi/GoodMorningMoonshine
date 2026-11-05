@@ -6,6 +6,8 @@ extends Node3D
 var leg_l: Node3D
 var leg_r: Node3D
 var arm_l: Node3D
+## Left forearm, hinged at the elbow (child of arm_l).
+var forearm_l: Node3D
 var arm_r: Node3D
 ## Right forearm, hinged at the elbow (child of arm_r).
 var forearm_r: Node3D
@@ -34,13 +36,14 @@ func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) ->
 	leg_l = _limb(Vector3(0, 0.9, -0.1), Vector3(0.17, 0.88, 0.17), pants)
 	leg_r = _limb(Vector3(0, 0.9, 0.1), Vector3(0.17, 0.88, 0.17), pants)
 	_box(Vector3(0, 1.22, 0), Vector3(0.28, 0.64, 0.46), shirt)
-	_sphere(Vector3(0, 1.69, 0), 0.16, skin)
+	_head = _sphere(Vector3(0, 1.69, 0), 0.16, skin)
 	_box(Vector3(-0.03, 1.81, 0), Vector3(0.28, 0.08, 0.32), hair)
 	# Eyes (the face looks towards +X) and eyelids that close when tired.
 	for ez in [-0.065, 0.065]:
 		_box(Vector3(0.152, 1.72, ez), Vector3(0.02, 0.045, 0.045), Color(0.08, 0.08, 0.1))
 		_eyelids.append(_box(Vector3(0.162, 1.74, ez), Vector3(0.02, 0.006, 0.055), skin))
-	arm_l = _limb(Vector3(0, 1.5, -0.29), Vector3(0.12, 0.62, 0.12), shirt)
+	arm_l = _limb(Vector3(0, 1.5, -0.29), Vector3(0.12, 0.32, 0.12), shirt)
+	forearm_l = _limb(Vector3(0, -0.31, 0), Vector3(0.115, 0.31, 0.115), shirt, arm_l)
 	# Right arm in two parts so it can bend at the elbow for a charged punch.
 	arm_r = _limb(Vector3(0, 1.5, 0.29), Vector3(0.12, 0.32, 0.12), shirt)
 	forearm_r = _limb(Vector3(0, -0.31, 0), Vector3(0.115, 0.31, 0.115), shirt, arm_r)
@@ -53,6 +56,11 @@ func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) ->
 ## flailing arms, bouncing). Returns the bounce height and backward lean
 ## so the owner can apply them to the whole body.
 var _eyelids: Array = []
+var _head: MeshInstance3D
+## 0..1: arms wrapped round the body against the cold.
+var cold_hug := 0.0
+## 0..1: left hand raised to the forehead against the sun.
+var shade_eyes := 0.0
 var silly_bounce := 0.0
 var silly_lean := 0.0
 
@@ -84,6 +92,33 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 	else:
 		arm_r.rotation.z = lerpf(s * 0.8, -1.2 * sin(ph) + 0.6, k)
 		forearm_r.rotation.z = 0.15  # a relaxed little bend
+	# Cold: arms pulled in front of the body, hugging it.
+	var hug := cold_hug * (1.0 - k)
+	arm_l.rotation.x = -0.45 * hug
+	arm_l.rotation.z = lerpf(arm_l.rotation.z, 0.55, hug)
+	forearm_l.rotation.z = lerpf(0.1, 1.2, hug)
+	# Dazzled by the sun: the left hand goes up to the forehead like a
+	# visor (upper arm forward and up, elbow bent back towards the face).
+	if shade_eyes > 0.0:
+		var e := shade_eyes
+		arm_l.rotation.z = lerpf(arm_l.rotation.z, 2.0, e)
+		arm_l.rotation.x = lerpf(arm_l.rotation.x, -0.35, e)
+		forearm_l.rotation.z = lerpf(forearm_l.rotation.z, 1.78, e)
+	if _punch_t <= 0.0 and _windup < 0.0 and not _raised:
+		arm_r.rotation.x = 0.45 * hug
+		arm_r.rotation.z = lerpf(arm_r.rotation.z, 0.35, hug)
+		forearm_r.rotation.z = lerpf(forearm_r.rotation.z, 1.2, hug)
+	else:
+		arm_r.rotation.x = 0.0
+
+
+## Face colour: `target` mixed into the skin by `amount` (blue when cold,
+## pale green when hungover).
+func set_face_tint(target: Color, amount: float) -> void:
+	if _head == null:
+		return
+	var m: StandardMaterial3D = _head.material_override
+	m.albedo_color = skin_color.lerp(target, clampf(amount, 0.0, 1.0))
 
 
 ## 0 = eyes open, 1 = closed.

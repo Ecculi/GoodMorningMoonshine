@@ -11,7 +11,6 @@ const WALK_SPEED := 2.6
 const RUN_SPEED := 6.4  # one block (~32 m) in about 5 s
 const LONG_PRESS := 0.35
 const DOUBLE_TAP := 0.3
-const HOLD_TO_RUN := 1.0
 const PICKUP_RADIUS := 0.6
 const PUNCH_RANGE := 1.3
 ## Holding the button with an empty hand bends the arm at the elbow and
@@ -39,8 +38,7 @@ var aim := Vector2.RIGHT
 var _press_time := -1.0
 var _last_tap_action := ""
 var _last_tap_time := -10.0
-var _hold_time := 0.0
-var _last_dir := Vector2.ZERO
+var _run_by_stick := false
 var _clock := 0.0
 var _knock := Vector3.ZERO
 var _sway := 0.0
@@ -131,6 +129,7 @@ func punch_charge() -> float:
 func _process(delta: float) -> void:
 	_clock += delta
 	_punch_cooldown = maxf(0.0, _punch_cooldown - delta)
+	hand_hint_t = maxf(0.0, hand_hint_t - delta)
 	# _handle_action sets these again while the button is held.
 	GameState.charging = false
 	model.set_windup(-1.0)
@@ -248,6 +247,7 @@ func _process(delta: float) -> void:
 	model.rotation.y = lerp_angle(model.rotation.y, _yaw_target, 1.0 - exp(-14.0 * delta))
 	model.animate(1.0 if moving else 0.0, delta * ts, speed / ts / WALK_SPEED, silly_amount())
 	model.set_windup(punch_charge())
+	model.shade_eyes = move_toward(model.shade_eyes, main.shade_amount(), delta * 3.0)
 
 	_handle_action(delta)
 	_check_pickups()
@@ -445,6 +445,10 @@ func _curb_chance() -> float:
 	return clampf(c, 0.0, 0.9)
 
 
+## True while pushing against an obstacle (see _check_stumbles).
+var _obstacle_contact := false
+
+
 func _check_stumbles(before: Vector3) -> void:
 	# Over the curb (only where there is a sidewalk, not in the crossings).
 	if absf(position.x) < BLOCK_HALF_X:
@@ -453,7 +457,9 @@ func _check_stumbles(before: Vector3) -> void:
 				if randf() < _curb_chance():
 					_trip()
 					return
-	# Into an obstacle: blocked; maybe down.
+	# Into an obstacle: blocked; maybe down. The chance is rolled once per
+	# bump, not again every frame while pushing against it (e.g. standing
+	# at a bin to search it).
 	for o in main.obstacles():
 		var d := Vector2(position.x - o[0], position.z - o[1])
 		var min_d: float = o[2] + 0.25
@@ -461,10 +467,12 @@ func _check_stumbles(before: Vector3) -> void:
 			var out := d.normalized() if d.length() > 0.001 else Vector2(-facing, 0)
 			position.x = o[0] + out.x * min_d
 			position.z = o[1] + out.y * min_d
-			if Vector2(before.x - o[0], before.z - o[1]).length() >= min_d - 0.01:
+			if not _obstacle_contact:
+				_obstacle_contact = true
 				if randf() < _stumble_chance(0.08, 0.35):
 					_trip()
 			return
+	_obstacle_contact = false
 
 
 ## Cars are solid: no walking through them. Walking into a side can make
@@ -614,6 +622,9 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 ## No hunger meter: when hungry the stomach growls now and then and the
 ## character slumps a little.
 var _growl_t := 0.0
+var _cold_puff_t := 0.0
+var _hang_jerk := 0.0
+var _hang_jerk_cd := 2.0
 var _zzz_t := 0.0
 
 
@@ -651,12 +662,40 @@ func _hunger_signs() -> void:
 	# Hunger slumps forward; the silly walk leans back and bounces.
 	model.rotation.z = (-0.12 if hungry else 0.0) + model.silly_lean
 	model.position.y = model.silly_bounce + (0.15 if _hic_jolt > 0.0 else 0.0)
-	# Hangover shakes; shivering when cold.
+	# Cold and hangover shake differently:
+	# - cold: fast fine shivering, arms hugging the body, bluish face and
+	#   breath puffs;
+	# - hangover: slower, uneven trembling of the whole body with a jerk
+	#   now and then, pale greenish face. How bad depends on yesterday's
+	#   peak per mille.
 	var shake := 0.0
-	if GameState.promille < GameState.PROMILLE_HANGOVER:
-		shake = 0.025
-	if GameState.cold >= GameState.COLD_SHIVER:
-		shake = maxf(shake, 0.015 + 0.03 * (GameState.cold - GameState.COLD_SHIVER) / 50.0)
+	var rt := Time.get_ticks_msec() / 1000.0
+	var cold_k := clampf((GameState.cold - GameState.COLD_SHIVER) / 50.0, 0.0, 1.0)
+	if GameState.cold < GameState.COLD_SHIVER:
+		cold_k = 0.0
+	model.cold_hug = move_toward(model.cold_hug, 1.0 if cold_k > 0.0 else 0.0, get_process_delta_time() * 3.0)
+	if cold_k > 0.0:
+		shake = 0.012 + 0.02 * cold_k
+		_cold_puff_t += GameState.world_dt
+		if _cold_puff_t > 2.2:
+			_cold_puff_t = 0.0
+			main.popup_icon(main.breath_texture(), position + Vector3(0.3 * facing, 1.72, 0.3))
+	var hang := GameState.hangover_shake()
+	if hang > 0.0:
+		# Uneven tremor (two mixed frequencies) and occasional jerks.
+		var tremor := (sin(rt * 8.3) * 0.6 + sin(rt * 13.1 + 1.7) * 0.4) * 0.045 * hang
+		_hang_jerk_cd -= get_process_delta_time()
+		if _hang_jerk_cd <= 0.0:
+			_hang_jerk_cd = randf_range(1.5, 4.0) / maxf(hang, 0.3)
+			_hang_jerk = 0.12 * hang
+		_hang_jerk = move_toward(_hang_jerk, 0.0, get_process_delta_time() * 0.6)
+		model.rotation.z += tremor + _hang_jerk * sin(rt * 40.0)
+	if cold_k > 0.0:
+		model.set_face_tint(Color(0.65, 0.78, 1.0), 0.45 * cold_k)
+	elif hang > 0.0:
+		model.set_face_tint(Color(0.78, 0.86, 0.62), 0.5 * hang)
+	else:
+		model.set_face_tint(Color.WHITE, 0.0)
 	if GameState.jitter_t > 0.0:
 		shake = maxf(shake, 0.03)
 	# Tired: eyes close, the body slumps, Zzz now and then.
@@ -692,15 +731,17 @@ func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
 			_last_tap_time = _clock
 	if not moving:
 		running = false
-		_hold_time = 0.0
+		_run_by_stick = false
 		return
-	if dir.round() == _last_dir.round():
-		_hold_time += delta
-	else:
-		_hold_time = 0.0
-	_last_dir = dir
-	if _hold_time > HOLD_TO_RUN:
+	# Holding an arrow just walks. Running: a double tap on an arrow, or
+	# the touch stick pushed out to its edge (exhausted, only the short
+	# burst is left).
+	if GameState.stick_run and (not GameState.exhausted or _exhausted_run > 0.0):
 		running = true
+		_run_by_stick = true
+	elif _run_by_stick:
+		running = false
+		_run_by_stick = false
 
 
 func _handle_action(delta: float) -> void:
@@ -743,7 +784,6 @@ func _limit_exhausted_run(moving: bool, delta: float) -> void:
 		_exhausted_run -= delta
 		if _exhausted_run <= 0.0:
 			running = false
-			_hold_time = -10.0  # holding the direction does not restart the run
 	elif not moving:
 		_exhausted_run = minf(EXHAUSTED_RUN_TIME, _exhausted_run + delta * 0.25)
 
@@ -833,8 +873,8 @@ func _punch(target, charge: float, charged := false) -> void:
 const SPAM_WINDOW := 0.7
 const SPAM_COST := 7.0
 ## Temporary health used per second of running: a full heart lasts
-## about 20 s (four blocks) of running.
-const RUN_STRAIN := 5.0
+## about 33 s (six to seven blocks) of running.
+const RUN_STRAIN := 3.0
 const REST_DELAY := 5.0
 const STRAIN_RECOVERY := 4.0
 var _last_punch := -10.0
@@ -911,6 +951,27 @@ func _pickup(it) -> void:
 		old.drop_at(Vector3(position.x, 0.0, position.z))
 	it.hold(model.hand)
 	hand_item = it
+	hand_hint_t = HAND_HINT_TIME
+
+
+## After picking something up, a hint above the head tells what the
+## action button does with it (short press / hold).
+const HAND_HINT_TIME := 5.0
+var hand_hint_t := 0.0
+
+
+## What a short press does now with the held item (an icon id for the hint).
+func hand_short_action_key() -> String:
+	if hand_item == null:
+		return "ACT_PUNCH"
+	if main.find_npc_in_front(position, facing, PUNCH_RANGE) != null or main.nearest_npc_distance(position) <= 2.5:
+		return "ACT_PUNCH"
+	match hand_item.kind:
+		Item.Kind.BOTTLE, Item.Kind.COFFEE, Item.Kind.ENERGY:
+			return "ACT_DRINK"
+		Item.Kind.FOOD:
+			return "ACT_EAT"
+	return "ACT_PUNCH"
 
 
 func take_hit(dmg: float, from_x: float) -> void:
