@@ -777,10 +777,14 @@ func _punch(target, charge: float) -> void:
 
 
 ## Fighting system: one punch is free, but punching again right away
-## (within SPAM_WINDOW) uses up health temporarily. It comes back slowly
-## once you have neither punched nor run for REST_DELAY seconds.
+## (within SPAM_WINDOW) uses up health temporarily. Running uses it up
+## too. It comes back slowly once you have neither punched nor run for
+## REST_DELAY seconds.
 const SPAM_WINDOW := 0.7
 const SPAM_COST := 7.0
+## Temporary health used per second of running: a full heart lasts
+## about 20 s (four blocks) of running.
+const RUN_STRAIN := 5.0
 const REST_DELAY := 5.0
 const STRAIN_RECOVERY := 4.0
 var _last_punch := -10.0
@@ -803,6 +807,9 @@ func _punch_strain() -> void:
 func _update_rest(_delta: float) -> void:
 	var dt := GameState.world_dt
 	_rest_t += dt
+	if GameState.running:
+		GameState.add_strain(RUN_STRAIN * dt)
+		_rest_t = 0.0
 	if GameState.exhausted and _rest_t <= REST_DELAY:
 		_exhaust_t += dt
 		if _exhaust_t > GameState.exhaust_grace():
@@ -810,9 +817,7 @@ func _update_rest(_delta: float) -> void:
 	else:
 		_exhaust_t = 0.0
 	if _rest_t > REST_DELAY:
-		# Running (holding an arrow turns into running) recovers at half speed.
-		var rate := STRAIN_RECOVERY * (0.5 if running and GameState.moving else 1.0)
-		GameState.recover_strain(rate * dt)
+		GameState.recover_strain(STRAIN_RECOVERY * dt)
 
 
 func _consume_hand_item() -> void:
