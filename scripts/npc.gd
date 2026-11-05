@@ -134,11 +134,11 @@ func _fight(dt: float) -> void:
 				model.raise_arm(true)
 
 
-func take_hit(dmg: int, attacker: Node3D) -> void:
+func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 	if state == S.KO:
 		return
 	hp -= dmg
-	_knock = 3.5 * signf(position.x - attacker.position.x)
+	_knock = 3.5 * knock_mult * signf(position.x - attacker.position.x)
 	_windup = -1.0
 	model.raise_arm(false)
 	main.popup("*", position + Vector3(0, 1.7, 0), Color(1, 0.9, 0.4))

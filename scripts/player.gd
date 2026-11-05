@@ -15,6 +15,12 @@ const DOUBLE_TAP := 0.3
 const HOLD_TO_RUN := 1.0
 const PICKUP_RADIUS := 0.6
 const PUNCH_RANGE := 1.3
+## Holding the button with an empty hand pulls the arm back for a
+## stronger punch.
+const PUNCH_CHARGE_TIME := 1.2
+## Out of breath: punches only this often, runs only this long at a time.
+const WINDED_PUNCH_COOLDOWN := 2.0
+const WINDED_RUN_TIME := 0.8
 
 const MOVE_ACTIONS := ["move_left", "move_right", "move_up", "move_down"]
 
@@ -32,6 +38,8 @@ var _last_dir := Vector2.ZERO
 var _clock := 0.0
 var _knock := Vector3.ZERO
 var _sway := 0.0
+var _punch_cooldown := 0.0
+var _winded_run := WINDED_RUN_TIME
 
 
 func _ready() -> void:
@@ -45,29 +53,43 @@ func reset(pos: Vector3) -> void:
 	facing = 1
 	running = false
 	_press_time = -1.0
+	_punch_cooldown = 0.0
+	_winded_run = WINDED_RUN_TIME
 	_knock = Vector3.ZERO
 	if hand_item != null and is_instance_valid(hand_item):
 		hand_item.queue_free()
 	hand_item = null
 
 
-## 0..1 while the throw is being charged, otherwise -1.
+## 0..1 while a throw or punch is being charged, otherwise -1.
 func throw_charge() -> float:
-	if _press_time < LONG_PRESS or hand_item == null:
+	if _press_time < LONG_PRESS:
 		return -1.0
+	if hand_item == null:
+		return punch_charge()
 	return clampf((_press_time - LONG_PRESS) / 1.2, 0.0, 1.0)
+
+
+## 0..1 while an empty-handed punch is being charged, otherwise -1.
+func punch_charge() -> float:
+	if _press_time < LONG_PRESS or hand_item != null:
+		return -1.0
+	return clampf((_press_time - LONG_PRESS) / PUNCH_CHARGE_TIME, 0.0, 1.0)
 
 
 func _process(delta: float) -> void:
 	_clock += delta
 	if GameState.over:
 		GameState.moving = false
+		GameState.charging = false
 		_press_time = -1.0
 		return
+	_punch_cooldown = maxf(0.0, _punch_cooldown - delta)
 
 	var dir := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
 	var moving := dir.length() > 0.2
 	_update_run(dir, moving, delta)
+	_limit_winded_run(moving, delta)
 	var speed := RUN_SPEED if running else WALK_SPEED
 
 	var v := Vector3.ZERO
@@ -95,6 +117,7 @@ func _process(delta: float) -> void:
 	GameState.running = running and moving
 	model.rotation.y = 0.0 if facing > 0 else PI
 	model.animate(1.0 if moving else 0.0, delta, speed / WALK_SPEED)
+	model.set_windup(punch_charge())
 
 	_handle_action(delta)
 	_check_pickups()
@@ -122,16 +145,37 @@ func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
 		running = true
 
 
+## Out of breath: only a few steps of running, then back to walking.
+func _limit_winded_run(moving: bool, delta: float) -> void:
+	if not GameState.winded:
+		_winded_run = WINDED_RUN_TIME
+		return
+	if running and moving:
+		_winded_run -= delta
+		if _winded_run <= 0.0:
+			running = false
+			_hold_time = -10.0  # holding the direction does not restart the run
+	elif not moving:
+		_winded_run = minf(WINDED_RUN_TIME, _winded_run + delta * 0.25)
+
+
 func _handle_action(delta: float) -> void:
 	if Input.is_action_just_pressed("action"):
 		_press_time = 0.0
 	if _press_time < 0.0:
+		GameState.charging = false
 		return
+	# Real time: the charge fills at the same pace even though the
+	# world runs at half speed meanwhile.
 	_press_time += delta
+	GameState.charging = true
 	if Input.is_action_pressed("action"):
 		return
+	GameState.charging = false
 	if _press_time >= LONG_PRESS and hand_item != null:
 		_throw(_press_time)
+	elif _press_time >= LONG_PRESS:
+		_punch(punch_charge())
 	else:
 		_short_action()
 	_press_time = -1.0
@@ -152,9 +196,22 @@ func _short_action() -> void:
 			main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
 			_consume_hand_item()
 			return
+	_punch(0.0)
+
+
+## charge 0..1: a fully charged punch hits twice as hard and knocks further.
+func _punch(charge: float) -> void:
+	GameState.busy_time = maxf(GameState.busy_time, 0.35)
+	# Out of breath, the arm only obeys every couple of seconds.
+	if GameState.winded and _punch_cooldown > 0.0:
+		return
+	GameState.exert(GameState.STAMINA_PUNCH + GameState.STAMINA_PUNCH_CHARGED * charge)
+	if GameState.winded:
+		_punch_cooldown = WINDED_PUNCH_COOLDOWN
 	model.punch()
+	var target = main.find_npc_in_front(position, facing, PUNCH_RANGE)
 	if target != null:
-		target.take_hit(1, self)
+		target.take_hit(1 + int(round(charge)), self, 1.0 + charge)
 
 
 func _consume_hand_item() -> void:
@@ -170,6 +227,7 @@ func _throw(t: float) -> void:
 	var start := global_position + Vector3(0.4 * facing, 1.1, 0.25)
 	it.throw_from(start, facing, dist)
 	model.punch()
+	GameState.exert(GameState.STAMINA_THROW)
 	GameState.busy_time = maxf(GameState.busy_time, it.flight_time + 0.1)
 
 

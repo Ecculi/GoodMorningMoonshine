@@ -44,7 +44,8 @@ func _draw() -> void:
 	if _hurt > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0.8, 0.0, 0.0, _hurt * 0.5))
 
-	_draw_heart(Vector2(46, 46), 58.0, clampf(GameState.health / 100.0, 0.0, 1.0))
+	_draw_heart(Vector2(46, 46), 58.0, clampf(GameState.health / 100.0, 0.0, 1.0),
+		clampf(GameState.stamina / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_charge()
@@ -68,20 +69,30 @@ func _heart_points(center: Vector2, size: float) -> PackedVector2Array:
 	return pts
 
 
-func _draw_heart(center: Vector2, size: float, frac: float) -> void:
+## frac = health (light pink), red_frac = stamina, the red part under it.
+func _draw_heart(center: Vector2, size: float, frac: float, red_frac: float) -> void:
 	var pts := _heart_points(center, size)
 	draw_colored_polygon(pts, Color(0.32, 0.32, 0.36, 0.9))
 	var s := size / 34.0
 	var top := center.y - 13.0 * s
 	var bottom := center.y + 17.0 * s
-	var level := lerpf(bottom, top, frac)
-	var clip := PackedVector2Array([Vector2(center.x - size, level), Vector2(center.x + size, level),
-		Vector2(center.x + size, bottom + 2.0), Vector2(center.x - size, bottom + 2.0)])
-	for poly in Geometry2D.intersect_polygons(pts, clip):
-		draw_colored_polygon(poly, Color(0.9, 0.12, 0.18))
+	var pink := Color(1.0, 0.68, 0.74)
+	if GameState.winded:
+		# Out of breath: the pink pulses like heavy breathing.
+		pink = pink.lerp(Color(1.0, 0.85, 0.88), 0.5 + 0.5 * sin(card_time * 9.0))
+	_fill_heart(pts, center, size, bottom, lerpf(bottom, top, frac), pink)
+	_fill_heart(pts, center, size, bottom, lerpf(bottom, top, minf(red_frac, frac)), Color(0.9, 0.12, 0.18))
 	var outline := pts.duplicate()
 	outline.append(pts[0])
 	draw_polyline(outline, Color(0.08, 0.08, 0.1), 2.0, true)
+
+
+func _fill_heart(pts: PackedVector2Array, center: Vector2, size: float, bottom: float,
+		level: float, col: Color) -> void:
+	var clip := PackedVector2Array([Vector2(center.x - size, level), Vector2(center.x + size, level),
+		Vector2(center.x + size, bottom + 2.0), Vector2(center.x - size, bottom + 2.0)])
+	for poly in Geometry2D.intersect_polygons(pts, clip):
+		draw_colored_polygon(poly, col)
 
 
 func _draw_bottle(origin: Vector2, promille: float, font: Font) -> void:

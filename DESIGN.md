@@ -143,6 +143,7 @@ Krapula ei kovene päivien mukaan.
 
 ### Kontrollit
 
+- Kun toimintanappi on pohjassa ja hahmo seisoo paikallaan, **aika kulkee puolella nopeudella**. Jos hahmo liikkuu samalla, aika kulkee normaalisti.
 - Kontrollien pitää olla niin simppelit, että peliä voi pelata **puhelimella**.
 - Käytössä on vain **suuntanuolet** ja **yksi toimintanappi**.
 - Toimintanapissa on **lyhyt ja pitkä painallus**:
@@ -150,6 +151,7 @@ Krapula ei kovene päivien mukaan.
   | Toiminto | Kontrolli |
   |---|---|
   | **Lyö** | lyhyt painallus |
+  | **Ladattu lyönti** (käsi tyhjä) | pitkä painallus: hahmo vetää kättä taaksepäin ja kerää voimaa; mitä pidempään pitää pohjassa, sitä kovempi lyönti |
   | **Syö / juo** käden tavara | lyhyt painallus, kun lähellä ei ole ketään |
   | **Mene sisään** | lyhyt painallus ovella |
   | **Heitä** käden tavara katseen suuntaan | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää |
@@ -220,6 +222,7 @@ Krapula ei kovene päivien mukaan.
 | Tila | Näyttötapa | Seuraus |
 |---|---|---|
 | **Health** | sydän, josta väri valuu pois; ei tarkkaa lukemaa | kuolema, kun nollassa |
+| **Kunto** | sydämen punainen osa; rasitus muuttaa punaista vaaleanpunaiseksi ylhäältä alas | koko sydän vaaleanpunainen = hengästynyt (ks. alla) |
 | **Alkoholi** | **tarkka lukema promilleina** (esim. 1,4 ‰) pulloikonin sisällä, koska alkoholi on pelin tärkein muuttuja | kuolema, kun nollassa |
 | **Väsymys** | ei mittaria: silmät alkavat painua kiinni, ryhti lysähtää, hahmo haukottelee ja päästä nousee välillä Zzz-ikoni | nukahtaa, kun täynnä (ks. alla) |
 | **Kylmä** | ei mittaria: hahmo tärisee | nälkä kasvaa nopeammin ja health kuluu |
@@ -248,6 +251,14 @@ Krapula ei kovene päivien mukaan.
 - **Unen laatu vaikuttaa kaikkeen:**
   - **Health:** hyvä yö kotona palauttaa healthin lähes täyteen, huono yö vähemmän.
   - **Väsymys** nollautuu yön aikana **lähes kokonaan** aina. Huonon yön jälkeen jää vain pieni jäännös.
+
+### Kunto ja hengästyminen
+
+- **Lyönnit, heitot ja juokseminen** kuluttavat kuntoa. Sydämen punainen osa muuttuu vaaleanpunaiseksi. Vaaleanpunainen osa näyttää todellisen healthin.
+- **Levätessä** kunto palautuu: paikallaan seistessä nopeasti, kävellessä hitaasti.
+- Kun koko sydän on vaaleanpunainen, hahmo on **hengästynyt**: lyö vain noin kerran kahdessa sekunnissa ja jaksaa juosta vain muutaman askeleen. Hengästyneenä vain paikallaan seisominen on lepoa. Hengästys loppuu, kun noin 30 % sydämestä on taas punaista.
+- **Sydän saa olla kokonaan vaaleanpunainen vain hetken.** Täydellä healthilla aikaa on 10 sekuntia, lähes tyhjällä vain 1 sekunti. Sen jälkeen health alkaa vähetä, kunnes pelaaja lepää.
+- Healthin koko määrä kuvastaa siis kuntoa: mitä vähemmän healthia, sitä vähemmän jaksaa.
 
 ### Healthin palautuminen
 
@@ -407,7 +418,8 @@ Tavoite: nähdä nopeasti, tuntuuko peli hyvältä, myös puhelimella. Prototyyp
 
 - **Yksi Oulun kortteli** 3D:nä (Kirkkokatu Pakkahuoneenkadun ja Hallituskadun välillä), risteykset näkymän reunoilla ja **tilt-shift-efekti**
 - **Hahmo**, joka kävelee ja juoksee (kaksoisnapautus tai suunnan pitäminen pohjassa)
-- **Toimintanappi** (lyhyt: lyö / juo / syö, pitkä: heitä)
+- **Toimintanappi** (lyhyt: lyö / juo / syö, pitkä: heitä tai tyhjällä kädellä ladattu lyönti; pohjassa pitäminen hidastaa ajan puoleen)
+- **Kunto** sydämessä: rasitus muuttaa punaista vaaleanpunaiseksi, ja hengästynyt hahmo lyö harvoin ja juoksee vain vähän
 - **Muutama ohikulkija**: tappelu, tyrmäys ja pudotukset sekä automaattinen taskuvarkaus
 - **Tavarat**: pullo, tölkki, makkara ja kolikot; automaattinen poiminta ja käden tavaran vaihto
 - **Promillemittari** pulloikonissa, healthin sydän ja raha

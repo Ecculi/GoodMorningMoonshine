@@ -13,6 +13,7 @@ var _walk_phase := 0.0
 var _walk_amount := 0.0
 var _punch_t := 0.0
 var _raised := false
+var _windup := -1.0
 
 
 func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) -> void:
@@ -39,6 +40,9 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0) -> void:
 	if _punch_t > 0.0:
 		_punch_t -= dt
 		arm_r.rotation.z = PI * 0.5
+	elif _windup >= 0.0:
+		# Arm pulled back behind the body, further the longer it charges.
+		arm_r.rotation.z = lerpf(-0.4, -1.4, _windup)
 	elif _raised:
 		arm_r.rotation.z = 2.5
 	else:
@@ -48,6 +52,11 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0) -> void:
 func punch() -> void:
 	_punch_t = 0.18
 	arm_r.rotation.z = PI * 0.5
+
+
+## 0..1 pulls the arm back for a charged punch, -1 releases it.
+func set_windup(amount: float) -> void:
+	_windup = amount
 
 
 func raise_arm(on: bool) -> void:
