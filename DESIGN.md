@@ -284,7 +284,7 @@ Humalan vaikutukset alkavat matalammalla kuin alussa suunniteltiin (kaikki rajat
 Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 
 - **Horjuminen:** ohjaus ei mene aivan suoraan, ja lyönnit menevät joskus ohi.
-- **Vinjetti (yli 0,8 ‰):** näkökentän reunat tummuvat, ja tummuus voimistuu ja leviää kohti keskustaa promillejen noustessa (voimakkaimmillaan 2,8 ‰).
+- **Vinjetti (yli 0,8 ‰):** näkökentän reunat tummuvat, ja tummuus voimistuu ja leviää kohti keskustaa promillejen noustessa (voimakkaimmillaan sammumisrajalla).
 - **Hikka (yli 0,8 ‰):** hahmo hikkaa välillä ("hik!") ja nytkähtää. Hikan hetkellä taskuvarkaus paljastuu aina.
 - **Rakkaus kaikkiin (1,3–1,8 ‰):** hahmo halaa ohikulkijoita, joihin törmää. Halauksen aikana taskuvarkaus onnistuu lähes aina, eikä halattu suutu.
 - **Laulaminen (yli 1,5 ‰):** hahmo alkaa välillä laulaa (nuotteja nousee). Lähellä olevat ohikulkijat voivat suuttua, ja poliisit voivat huomata.
@@ -295,7 +295,8 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - **Hassu kävely:** 2,0 promillesta alkaen hahmo ottaa välillä satunnaisia 1–2 sekunnin hassun kävelyn pätkiä (sitä useammin, mitä kovempi humala), ja yli 2,8 promillessa hän kävelee hassusti koko ajan. Hassu kävely on absurdin liioiteltua: korkeita potkuja eteen, heiluvat kädet, pomppiva askel ja taaksepäin kallistuva vartalo.
 - **Väärä suunta:** kovassa humalassa (yli 1,8 ‰) hahmo lähtee välillä aivan eri suuntaan kuin nuoli osoittaa (esim. oikealle painettaessa ylös). Pelaaja voi korjata heti painamalla siihen suuntaan, johon hahmo oikeasti menee. Jos hän vain jatkaa alkuperäisen nuolen painamista, väärä suunta menee ohi itsestään noin 1,5–3 sekunnissa. Mitä kovempi humala, sitä useammin näin käy, ja **juostessa paljon useammin** kuin kävellessä. Väärä suunta voi olla mikä tahansa kahdeksasta suunnasta (myös viistoon), mutta **ei koskaan suoraan vastakkainen**. Jos väärä suunta veisi seinää tai reunaa päin, se peruuntuu, jottei hahmo jää kävelemään paikallaan.
 - **Rohkeus:** lyönnit ovat kovempia ja kylmä tuntuu vähemmän, mutta poliisit huomaavat pelaajan helpommin.
-- **Näkökenttä:** 1,0 promillesta alkaen kuva sumenee (aluksi lievästi): pelihahmon ympärillä olevan ympyrän sisällä vähän, ulkopuolella enemmän, ja sitä enemmän mitä kovempi humala. Ympyrä pienenee nopeasti koko ruudun kokoisesta (1,0 ‰) 1,5 metrin säteeseen (2,3 ‰ ja enemmän), ja yli 2,3 promillessa sumennus ympyrän ulkopuolella voimistuu selvästi. Hahmon lähellä kuva pysyy selvimpänä.
+- **Näkökenttä:** 1,0 promillesta alkaen kuva sumenee (aluksi lievästi): pelihahmon ympärillä olevan ympyrän sisällä vähän, ulkopuolella enemmän, ja sitä enemmän mitä kovempi humala. Ympyrä pienenee nopeasti koko ruudun kokoisesta (1,0 ‰) 1,5 metrin säteeseen (2,3 ‰) ja siitä edelleen 0,8 metriin päivän sammumisrajalla. Yli 2,3 promillessa sumennus ympyrän ulkopuolella voimistuu selvästi. Kaikki näkökentän efektit (sumennus, tuplanäkö, vinjetti) voimistuvat aina sammumisrajaan asti.
+- **Silmäluomet:** noin 2,0 promillesta alkaen ruudun ylä- ja alareunasta painuu välillä tummat, kaarevat silmäluomet hitaana räpäytyksenä (sitä useammin, mitä humalaisempi). Lähellä sammumisrajaa luomet roikkuvat jatkuvasti puoliksi kiinni. Hahmon lähellä kuva pysyy selvimpänä.
 - **Sammuminen:** kun promillet ylittävät päivän sammumisrajan (arvotaan joka päivä 3,2–4,0 ‰), hahmo sammuu paikalleen. Se lasketaan nukahtamiseksi.
 
 ### Nukahtaminen väsymyksestä

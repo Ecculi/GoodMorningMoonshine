@@ -125,7 +125,7 @@ func _process(delta: float) -> void:
 	camera.position.x = lerpf(camera.position.x, target_x, 1.0 - exp(-4.0 * delta))
 	_update_sun()
 	_update_focus(delta)
-	tilt_mat.set_shader_parameter("double_vision", clampf((GameState.promille - 2.3) / 0.5, 0.0, 1.0))
+	tilt_mat.set_shader_parameter("double_vision", _towards_passout(2.3))
 	_update_drunk_circle()
 	_check_lost_pickups()
 	_check_arrest()
@@ -1350,24 +1350,59 @@ const DRUNK_CIRCLE_MIN := 1.5
 const BLUR_START := 1.0
 
 
+## 0 at `start` per mille, 1 at today's passing-out limit: the effects keep
+## getting worse right up to passing out.
+func _towards_passout(start: float) -> float:
+	return clampf((GameState.promille - start) / maxf(GameState.pass_out_promille - start, 0.1), 0.0, 1.0)
+
+
+const DRUNK_CIRCLE_END := 0.8
+var _blink_t := 0.0
+var _blink_cd := 4.0
+
+
 func _update_drunk_circle() -> void:
-	# Blur starts mildly at 1.0 per mille and grows from there.
-	var t := clampf((GameState.promille - BLUR_START) / 1.8, 0.0, 1.0)
-	tilt_mat.set_shader_parameter("drunk", t)
-	tilt_mat.set_shader_parameter("heavy", clampf((GameState.promille - 2.3) / 0.5, 0.0, 1.0))
+	# Blur starts mildly at 1.0 per mille and grows until passing out.
+	tilt_mat.set_shader_parameter("drunk", _towards_passout(BLUR_START))
+	tilt_mat.set_shader_parameter("heavy", _towards_passout(2.3))
 	# The edges of the view darken from 0.8 per mille on.
-	tilt_mat.set_shader_parameter("vignette", clampf((GameState.promille - 0.8) / 2.0, 0.0, 1.0))
+	tilt_mat.set_shader_parameter("vignette", _towards_passout(0.8))
+	_update_eyelids(get_process_delta_time())
 	var vs := get_viewport().get_visible_rect().size
 	var c: Vector3 = player.global_position + Vector3(0, 1.0, 0)
 	if camera.is_position_behind(c):
 		return
 	var shrink := pow(clampf((GameState.promille - BLUR_START) / 1.3, 0.0, 1.0), 0.6)
 	var r_m := lerpf(DRUNK_CIRCLE_MAX, DRUNK_CIRCLE_MIN, shrink)
+	# ...and keeps shrinking from 2.3 per mille until passing out.
+	r_m = lerpf(r_m, DRUNK_CIRCLE_END, _towards_passout(2.3))
 	var cp := camera.unproject_position(c)
 	var ep := camera.unproject_position(c + Vector3(r_m, 0, 0))
 	tilt_mat.set_shader_parameter("circle_center", cp / vs)
 	tilt_mat.set_shader_parameter("circle_radius", (ep - cp).length() / vs.y)
 	tilt_mat.set_shader_parameter("aspect", vs.x / vs.y)
+
+
+## Drunk eyelids: from 2.0 per mille slow heavy blinks (more often the
+## drunker), and near passing out the lids hang half shut.
+func _update_eyelids(dt: float) -> void:
+	var k := _towards_passout(2.0)
+	var droop := 0.6 * smoothstep(0.6, 1.0, k)
+	var blink := 0.0
+	if k > 0.0:
+		if _blink_t > 0.0:
+			_blink_t -= dt
+			var b := 1.0 - _blink_t / 0.9
+			blink = sin(b * PI) * lerpf(0.6, 0.95, k)
+		else:
+			_blink_cd -= dt
+			if _blink_cd <= 0.0:
+				_blink_t = 0.9
+				_blink_cd = lerpf(7.0, 1.8, k) * randf_range(0.7, 1.3)
+	if GameState.over:
+		blink = 0.0
+		droop = 0.0
+	tilt_mat.set_shader_parameter("lids", clampf(maxf(droop, blink), 0.0, 1.0))
 
 
 ## The sharp tilt-shift band follows the player vertically on screen.

@@ -20,6 +20,8 @@ uniform float aspect = 1.7778;
 uniform float heavy = 0.0;
 // Drunk vignette (0..1): the edges of the view darken.
 uniform float vignette = 0.0;
+// Drunk eyelids (0 = open, 1 = shut): dark curved lids from top and bottom.
+uniform float lids = 0.0;
 // Sun glare without sunglasses (0..1), strongest towards the top.
 uniform float glare = 0.0;
 // Double vision when very drunk (0..1): a second, shifted image.
@@ -66,6 +68,14 @@ void fragment() {
 		float r = length((SCREEN_UV - vec2(0.5)) * vec2(aspect, 1.0)) / (0.5 * length(vec2(aspect, 1.0)));
 		float inner = mix(0.8, 0.3, vignette);
 		col *= 1.0 - smoothstep(inner, inner + 0.55, r) * mix(0.35, 0.85, vignette);
+	}
+	if (lids > 0.0) {
+		// Each lid covers up to half the screen; the edge curves like an eye.
+		float x = (SCREEN_UV.x - 0.5) * 2.0;
+		float reach = lids * 0.5 + 0.08 * lids * x * x;
+		float top = smoothstep(reach + 0.03, reach - 0.01, SCREEN_UV.y);
+		float bottom = smoothstep(reach + 0.03, reach - 0.01, 1.0 - SCREEN_UV.y);
+		col = mix(col, vec3(0.03, 0.02, 0.02), max(top, bottom));
 	}
 	COLOR = vec4(col, 1.0);
 }
