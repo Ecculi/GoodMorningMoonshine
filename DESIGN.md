@@ -349,6 +349,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
   - **Kevyt esine** (tölkki, tyhjä muovipussi) ärsyttää kohdetta mutta ei juuri satuta.
   - **Raskas esine** (pullo, täysi pussi) tainnuttaa kohteen hetkeksi. Prototyypissä: pullo 60 % ja täysi energiajuomatölkki 40 % todennäköisyydellä (tyhjä tölkki on kevyt); kohde makaa 3–5 sekuntia ja nousee vihaisena.
   - **Ruoka** houkuttelee lokit ja koirat paikalle. Sillä voi harhauttaa vihaisen koiran.
+- **Heitto takaa-ajajaan:** jos perässä juoksevaan tai tappelevaan (ohikulkija, punkkari, poliisi, vartija, portsari) osuu heitetty esine, hän horjahtaa taaksepäin ja pysähtyy hetkeksi: pullo 2,2 s, energiajuomatölkki 1,8 s, kahvi 1,6 s, tölkki 1,2 s, ruoka 0,9 s. Hyvä heitto antaa aikaa paeta. (Kova esine voi myös tainnuttaa kokonaan, ks. yllä.)
 - **Tyrmäysten raja:** kun samaa hahmoa on tyrmätty 2–4 kertaa (raja arvotaan hahmokohtaisesti; myös heiton tainnutukset lasketaan), se jää tajuttomaksi maahan eikä enää nouse ajamaan takaa.
 
 ### Ryöstely
