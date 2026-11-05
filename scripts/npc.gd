@@ -20,7 +20,9 @@ const Ragdoll = preload("res://scripts/ragdoll.gd")
 enum S { WALK, FIGHT, STUNNED, KO, LEAVE, CHASE, RETURN }
 
 const EDGE_X := 25.0
-const CHASE_SPEED := 2.3
+## Faster than the player walks (2.6), slower than running (6.4): walking
+## away is no escape, running is.
+const CHASE_SPEED := 3.2
 const WINDUP := 0.45
 const ATTACK_COOLDOWN := 1.3
 const HIT_DAMAGE := 9.0
@@ -503,21 +505,27 @@ func _fight(dt: float) -> void:
 		dir = 1 if dx >= 0.0 else -1
 	_cooldown -= dt
 
+	var target := Vector2(p.position.x - dir * 0.8, p.position.z)
+	var cur := Vector2(position.x, position.z)
 	if _windup >= 0.0:
+		# Winding up: keeps stepping after the player (a lunge), so just
+		# walking on doesn't dodge it. Running or stepping aside does.
 		_windup += dt
-		model.animate(0.0, dt)
+		var lunge := cur.move_toward(target, chase_speed * 0.9 * dt)
+		position.x = lunge.x
+		position.z = lunge.y
+		model.animate(0.6, dt, 1.4)
 		if _windup >= WINDUP:
 			_windup = -1.0
 			model.raise_arm(false)
 			model.punch()
 			_cooldown = ATTACK_COOLDOWN
-			# The player can dodge by moving away in depth or sideways.
-			if dx * dir > -0.2 and absf(dx) < 1.3 and absf(dz) < 0.5:
+			dx = p.position.x - position.x
+			dz = p.position.z - position.z
+			if dx * dir > -0.2 and absf(dx) < 1.5 and absf(dz) < 0.6:
 				p.take_hit(hit_damage, position.x)
 		return
 
-	var target := Vector2(p.position.x - dir * 0.9, p.position.z)
-	var cur := Vector2(position.x, position.z)
 	if cur.distance_to(target) > 0.25:
 		var nxt := cur.move_toward(target, chase_speed * dt)
 		position.x = nxt.x
@@ -525,10 +533,11 @@ func _fight(dt: float) -> void:
 		model.animate(1.0, dt, 1.6)
 	else:
 		model.animate(0.0, dt)
-		if _cooldown <= 0.0:
-			_windup = 0.0
-			if telegraphs:
-				model.raise_arm(true)
+	# Close enough: start the punch (no need to stand right next to them).
+	if _cooldown <= 0.0 and absf(dx) < 1.4 and absf(dz) < 0.6:
+		_windup = 0.0
+		if telegraphs:
+			model.raise_arm(true)
 
 
 func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
