@@ -1304,17 +1304,18 @@ func shoes_fly_off(from: Vector3, dir: int) -> void:
 	ln.position = start
 	var height := rng.randf_range(3.5, 5.5)
 	var spin := Vector3(rng.randf_range(8, 14), rng.randf_range(-6, 6), rng.randf_range(8, 14))
-	var tw := create_tween()
-	tw.tween_method(func(t: float):
+	var fly := func(t: float) -> void:
 		if not is_instance_valid(ln):
 			return
 		ln.position = start.lerp(land, t) + Vector3(0, sin(PI * t) * height, 0)
 		ln.rotation = spin * t * (1.0 - t * 0.3)
-		, 0.0, 1.0, 1.4)
-	tw.tween_callback(func():
+	var landed := func() -> void:
 		if is_instance_valid(ln):
 			ln.rotation = Vector3(0, ln.rotation.y, 0)
-			ln.remove_meta("flying"))
+			ln.remove_meta("flying")
+	var tw := create_tween()
+	tw.tween_method(fly, 0.0, 1.0, 1.4)
+	tw.tween_callback(landed)
 
 
 func remove_animal(a) -> void:
