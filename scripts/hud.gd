@@ -83,7 +83,7 @@ func splat() -> void:
 	var vs := get_viewport_rect().size
 	_splats.append({
 		"pos": Vector2(randf_range(vs.x * 0.15, vs.x * 0.85), randf_range(vs.y * 0.1, vs.y * 0.7)),
-		"size": randf_range(50.0, 95.0), "t": SPLAT_TIME, "seed": randi(),
+		"size": randf_range(75.0, 143.0), "t": SPLAT_TIME, "seed": randi(),
 	})
 	if _splats.size() >= 3:
 		GameState.unlock("SPLATS3")
