@@ -61,6 +61,8 @@ var _knock := 0.0
 ## Angry dog: pause after a bite (seconds), sideways offset while backing
 ## off, and how hard the next charge is.
 var _rest_t := 0.0
+## Player position last frame (gull aiming).
+var _last_pp := Vector3.INF
 var _rest_z := 0.0
 var _charge_k := 0.85
 var _rng := RandomNumberGenerator.new()
@@ -254,18 +256,27 @@ func _gull(dt: float) -> void:
 				state = A.FLEE
 				return
 			var p: Vector3 = main.player.position
+			# How the player is moving (for aiming).
+			var pv := (p - _last_pp) / dt if _last_pp != Vector3.INF else Vector3.ZERO
+			_last_pp = p
+			pv.y = 0.0
+			# Hover close above the player, drifting a little round them.
 			var ang := _t * 1.6 + float(get_instance_id() % 7)
-			var over := p + Vector3(cos(ang) * 1.2, 0, sin(ang) * 0.5)
+			var over := p + pv * 0.4 + Vector3(cos(ang) * 0.5, 0, sin(ang) * 0.25)
 			position.y = move_toward(position.y, BOMB_HEIGHT, 2.5 * dt)
-			_move_to(over, 5.5, dt)
+			_move_to(over, 6.5, dt)
 			if _cooldown <= 0.0 and position.y > BOMB_HEIGHT - 0.6:
-				_cooldown = _rng.randf_range(1.2, 2.6)
+				_cooldown = _rng.randf_range(1.0, 2.2)
 				var dr = Dropping.new()
 				dr.main = main
 				main.add_child(dr)
-				dr.global_position = position + Vector3(0, -0.05, 0)
-				# A little lead: aimed where the player is heading.
-				dr.vel = Vector3(main.player.facing * (1.2 if GameState.moving else 0.0), 0, 0)
+				var from := position + Vector3(0, -0.05, 0)
+				dr.global_position = from
+				# Aimed: where the player's head will be when it gets there.
+				var drop_h := maxf(from.y - (p.y + 1.6), 0.2)
+				var fall_t := sqrt(2.0 * drop_h / 9.8)
+				var aim := p + pv * fall_t
+				dr.vel = Vector3((aim.x - from.x) / fall_t, 0, (aim.z - from.z) / fall_t)
 
 
 ## Another gull was trodden on: come and get even (start a little later).
@@ -542,7 +553,7 @@ class Dropping extends MeshInstance3D:
 		global_position += vel * dt
 		var p: Vector3 = main.player.global_position
 		var flat := Vector2(global_position.x - p.x, global_position.z - p.z).length()
-		if global_position.y < p.y + 1.9 and global_position.y > p.y + 0.9 and flat < 0.42:
+		if global_position.y < p.y + 2.0 and global_position.y > p.y + 0.8 and flat < 0.6:
 			main.hud.splat()
 			queue_free()
 			return
