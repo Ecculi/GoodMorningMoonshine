@@ -207,15 +207,27 @@ func _draw_map(r: Rect2) -> void:
 	draw_rect(Rect2(hp + Vector2(-7, -4), Vector2(14, 11)), house)
 	draw_colored_polygon(PackedVector2Array([hp + Vector2(-10, -3), hp + Vector2(0, -13), hp + Vector2(10, -3)]), house)
 	draw_rect(Rect2(hp + Vector2(-2, 1), Vector2(4, 6)), Color(0.93, 0.92, 0.88))
-	# Hints: a soft circle roughly where a lost thing lies, its icon inside.
+	# Hints: the block where a lost thing lies, highlighted in orange, with
+	# its icon in the middle.
 	for h in GameState.phone_map_hints:
 		if not GameState.is_lost(h["id"]):
 			continue
-		var at: Vector2 = h["at"]
-		var hc: Vector2 = to_screen.call(at.x, at.y)
-		draw_circle(hc, scale * 0.9, Color(0.95, 0.55, 0.15, 0.22))
-		draw_arc(hc, scale * 0.9, 0.0, TAU, 32, Color(0.9, 0.45, 0.1, 0.6), 2.0, true)
-		LostItems.draw_icon(self, h["id"], hc, 22.0, "own")
+		var hs2: Vector3i = h["seg"]
+		var a: Vector2
+		var b: Vector2
+		if hs2.x == 0:
+			a = to_screen.call(float(hs2.z), float(hs2.y))
+			b = to_screen.call(hs2.z + 1.0, float(hs2.y))
+		else:
+			a = to_screen.call(float(hs2.y), float(hs2.z))
+			b = to_screen.call(float(hs2.y), hs2.z + 1.0)
+		var pulse := 0.6 + 0.25 * sin(Time.get_ticks_msec() / 260.0)
+		draw_line(a, b, Color(0.95, 0.55, 0.15, pulse), 9.0)
+		draw_circle(a, 4.5, Color(0.95, 0.55, 0.15, pulse))
+		draw_circle(b, 4.5, Color(0.95, 0.55, 0.15, pulse))
+		var mid := (a + b) * 0.5
+		draw_circle(mid, 13.0, Color(1, 1, 1, 0.9))
+		LostItems.draw_icon(self, h["id"], mid, 20.0, "own")
 	# Where am I.
 	var seg: Vector3i = main.segment
 	var f := clampf((main.player.position.x + 16.0) / 32.0, 0.0, 1.0)

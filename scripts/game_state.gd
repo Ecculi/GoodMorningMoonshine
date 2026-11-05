@@ -138,11 +138,11 @@ var battery := 20.0
 var phone_msgs: Array = []
 ## Yesterday's photo: {"id": item id, "seg": Vector3i, "street": String} or {}.
 var phone_photo := {}
-## Map hints: [{"id": item id, "at": Vector2 map grid point}]. The circle is
-## only roughly where the thing is (within about a block).
+## Map hints: [{"id": item id, "seg": Vector3i}]. The map highlights the
+## block (street between two crossings) where the thing lies; where in the
+## block and on which side is left to find.
 var phone_map_hints: Array = []
 const MAP_HINT_CHANCE := 0.7
-const MAP_HINT_FUZZ := 0.6
 ## Open full-screen thing that freezes the world: "", "phone" or "shop".
 var modal := ""
 var rng := RandomNumberGenerator.new()
@@ -564,12 +564,10 @@ func _make_phone_hints() -> void:
 		var id: String = candidates[rng.randi() % candidates.size()]
 		var seg: Vector3i = placements[id][0]
 		phone_photo = {"id": id, "seg": seg, "street": _hint_street(seg)}
-	# Map: a rough circle around where each of most lost things lies.
+	# Map: the block where each of most lost things lies.
 	for id in candidates:
 		if rng.randf() < MAP_HINT_CHANCE:
-			var at := _seg_center(placements[id][0]) + Vector2(rng.randf_range(-MAP_HINT_FUZZ, MAP_HINT_FUZZ),
-				rng.randf_range(-MAP_HINT_FUZZ, MAP_HINT_FUZZ))
-			phone_map_hints.append({"id": id, "at": at})
+			phone_map_hints.append({"id": id, "seg": placements[id][0]})
 
 
 func _hint_street(seg: Vector3i) -> String:
