@@ -312,6 +312,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 
 ### Nukahtaminen väsymyksestä
 
+- **Kadulla nukutun yön jälkeen** housut ovat takamuksesta ruskeat ja edestä keltaiset. Tahrat pysyvät, kunnes hahmo nukkuu kotona tai kaverilla. Portsari ei päästä likaista baariin.
 - **Kadulle nukahtaminen etenee vaiheittain** (väsymys täynnä, sammumisraja ylittyy tai kello tulee 24): ensin silmäluomet painuvat noin 1,5 sekunnissa lähes kiinni ja hahmo huojuu paikallaan, sitten hän lysähtää kadulle (rätkänukke), ja vasta hetken päästä silmät menevät kokonaan kiinni ja päivä vaihtuu.
 
 - Kun väsymys on täynnä, pelaaja nukahtaa siihen paikkaan, missä on.

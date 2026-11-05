@@ -138,6 +138,9 @@ var lost: Array = []
 var placements := {}
 ## Where the character slept: "home", "stairs" or "street".
 var sleep_place := "home"
+## Wet and soiled trousers after a night on the street (brown at the back,
+## yellow at the front). Washed after a night at home or a friend's.
+var soiled := false
 var bonus := 0
 ## Item kind taken by the police (-1 = nothing); get it back at the police
 ## station with an ID card.
@@ -489,6 +492,7 @@ func new_game() -> void:
 	health = 100.0
 	money = 0
 	confiscated = -1
+	soiled = false
 	hunger = 20.0
 	strain = 0.0
 	exhausted = false
@@ -522,6 +526,10 @@ func new_game() -> void:
 func new_day() -> void:
 	_doses.clear()
 	var at_sleep := promille
+	if sleep_place == "street":
+		soiled = true
+	elif sleep_place == "home" or sleep_place == "friend":
+		soiled = false
 	yesterday_max = maxf(today_max, at_sleep)
 	day += 1
 	match sleep_place:

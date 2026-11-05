@@ -121,6 +121,39 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 		arm_r.rotation.x = 0.0
 
 
+## Soiled trousers after a night on the street: brown patches on the
+## seat (back of the hips and thighs), yellow on the front.
+var _soil: Array = []
+
+
+func set_soiled(on: bool) -> void:
+	for m in _soil:
+		m.queue_free()
+	_soil.clear()
+	if not on:
+		return
+	var brown := Color(0.36, 0.24, 0.1)
+	var yellow := Color(0.85, 0.75, 0.25)
+	# On the hips (the body faces +X, so the seat is at -X).
+	_soil.append(_patch(self, Vector3(-0.145, 0.99, 0), Vector3(0.012, 0.17, 0.36), brown))
+	_soil.append(_patch(self, Vector3(0.145, 0.97, 0), Vector3(0.012, 0.13, 0.22), yellow))
+	# On the thighs, moving with the legs.
+	for leg in [leg_l, leg_r]:
+		_soil.append(_patch(leg, Vector3(-0.088, -0.13, 0), Vector3(0.012, 0.24, 0.16), brown))
+		_soil.append(_patch(leg, Vector3(0.088, -0.09, 0), Vector3(0.012, 0.16, 0.12), yellow))
+
+
+func _patch(parent: Node3D, pos: Vector3, size: Vector3, c: Color) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = size
+	mi.mesh = bm
+	mi.material_override = _mat(c)
+	mi.position = pos
+	parent.add_child(mi)
+	return mi
+
+
 ## Face colour: `target` mixed into the skin by `amount` (blue when cold,
 ## pale green when hungover).
 func set_face_tint(target: Color, amount: float) -> void:

@@ -652,8 +652,9 @@ func _try_shop(sh: Dictionary) -> bool:
 		# The bouncer: no shoes, no entry; too drunk is turned away, but a
 		# borderline case can be fixed with a fiver.
 		var p := GameState.promille
-		var ok := not GameState.is_lost("shoes") and p <= 1.8
-		if not ok and not GameState.is_lost("shoes") and p <= 2.3 and GameState.money >= 5:
+		# Soiled trousers after a night on the street: not let in at all.
+		var ok := not GameState.is_lost("shoes") and p <= 1.8 and not GameState.soiled
+		if not ok and not GameState.is_lost("shoes") and not GameState.soiled and p <= 2.3 and GameState.money >= 5:
 			GameState.money -= 5
 			popup("-5 €", door, Color(1, 0.85, 0.3))
 			ok = true

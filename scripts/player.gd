@@ -59,6 +59,7 @@ func _ready() -> void:
 
 
 func reset(pos: Vector3) -> void:
+	model.set_soiled(false)
 	position = pos
 	facing = 1
 	_yaw_target = 0.0
@@ -90,6 +91,7 @@ func reset(pos: Vector3) -> void:
 ## Morning: clear any fall, rag doll or knockout left over from the night
 ## (e.g. fell asleep on the ground). Keeps what is in the hand.
 func wake_up() -> void:
+	model.set_soiled(GameState.soiled)
 	running = false
 	_press_time = -1.0
 	_block_action = true
