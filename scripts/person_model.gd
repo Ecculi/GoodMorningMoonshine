@@ -35,6 +35,10 @@ func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) ->
 	scale = Vector3.ONE * size
 	leg_l = _limb(Vector3(0, 0.9, -0.1), Vector3(0.17, 0.88, 0.17), pants)
 	leg_r = _limb(Vector3(0, 0.9, 0.1), Vector3(0.17, 0.88, 0.17), pants)
+	# Shoes on the feet, toes forward (+X); they move with the legs.
+	for leg in [leg_l, leg_r]:
+		_shoes.append(_patch(leg, Vector3(0.05, -0.855, 0), Vector3(0.27, 0.09, 0.15), Color(0.12, 0.1, 0.09)))
+		_shoes.append(_patch(leg, Vector3(0.17, -0.885, 0), Vector3(0.05, 0.03, 0.15), Color(0.85, 0.85, 0.82)))
 	_box(Vector3(0, 1.22, 0), Vector3(0.28, 0.64, 0.46), shirt)
 	_head = _sphere(Vector3(0, 1.69, 0), 0.16, skin)
 	_box(Vector3(-0.03, 1.81, 0), Vector3(0.28, 0.08, 0.32), hair)
@@ -119,6 +123,22 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 		forearm_r.rotation.z = lerpf(forearm_r.rotation.z, 1.2, hug)
 	else:
 		arm_r.rotation.x = 0.0
+
+
+var _shoes: Array = []
+
+
+## Shoe colour (the white toe caps stay white).
+func set_shoe_color(c: Color) -> void:
+	for i in range(0, _shoes.size(), 2):
+		var m: StandardMaterial3D = _shoes[i].material_override
+		m.albedo_color = c
+
+
+## Barefoot (shoes lost) or not.
+func set_shoes(on: bool) -> void:
+	for s in _shoes:
+		s.visible = on
 
 
 ## Soiled trousers after a night on the street: brown patches on the
