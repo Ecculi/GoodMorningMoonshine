@@ -5,6 +5,9 @@ extends Node3D
 ## - "police": patrols; chases the player after a crime and arrests them
 ##   (main.gd counts the contact time)
 ## - "guard": stands by a shop; beats the player up after a crime
+## - "bouncer": stands by the bar door; hit him and he runs after you like
+##   the police, throws you out onto the street by the scruff of the neck,
+##   then walks back to the door
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -14,7 +17,7 @@ const PersonModel = preload("res://scripts/person_model.gd")
 const Item = preload("res://scripts/item.gd")
 const Ragdoll = preload("res://scripts/ragdoll.gd")
 
-enum S { WALK, FIGHT, STUNNED, KO, LEAVE, CHASE }
+enum S { WALK, FIGHT, STUNNED, KO, LEAVE, CHASE, RETURN }
 
 const EDGE_X := 25.0
 const CHASE_SPEED := 2.3
@@ -76,6 +79,10 @@ var gang_id := -1
 var gang: Array = []
 ## Beggar / drunk: how many trades are left.
 var trades_left := 1
+## Bouncer: his spot by the door.
+var post := Vector3.ZERO
+const BOUNCER_SPEED := 3.3
+const BOUNCER_THROW_DAMAGE := 10.0
 var _sway_t := 0.0
 
 const SHIRTS := [Color(0.75, 0.2, 0.2), Color(0.2, 0.55, 0.3), Color(0.85, 0.7, 0.2),
@@ -108,6 +115,13 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			stationary = true
 			chase_speed = GUARD_SPEED
 			hit_damage = GUARD_DAMAGE
+		"bouncer":
+			model = PersonModel.new(Color(0.08, 0.08, 0.09), Color(0.08, 0.08, 0.09), Color(0.85, 0.68, 0.55),
+				Color(0.1, 0.1, 0.1), 1.12)
+			hp = 6
+			stationary = true
+			chase_speed = BOUNCER_SPEED
+			telegraphs = true
 		"punk":
 			# Black leather jacket, ripped jeans, a bright mohawk.
 			model = PersonModel.new(Color(0.08, 0.08, 0.09), Color(0.25, 0.3, 0.45), skin,
@@ -207,6 +221,14 @@ func _alert_gang() -> void:
 func provoke() -> void:
 	if state == S.KO:
 		return
+	if role == "bouncer":
+		# Goes after you like the police.
+		stationary = false
+		state = S.CHASE
+		_far_t = 0.0
+		_mark.modulate = Color(1, 0.25, 0.2)
+		_mark.visible = true
+		return
 	if model.sitting:
 		model.sitting = false
 	stationary = false
@@ -298,11 +320,24 @@ func _process(_delta: float) -> void:
 			_fight(dt)
 		S.CHASE:
 			_chase(dt)
+		S.RETURN:
+			# Back to the door, then stand there facing the street again.
+			var to := Vector2(post.x - position.x, post.z - position.z)
+			if to.length() < 0.1:
+				position = post
+				state = S.WALK
+				stationary = true
+				model.animate(0.0, dt)
+			else:
+				var stp := to.normalized() * minf(1.6 * dt, to.length())
+				position.x += stp.x
+				position.z += stp.y
+				model.animate(1.0, dt)
 		S.STUNNED:
 			_timer -= dt
 			model.animate(0.0, dt)
 			if _timer <= 0.0:
-				state = S.CHASE if role == "police" else S.FIGHT
+				state = S.CHASE if role == "police" or role == "bouncer" else S.FIGHT
 		S.KO:
 			_timer += dt
 			if _ragdoll != null:
@@ -310,7 +345,7 @@ func _process(_delta: float) -> void:
 				position = Vector3(t.x, 0.0, clampf(t.z, -7.4, 5.2))
 			if _ko_count >= _ko_limit:
 				pass  # out cold for good: stays down
-			elif _timer > _ko_time and _dazed:
+			elif _timer > _ko_time and _dazed and role != "bouncer":
 				# Came round after a thrown hit: back up and angry.
 				_dazed = false
 				_ko_time = KO_TIME
@@ -321,6 +356,14 @@ func _process(_delta: float) -> void:
 				else:
 					state = S.WALK
 					notice()
+			elif _timer > _ko_time and role == "bouncer":
+				# Comes round and goes back to the door.
+				_dazed = false
+				_ko_time = KO_TIME
+				_end_ragdoll()
+				hp = 6
+				_mark.visible = false
+				state = S.RETURN
 			elif _timer > _ko_time:
 				if not is_lawman():
 					# Face away from the player before rising, then limp off.
@@ -375,8 +418,8 @@ func _turn(moved: Vector3, dt: float) -> void:
 	elif state == S.FIGHT or state == S.CHASE:
 		var p = main.player
 		target = atan2(-(p.position.z - position.z), p.position.x - position.x)
-	elif model.sitting:
-		target = -PI * 0.5  # sitting against the wall, facing the street
+	elif model.sitting or (role == "bouncer" and stationary):
+		target = -PI * 0.5  # back to the wall, facing the street
 	else:
 		target = 0.0 if dir > 0 else PI
 	model.rotation.y = lerp_angle(model.rotation.y, target, 1.0 - exp(-10.0 * dt))
@@ -414,11 +457,21 @@ func _chase(dt: float) -> void:
 	if to.length() > GIVE_UP_DIST:
 		_far_t += dt
 		if _far_t > GIVE_UP_TIME:
-			state = S.WALK
+			state = S.RETURN if role == "bouncer" else S.WALK
 			_mark.visible = false
 			return
 	else:
 		_far_t = 0.0
+	if role == "bouncer" and to.length() < 0.8:
+		# Caught: scruff of the neck and seat of the pants, out you go.
+		model.raise_arm(true)
+		model.punch()
+		p.thrown_out(position.x, BOUNCER_THROW_DAMAGE)
+		main.popup("!", position + Vector3(0, 2.4, 0), Color(1, 0.3, 0.25))
+		_mark.visible = false
+		state = S.RETURN
+		model.raise_arm(false)
+		return
 	if to.length() > 0.5:
 		var step := to.normalized() * minf(chase_speed * dt, to.length() - 0.45)
 		position.x += step.x
@@ -495,6 +548,8 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 		if attacker.has_method("_check_hits"):
 			push = Vector3(attacker.dir * 7.0, 3.5, randf_range(-0.8, 0.8))
 		_knock_out(push)
+	elif role == "bouncer":
+		provoke()
 	elif not is_lawman():
 		provoke()
 		_cooldown = maxf(_cooldown, 0.5)

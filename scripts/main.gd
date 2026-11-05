@@ -245,7 +245,8 @@ func _go_to(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	# next street, a little further behind than they were.
 	var followers: Array = []
 	for n in npcs:
-		if n.is_hostile() and not n.is_down():
+		# (A bouncer never leaves the door's street.)
+		if n.is_hostile() and not n.is_down() and n.role != "bouncer":
 			var d := Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length()
 			if d < 16.0:
 				followers.append([n.role, d, n.state, n.hp])
@@ -365,6 +366,11 @@ func _populate_block() -> void:
 			if rng.randf() < 0.35:
 				var g = _spawn_npc(false, "guard")
 				g.position = Vector3(sh["x"] - 1.2, 0, -6.9)
+			if sh["type"] == "bar":
+				# The bouncer stands next to the bar door, facing the street.
+				var bo = _spawn_npc(false, "bouncer")
+				bo.position = Vector3(sh["x"] + 1.0, 0, -7.3)
+				bo.post = bo.position
 	_spawn_street_folk()
 	for id in GameState.placements:
 		var pl: Array = GameState.placements[id]

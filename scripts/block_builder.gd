@@ -148,12 +148,7 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 		lm.emission_enabled = true
 		lm.emission = Color(0.9, 0.7, 0.35)
 		lm.emission_energy_multiplier = 0.6
-		if shop == "bar":
-			# The bouncer stands next to the bar door, facing the street.
-			var b = PersonModel.new(Color(0.08, 0.08, 0.09), Color(0.08, 0.08, 0.09), Color(0.85, 0.68, 0.55), Color(0.1, 0.1, 0.1), 1.12)
-			b.position = Vector3(door_x + 1.0, 0.12, -7.3)
-			b.rotation.y = -PI * 0.5
-			root.add_child(b)
+		# (The bar's bouncer is a character spawned by main.gd.)
 		var shops: Array = root.get_meta("shops")
 		shops.append({"type": shop, "x": door_x})
 

@@ -365,6 +365,18 @@ func run_over(car_dir: int) -> void:
 	_knock_out(55.0, Vector3(car_dir * 3.0, 0.5, randf_range(-1.0, 1.0)))
 
 
+## Thrown out by a bouncer (scruff of the neck and the seat of the pants):
+## flies out onto the street and lands in a heap.
+func thrown_out(from_x: float, dmg: float) -> void:
+	if GameState.over or _fall_t > 0.0:
+		return
+	running = false
+	var side := signf(position.x - from_x) if position.x != from_x else float(facing)
+	_go_ragdoll(Vector3(side * 2.0, 2.5, 4.5), 1.8)
+	GameState.damage(dmg)
+	main.hud.flash_hurt()
+
+
 func _knock_out(dmg: float, push: Vector3) -> void:
 	_go_ragdoll(push, KNOCKOUT_TIME)
 	GameState.damage(dmg)
