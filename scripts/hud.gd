@@ -771,30 +771,43 @@ func _draw_charge() -> void:
 
 func _draw_headline(vs: Vector2, font: Font) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, clampf(card_time * 2.0, 0.0, 0.75)))
-	var w := minf(vs.x * 0.8, 820.0)
-	var h := minf(vs.y * 0.8, 480.0)
+	var w := minf(vs.x * 0.85, 900.0)
+	var h := minf(vs.y * 0.9, 620.0)
 	var r := Rect2((vs - Vector2(w, h)) * 0.5, Vector2(w, h))
 	draw_rect(r, Color(0.97, 0.95, 0.87))
 	# Masthead (fictional local paper).
 	draw_rect(Rect2(r.position, Vector2(w, 64)), Color(0.85, 0.1, 0.12))
 	draw_string(font, r.position + Vector2(0, 46), tr("PAPER_NAME"), HORIZONTAL_ALIGNMENT_CENTER, w, 38, Color.WHITE)
-	# Headline.
-	draw_multiline_string(font, r.position + Vector2(30, 112), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER,
-		w - 60, 38, 3, Color(0.08, 0.08, 0.08))
-	# Big photo on the left, the caption beside it.
-	var ph_h := maxf(h - 300, 80.0)
-	var ph := Rect2(r.position + Vector2(30, 192), Vector2(ph_h * 480.0 / 330.0, ph_h))
-	if ph.size.x > w * 0.62:
-		ph.size = Vector2(w * 0.62, w * 0.62 * 330.0 / 480.0)
+	# Headline: as big as fits on two lines.
+	var title := card_title.to_upper()
+	var tw := w - 60.0
+	var fs := 40
+	while fs > 20:
+		var th := font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_CENTER, tw, fs).y
+		if th <= font.get_height(fs) * 2.05:
+			break
+		fs -= 2
+	var head_top := r.position.y + 76.0
+	var head_h := font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_CENTER, tw, fs).y
+	draw_multiline_string(font, Vector2(r.position.x + 30, head_top + font.get_ascent(fs)), title,
+		HORIZONTAL_ALIGNMENT_CENTER, tw, fs, -1, Color(0.08, 0.08, 0.08))
+	# Bottom: a rule and the score; the photo and caption fit in between.
+	var rule_y := r.end.y - 66.0
+	var ph_top := head_top + head_h + 14.0
+	var ph_h := maxf(rule_y - 30.0 - ph_top, 60.0)
+	var ph := Rect2(Vector2(r.position.x + 30, ph_top), Vector2(ph_h * 480.0 / 330.0, ph_h))
+	if ph.size.x > w * 0.6:
+		ph.size = Vector2(w * 0.6, w * 0.6 * 330.0 / 480.0)
 	_draw_photo(ph)
-	draw_string(font, Vector2(ph.position.x, ph.end.y + 16), tr("PHOTO_CREDIT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
+	draw_string(font, Vector2(ph.position.x, ph.end.y + 18), tr("PHOTO_CREDIT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
 		Color(0.35, 0.35, 0.35))
 	if _death_caption != "":
-		var cx := ph.end.x + 18
-		draw_multiline_string(font, Vector2(cx, ph.position.y + 20), _death_caption, HORIZONTAL_ALIGNMENT_LEFT,
-			r.end.x - cx - 24, 20, 8, Color(0.15, 0.15, 0.15))
-	draw_line(r.position + Vector2(30, h - 110), r.position + Vector2(w - 30, h - 110), Color(0.2, 0.2, 0.2), 2.0)
-	draw_string(font, r.position + Vector2(0, h - 60), card_sub, HORIZONTAL_ALIGNMENT_CENTER, w, 34, Color(0.1, 0.1, 0.1))
+		var cx := ph.end.x + 22
+		draw_multiline_string(font, Vector2(cx, ph.position.y + font.get_ascent(20)), _death_caption,
+			HORIZONTAL_ALIGNMENT_LEFT, r.end.x - cx - 26, 20, -1, Color(0.15, 0.15, 0.15))
+	draw_line(Vector2(r.position.x + 30, rule_y), Vector2(r.end.x - 30, rule_y), Color(0.2, 0.2, 0.2), 2.0)
+	draw_string(font, Vector2(r.position.x, r.end.y - 22), card_sub, HORIZONTAL_ALIGNMENT_CENTER, w, 30,
+		Color(0.1, 0.1, 0.1))
 	# "Press to play again" as an icon: the action button with a play arrow.
 	if card_time > 1.0:
 		var bc := r.position + Vector2(w - 50, h - 50)
