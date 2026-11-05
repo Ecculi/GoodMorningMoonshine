@@ -19,7 +19,7 @@ const Car = preload("res://scripts/car.gd")
 
 ## Battery use per second while the phone is open, by page.
 ## Battery per second of use, by page. Drains only while the phone is open.
-const PHONE_DRAIN := [0.3, 0.45, 0.875]
+const PHONE_DRAIN := [0.15, 0.225, 0.45]
 const KIOSK_OPTIONS := [
 	{"kind": "bottle", "price": 3, "alcohol": true},
 	{"kind": "food", "price": 2, "alcohol": false},
