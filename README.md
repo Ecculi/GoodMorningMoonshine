@@ -13,7 +13,7 @@ Ohjaus:
 | Toiminto | Näppäimistö | Peliohjain | Puhelin |
 |---|---|---|---|
 | Liiku | nuolet / WASD | ristiohjain / vasen tatti | ohjaussauva (sormi vasempaan alakulmaan) |
-| Juokse | suunnan kaksoisnapautus | sama | ohjaussauva reunaan asti |
+| Juokse | suunnan kaksoisnapautus tai Shift + nuoli | kaksoisnapautus tai RB pohjassa | ohjaussauva reunaan asti |
 | Lyö / juo / syö | välilyönti, Z tai Enter (lyhyt painallus) | A | iso nappi |
 | Heitä käden tavara | sama nappi pohjassa | sama | sama |
 | Puhelin auki / kiinni | P tai Tab | Y | puhelinnappi (pieni nappi ison napin yläpuolella) |

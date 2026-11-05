@@ -681,6 +681,8 @@ func _setup_input() -> void:
 	_add_action("action", [KEY_SPACE, KEY_Z, KEY_ENTER], [JOY_BUTTON_A])
 	# Shortcut for keyboards and gamepads (on touch screens: up + action).
 	_add_action("phone", [KEY_P, KEY_TAB], [JOY_BUTTON_Y])
+	# Hold to run while moving (besides double-tapping an arrow).
+	_add_action("run", [KEY_SHIFT], [JOY_BUTTON_RIGHT_SHOULDER])
 	_add_axis("move_left", JOY_AXIS_LEFT_X, -1.0)
 	_add_axis("move_right", JOY_AXIS_LEFT_X, 1.0)
 	_add_axis("move_up", JOY_AXIS_LEFT_Y, -1.0)

@@ -752,9 +752,10 @@ func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
 		_run_by_stick = false
 		return
 	# Holding an arrow just walks. Running: a double tap on an arrow, or
-	# the touch stick pushed out to its edge (exhausted, only the short
-	# burst is left).
-	if GameState.stick_run and (not GameState.exhausted or _exhausted_run > 0.0):
+	# the touch stick pushed out to its edge, or Shift (gamepad RB) held
+	# (exhausted, only the short burst is left).
+	var hold_run := GameState.stick_run or Input.is_action_pressed("run")
+	if hold_run and (not GameState.exhausted or _exhausted_run > 0.0):
 		running = true
 		_run_by_stick = true
 	elif _run_by_stick:

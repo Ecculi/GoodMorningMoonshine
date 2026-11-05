@@ -166,7 +166,7 @@ Krapula ei kovene päivien mukaan.
   | **Syö / juo** käden tavara | lyhyt painallus, kun lähellä ei ole ketään |
   | **Mene sisään** | lyhyt painallus ovella |
   | **Heitä** käden tavara | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää. Latauksen aikana hahmo ei liiku, vaan nuolilla valitaan heiton suunta (myös ylös ja alas). Heitto lähtee, kun nappi päästetään. |
-  | **Juokse** | kaksoisnapautus suuntanuolta (toisella napautuksella nuoli jää pohjaan); puhelimella ohjaussauva reunaan asti. Pelkkä suunnan pitäminen pohjassa on aina kävelyä. |
+  | **Juokse** | kaksoisnapautus suuntanuolta (toisella napautuksella nuoli jää pohjaan) tai Shift pohjassa nuolen kanssa (peliohjaimella RB); puhelimella ohjaussauva reunaan asti. Pelkkä suunnan pitäminen pohjassa on aina kävelyä. |
 
 - Kun toimintanappi on pohjassa (lyönnin tai heiton lataus), **koko peli kulkee puolella nopeudella**: ohikulkijat, autot, kello ja myös pelaaja itse.
 - **Lääkkeet:** roskiksesta voi joskus löytää lääkkeitä. Ne vaikuttavat heti löydettäessä: latauksen aikana vain muu maailma hidastuu ja pelaaja liikkuu täydellä nopeudella noin 90 sekunnin ajan (pelin aikaa). Se on vahva etu, jolla ehtii väistää.
