@@ -237,7 +237,20 @@ func _draw_map(r: Rect2) -> void:
 	else:
 		pos = to_screen.call(float(seg.y), seg.z + f)
 	var pulse := 7.0 + sin(Time.get_ticks_msec() / 150.0) * 2.0
+	# Heading: which way along the street the character is going (facing),
+	# a blue arrow out of the dot and a faint "view cone".
+	var ahead: Vector2
+	if seg.x == 0:
+		ahead = to_screen.call(seg.z + f + 0.1, float(seg.y))
+	else:
+		ahead = to_screen.call(float(seg.y), seg.z + f + 0.1)
+	var hd: Vector2 = (ahead - pos).normalized() * float(main.player.facing)
+	var side := hd.orthogonal()
+	draw_colored_polygon(PackedVector2Array([pos, pos + hd * 34.0 + side * 16.0, pos + hd * 34.0 - side * 16.0]),
+		Color(0.2, 0.5, 1.0, 0.18))
 	draw_circle(pos, pulse + 4.0, Color(0.2, 0.5, 1.0, 0.3))
+	draw_colored_polygon(PackedVector2Array([pos + hd * 22.0, pos + hd * 10.0 + side * 7.0, pos + hd * 10.0 - side * 7.0]),
+		Color(0.15, 0.4, 0.95))
 	draw_circle(pos, 6.0, Color(0.15, 0.4, 0.95))
 	draw_string(font, r.position + Vector2(0, 22), CityMap.street_name(seg), HORIZONTAL_ALIGNMENT_CENTER,
 		r.size.x, 20, Color(0.2, 0.2, 0.25))
