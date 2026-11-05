@@ -25,6 +25,10 @@ const DAZE_CHANCE := {Item.Kind.BOTTLE: 0.6, Item.Kind.ENERGY: 0.4}
 const DAZE_TIME_MIN := 3.0
 const DAZE_TIME_MAX := 5.0
 var _ko_time := KO_TIME
+## Knocked out this many times; at _ko_limit (2-4, per person) they stay
+## out cold and don't get up any more.
+var _ko_count := 0
+var _ko_limit := 3
 ## True while out only briefly (thrown item): gets up and carries on.
 var _dazed := false
 const LEAVE_SPEED := 0.9
@@ -75,6 +79,7 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 	position = Vector3(x, 0, z)
 	dir = d
 	role = who
+	_ko_limit = rng.randi_range(2, 4)
 	speed = rng.randf_range(1.0, 1.6)
 	telegraphs = rng.randf() < 0.6
 	var skin: Color = SKINS[rng.randi() % SKINS.size()]
@@ -170,7 +175,9 @@ func _process(_delta: float) -> void:
 			if _ragdoll != null:
 				var t: Vector3 = _ragdoll.torso_position()
 				position = Vector3(t.x, 0.0, clampf(t.z, -7.4, 5.2))
-			if _timer > _ko_time and _dazed:
+			if _ko_count >= _ko_limit:
+				pass  # out cold for good: stays down
+			elif _timer > _ko_time and _dazed:
 				# Came round after a thrown hit: back up and angry.
 				_dazed = false
 				_ko_time = KO_TIME
@@ -463,6 +470,7 @@ func _end_ragdoll() -> void:
 func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
 	state = S.KO
 	_timer = 0.0
+	_ko_count += 1
 	_mark.visible = false
 	model.raise_arm(false)
 	# Fall over as a rag doll.

@@ -343,6 +343,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
   - **Kevyt esine** (tölkki, tyhjä muovipussi) ärsyttää kohdetta mutta ei juuri satuta.
   - **Raskas esine** (pullo, täysi pussi) tainnuttaa kohteen hetkeksi. Prototyypissä: pullo 60 % ja täysi energiajuomatölkki 40 % todennäköisyydellä (tyhjä tölkki on kevyt); kohde makaa 3–5 sekuntia ja nousee vihaisena.
   - **Ruoka** houkuttelee lokit ja koirat paikalle. Sillä voi harhauttaa vihaisen koiran.
+- **Tyrmäysten raja:** kun samaa hahmoa on tyrmätty 2–4 kertaa (raja arvotaan hahmokohtaisesti; myös heiton tainnutukset lasketaan), se jää tajuttomaksi maahan eikä enää nouse ajamaan takaa.
 
 ### Ryöstely
 
