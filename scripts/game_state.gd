@@ -537,6 +537,14 @@ func _die(cause: String) -> void:
 	player_died.emit(cause)
 
 
+## Falls asleep on the spot (e.g. after a fall when drowsy).
+func fall_asleep(cause: String) -> void:
+	if over:
+		return
+	sleep_place = "street"
+	_end_day(cause)
+
+
 func _end_day(cause: String) -> void:
 	over = true
 	day_ended.emit(cause)

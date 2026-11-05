@@ -78,6 +78,7 @@ func reset(pos: Vector3) -> void:
 	hand_item = null
 	_ride_car = null
 	_fall_t = 0.0
+	_sleep_after_fall = false
 	if _ragdoll != null:
 		_ragdoll.queue_free()
 		_ragdoll = null
@@ -137,7 +138,11 @@ func _process(delta: float) -> void:
 			var t: Vector3 = _ragdoll.torso_position()
 			position = main.clamp_walkable(Vector3(t.x, 0.0, t.z))
 		if _fall_t <= 0.0:
-			_get_up()
+			if _sleep_after_fall:
+				_sleep_after_fall = false
+				GameState.fall_asleep("SLEEP_FELL")
+			else:
+				_get_up()
 		return
 
 	var dir := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_up", "move_down"))
@@ -496,6 +501,25 @@ func _check_snow_slip(want: Vector2, speed: float) -> void:
 		_slip_on_backside()
 
 
+## Tired (eyes closing) or drunk eyelids drooping: a fall can end in
+## falling asleep right there on the ground.
+const FALL_ASLEEP_CHANCE := 0.5
+const DROWSY_TIRED := 40.0
+const DROWSY_PROMILLE := 2.0
+var _sleep_after_fall := false
+
+
+func _is_drowsy() -> bool:
+	return GameState.tired >= DROWSY_TIRED or GameState.promille >= DROWSY_PROMILLE
+
+
+## Called after a trip or slip: maybe stay down and sleep.
+func _maybe_fall_asleep() -> void:
+	if _is_drowsy() and randf() < FALL_ASLEEP_CHANCE:
+		_sleep_after_fall = true
+		main.popup("Zzz", position + Vector3(0.2 * facing, 1.2, 0.3), Color(0.8, 0.85, 1.0))
+
+
 func _slip_on_backside() -> void:
 	main.popup("*", position + Vector3(0, 0.8, 0.3), Color(0.85, 0.9, 1.0))
 	# Feet fly forward, body falls back.
@@ -504,6 +528,7 @@ func _slip_on_backside() -> void:
 	_slide_v = Vector3.ZERO
 	GameState.damage(3.0)
 	main.hud.flash_hurt()
+	_maybe_fall_asleep()
 
 
 func _trip() -> void:
@@ -511,6 +536,7 @@ func _trip() -> void:
 	_go_ragdoll(Vector3(facing * 4.0, 1.5, randf_range(-0.5, 0.5)), 1.6)
 	GameState.damage(4.0)
 	main.hud.flash_hurt()
+	_maybe_fall_asleep()
 
 
 ## Very drunk: every now and then the character heads off in a wrong
