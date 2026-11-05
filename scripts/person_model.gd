@@ -61,6 +61,11 @@ var _head: MeshInstance3D
 var cold_hug := 0.0
 ## 0..1: left hand raised to the forehead against the sun.
 var shade_eyes := 0.0
+## Sitting on the ground, back to a wall, legs out in front.
+var sitting := false:
+	set(v):
+		sitting = v
+		position.y = -0.82 if v else 0.0
 var silly_bounce := 0.0
 var silly_lean := 0.0
 
@@ -75,6 +80,10 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 	leg_l.rotation.z = lerpf(s, maxf(0.0, sin(ph)) * 1.8 - 0.25, k)
 	leg_r.rotation.z = lerpf(-s, -0.45 * sin(ph) + 0.3 * sin(ph * 2.0), k)
 	arm_l.rotation.z = lerpf(-s * 0.8, 1.3 * sin(ph + 1.0) + 0.5, k)
+	if sitting:
+		leg_l.rotation.z = PI * 0.5
+		leg_r.rotation.z = PI * 0.5
+		arm_l.rotation.z = 0.5
 	silly_bounce = absf(sin(ph)) * 0.18 * k
 	silly_lean = (0.22 + 0.08 * sin(ph * 2.0)) * k
 	forearm_r.rotation.z = 0.0

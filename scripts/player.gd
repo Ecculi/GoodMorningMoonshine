@@ -129,6 +129,7 @@ func punch_charge() -> float:
 func _process(delta: float) -> void:
 	_clock += delta
 	_punch_cooldown = maxf(0.0, _punch_cooldown - delta)
+	_snow_slip_cd = maxf(0.0, _snow_slip_cd - GameState.world_dt)
 	hand_hint_t = maxf(0.0, hand_hint_t - delta)
 	# _handle_action sets these again while the button is held.
 	GameState.charging = false
@@ -364,6 +365,18 @@ func run_over(car_dir: int) -> void:
 	_knock_out(55.0, Vector3(car_dir * 3.0, 0.5, randf_range(-1.0, 1.0)))
 
 
+## Thrown out by a bouncer (scruff of the neck and the seat of the pants):
+## flies out onto the street and lands in a heap.
+func thrown_out(from_x: float, dmg: float) -> void:
+	if GameState.over or _fall_t > 0.0:
+		return
+	running = false
+	var side := signf(position.x - from_x) if position.x != from_x else float(facing)
+	_go_ragdoll(Vector3(side * 2.0, 2.5, 4.5), 1.8)
+	GameState.damage(dmg)
+	main.hud.flash_hurt()
+
+
 func _knock_out(dmg: float, push: Vector3) -> void:
 	_go_ragdoll(push, KNOCKOUT_TIME)
 	GameState.damage(dmg)
@@ -426,7 +439,7 @@ func _stumble_chance(low: float, high: float) -> float:
 	if p > GameState.PROMILLE_DRUNK:
 		c += lerpf(low, high, clampf((p - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
 	if GameState.weather == "snow":
-		c += 0.05 * (2.0 if GameState.is_lost("shoes") else 1.0)
+		c += 0.02 * (2.0 if GameState.is_lost("shoes") else 1.0)
 	if running:
 		c *= 1.5
 	return clampf(c, 0.0, 0.9)
@@ -498,7 +511,11 @@ func _collide_cars(before: Vector3) -> void:
 
 var _slide_v := Vector3.ZERO
 var _slip_dir := Vector2.ZERO
-const SNOW_SLIP_PROMILLE := 1.1
+const SNOW_SLIP_PROMILLE := 1.5
+## Only sharp turns can slip, and at most one roll per this many seconds.
+const SNOW_SLIP_MIN_ANGLE := 75.0
+const SNOW_SLIP_COOLDOWN := 2.0
+var _snow_slip_cd := 0.0
 
 
 ## Snow above 1.1 per mille: a sharp change of direction can land the
@@ -517,11 +534,12 @@ func _check_snow_slip(want: Vector2, speed: float) -> void:
 		return
 	_slip_dir = nd
 	var p := GameState.promille
-	if p < SNOW_SLIP_PROMILLE:
+	if p < SNOW_SLIP_PROMILLE or absf(angle) < SNOW_SLIP_MIN_ANGLE or _snow_slip_cd > 0.0:
 		return
+	_snow_slip_cd = SNOW_SLIP_COOLDOWN
 	var turn := pow(absf(angle) / 180.0, 2.0)  # about-turn = 1
 	var drunk := clampf((p - SNOW_SLIP_PROMILLE) / 1.5, 0.0, 1.0)
-	var chance := turn * lerpf(0.08, 0.4, drunk)
+	var chance := turn * lerpf(0.04, 0.2, drunk)
 	if running:
 		chance *= 1.4
 	if GameState.is_lost("shoes"):
@@ -796,12 +814,18 @@ func _short_action() -> void:
 			return
 	GameState.busy_time = maxf(GameState.busy_time, 0.35)
 	var target = main.find_npc_in_front(position, facing, PUNCH_RANGE)
+	# Next to a beggar or a street drunk the button trades (a charged punch
+	# still hits them).
+	var trader = main.trader_near(position, 1.6)
+	if trader != null and trader.offer_trade(self):
+		return
 	if target == null and hand_item != null and main.nearest_npc_distance(position) > 2.5:
 		if hand_item.kind == Item.Kind.BOTTLE:
-			var amount := GameState.drink(Item.DRINK_PROMILLE[hand_item.drink])
+			# The amount is not shown: it sinks in slowly, and you never
+			# quite know how drunk you are going to get.
+			GameState.drink(Item.DRINK_PROMILLE[hand_item.drink])
 			GameState.warm_up(Item.DRINK_WARMTH[hand_item.drink])
-			main.popup("+" + GameState.format_promille(amount),
-				position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
+			main.popup("glug", position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
 			_consume_hand_item()
 			return
 		if hand_item.kind == Item.Kind.COFFEE or hand_item.kind == Item.Kind.ENERGY:
@@ -847,6 +871,10 @@ func _punch(target, charge: float, charged := false) -> void:
 	else:
 		_punch_strain()
 	if target == null:
+		# Swat a seagull or a dog in front.
+		var an = main.animal_in_front(position, facing, PUNCH_RANGE + 0.3)
+		if an != null:
+			an.swat()
 		return
 	var p := GameState.promille
 	# Drunk: swings miss more often the drunker you are.

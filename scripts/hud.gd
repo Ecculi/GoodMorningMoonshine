@@ -61,6 +61,60 @@ func show_pocket_check() -> void:
 
 
 ## A short thought bubble, e.g. "my phone is missing" (gone after ~2 m).
+## A lost thing was just found: shown big in the middle of the screen.
+const FOUND_TIME := 2.4
+var _found_id := ""
+var _found_t := 0.0
+
+
+func show_found(id: String) -> void:
+	_found_id = id
+	_found_t = FOUND_TIME
+
+
+## Gull droppings on the "view": white splats that fade bit by bit.
+const SPLAT_TIME := 7.0
+var _splats: Array = []
+
+
+func splat() -> void:
+	var vs := get_viewport_rect().size
+	_splats.append({
+		"pos": Vector2(randf_range(vs.x * 0.15, vs.x * 0.85), randf_range(vs.y * 0.1, vs.y * 0.7)),
+		"size": randf_range(50.0, 95.0), "t": SPLAT_TIME, "seed": randi(),
+	})
+
+
+func _draw_splats() -> void:
+	var dt := get_process_delta_time()
+	for sp in _splats.duplicate():
+		sp["t"] -= dt
+		if sp["t"] <= 0.0:
+			_splats.erase(sp)
+			continue
+		# Holds for a moment, then fades slowly.
+		var a := clampf(sp["t"] / (SPLAT_TIME * 0.7), 0.0, 1.0)
+		var r := RandomNumberGenerator.new()
+		r.seed = sp["seed"]
+		var c: Vector2 = sp["pos"]
+		var s: float = sp["size"]
+		var col := Color(0.96, 0.96, 0.9, 0.85 * a)
+		var shade := Color(0.82, 0.84, 0.72, 0.8 * a)
+		draw_circle(c, s * 0.42, shade)
+		draw_circle(c, s * 0.36, col)
+		# Splashes round the edge and a couple of runs down.
+		for i in 9:
+			var d := Vector2.from_angle(r.randf() * TAU)
+			draw_circle(c + d * s * r.randf_range(0.35, 0.65), s * r.randf_range(0.06, 0.15), col)
+		for i in 2:
+			var x0 := c.x + r.randf_range(-0.25, 0.25) * s
+			var ln := s * r.randf_range(0.4, 0.9) * (1.0 - a * 0.3 + 0.3)
+			draw_line(Vector2(x0, c.y), Vector2(x0, c.y + ln), col, s * 0.09)
+			draw_circle(Vector2(x0, c.y + ln), s * 0.07, col)
+		# A greyish-green centre.
+		draw_circle(c + Vector2(s * 0.06, -s * 0.04), s * 0.12, Color(0.45, 0.5, 0.35, 0.7 * a))
+
+
 func think(items: Array) -> void:
 	_bubble_items = items
 	_bubble_on = true
@@ -129,8 +183,17 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+var _was_hungover := false
+
+
 func _process(delta: float) -> void:
 	_hurt = maxf(0.0, _hurt - delta)
+	# Just slipped under 0.5 per mille: a red warning above the head too.
+	var hung := GameState.hangover_drain() > 0.0 and not GameState.over
+	if hung and not _was_hungover and main != null and main.player != null:
+		main.popup("‰!", main.player.position + Vector3(0, 2.5, 0), Color(1, 0.25, 0.2))
+		flash_hurt()
+	_was_hungover = hung
 	_fade = maxf(0.0, _fade - delta * _fade_speed)
 	if _bubble_on and main != null and main.player != null:
 		var p: Vector3 = main.player.position
@@ -166,12 +229,17 @@ func _draw() -> void:
 	_draw_heart(Vector2(46, 46), heart_size, clampf(GameState.health / 100.0, 0.0, 1.0),
 		clampf(GameState.strain / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
+	_draw_hangover_warning()
+	_draw_splats()
+	_draw_offscreen_lost(vs)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_phone_icon(vs, font)
 	_draw_charge()
 	_draw_shading_hand(vs)
 	_draw_hand_hint(font)
 	_draw_bin_hint()
+	_draw_trade_hint()
+	_draw_found(vs)
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
 	_draw_lost_list(vs)
@@ -272,6 +340,65 @@ func _draw_arrest() -> void:
 	draw_arc(sp, 34.0, -PI * 0.5, -PI * 0.5 + TAU * main.arrest, 40, col, 7.0, true)
 
 
+## A lost thing in this block but out of view: an arrow at that edge of
+## the screen with the thing's icon, pointing the way.
+func _draw_offscreen_lost(vs: Vector2) -> void:
+	if main == null or mode != "" or GameState.modal != "":
+		return
+	for ln in main.lost_nodes:
+		if not is_instance_valid(ln):
+			continue
+		var p: Vector3 = ln.global_position + Vector3(0, 0.3, 0)
+		if main.camera.is_position_behind(p):
+			continue
+		var sp: Vector2 = main.camera.unproject_position(p)
+		if sp.x >= 0.0 and sp.x <= vs.x:
+			continue
+		var side := 1.0 if sp.x > vs.x else -1.0
+		var y := clampf(sp.y, 120.0, vs.y - 60.0)
+		var tip := Vector2(vs.x - 14.0 if side > 0.0 else 14.0, y)
+		var bob := sin(Time.get_ticks_msec() / 180.0) * 4.0 * side
+		tip.x += bob
+		var back := tip - Vector2(side * 22.0, 0)
+		draw_colored_polygon(PackedVector2Array([tip, back + Vector2(0, -14), back + Vector2(0, 14)]),
+			Color(1, 0.6, 0.15, 0.9))
+		var ic := back - Vector2(side * 28.0, 0)
+		draw_circle(ic, 22.0, Color(1, 1, 1, 0.85))
+		LostItems.draw_icon(self, ln.id, ic, 30.0, "own")
+
+
+## Hangover (under 0.5 per mille) drains health: make the link plain.
+## The bottle blinks red, a red arrow pulses from the bottle into the
+## heart, and red drops fall from the heart; all faster the soberer.
+func _draw_hangover_warning() -> void:
+	var drain := GameState.hangover_drain()
+	if drain <= 0.0 or mode != "":
+		return
+	var k := clampf(drain / GameState.HANGOVER_DRAIN_MAX, 0.25, 1.0)
+	var t := Time.get_ticks_msec() / 1000.0
+	var blink := 0.5 + 0.5 * sin(t * (5.0 + 6.0 * k))
+	var red := Color(1.0, 0.15, 0.15)
+	# Bottle outline blinking red.
+	var bo := Vector2(118, 10)
+	var pts := PackedVector2Array()
+	for p in [Vector2(-7, 0), Vector2(7, 0), Vector2(7, 20), Vector2(22, 36), Vector2(22, 100),
+			Vector2(-22, 100), Vector2(-22, 36), Vector2(-7, 20), Vector2(-7, 0)]:
+		pts.append(bo + Vector2(22, 0) + p)
+	draw_polyline(pts, Color(red.r, red.g, red.b, 0.4 + 0.6 * blink), 4.0, true)
+	# Arrow from the bottle into the heart.
+	var a0 := Vector2(112, 52)
+	var a1 := Vector2(84, 52)
+	var ac := Color(red.r, red.g, red.b, 0.5 + 0.5 * blink)
+	draw_line(a0, a1 + Vector2(6, 0), ac, 4.0)
+	draw_colored_polygon(PackedVector2Array([a1, a1 + Vector2(9, -7), a1 + Vector2(9, 7)]), ac)
+	# Red glow round the heart and drops falling from it.
+	draw_arc(Vector2(46, 46), 36.0, 0.0, TAU, 40, Color(red.r, red.g, red.b, 0.25 + 0.45 * blink), 3.0, true)
+	for i in 3:
+		var ph := fmod(t * (0.8 + 1.2 * k) + i / 3.0, 1.0)
+		var dp := Vector2(40 + i * 6, 72 + ph * 30)
+		draw_circle(dp, 3.5 * (1.0 - ph * 0.5), Color(0.85, 0.05, 0.1, 1.0 - ph))
+
+
 ## Held item: what a short press and a hold do, as icons above the head
 ## for a few seconds after picking it up (no text):
 ##   [button] -> drink / eat / punch
@@ -345,6 +472,78 @@ func _draw_shading_hand(vs: Vector2) -> void:
 	for y in [0.0425, 0.0875, 0.1325]:
 		draw_line(pt.call(0.6, y), pt.call(0.82, y + 0.003), leak, 1.5)
 	draw_line(pt.call(0.25, 0.178), pt.call(0.56, 0.182), Color(1, 0.92, 0.72, 0.2 * amt), 2.0)
+
+
+## Found a lost thing: its icon pops up big in the middle with a green
+## tick and a burst of rays, then shrinks away towards the find list at
+## the top.
+func _draw_found(vs: Vector2) -> void:
+	if _found_t <= 0.0 or _found_id == "":
+		return
+	_found_t = maxf(0.0, _found_t - delta_draw_found())
+	var k := 1.0 - _found_t / FOUND_TIME  # 0 -> 1
+	# Pop in (overshoot), hold, then fly up to the list and fade.
+	var pop := minf(k / 0.12, 1.0)
+	var sc := pop * (1.0 + 0.25 * sin(pop * PI))
+	var c := Vector2(vs.x * 0.5, vs.y * 0.38)
+	var a := 1.0
+	if k > 0.75:
+		var f := (k - 0.75) / 0.25
+		c = c.lerp(Vector2(vs.x * 0.5, 40), f)
+		sc *= lerpf(1.0, 0.4, f)
+		a = 1.0 - f
+	var r := 70.0 * sc
+	# Rays.
+	for i in 12:
+		var ang := TAU * float(i) / 12.0 + k * 1.5
+		var d := Vector2.from_angle(ang)
+		draw_line(c + d * r * 1.15, c + d * r * 1.6, Color(1, 0.9, 0.4, 0.8 * a), 5.0)
+	draw_circle(c, r, Color(1, 1, 1, 0.92 * a))
+	draw_arc(c, r, 0.0, TAU, 48, Color(0.3, 0.85, 0.35, a), 6.0, true)
+	LostItems.draw_icon(self, _found_id, c, 90.0 * sc, "own")
+	# Green tick at the lower right.
+	var tc := c + Vector2(r * 0.62, r * 0.62)
+	draw_circle(tc, 22.0 * sc, Color(0.25, 0.75, 0.3, a))
+	draw_polyline(PackedVector2Array([tc + Vector2(-10, 0) * sc, tc + Vector2(-3, 8) * sc, tc + Vector2(11, -8) * sc]),
+		Color(1, 1, 1, a), 5.0 * sc, true)
+
+
+var _found_last_ms := 0
+
+
+func delta_draw_found() -> float:
+	var now := Time.get_ticks_msec()
+	var d := 0.0 if _found_last_ms == 0 else float(now - _found_last_ms) / 1000.0
+	_found_last_ms = now
+	return minf(d, 0.1)
+
+
+## Next to a beggar or a street drunk: what the button does there.
+##   beggar: [button] -> coin -> "?" (a tip)
+##   drunk:  [button] -> coin / sausage -> bottle (a sip)
+func _draw_trade_hint() -> void:
+	if main == null or main.player == null or mode != "" or GameState.modal != "":
+		return
+	var n = main.trader_near(main.player.position, 1.6)
+	if n == null or n.trades_left <= 0:
+		return
+	var p: Vector3 = n.position + Vector3(0, 1.5 if n.model.sitting else 2.5, 0)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	draw_rect(Rect2(sp - Vector2(58, 15), Vector2(116, 30)), Color(0, 0, 0, 0.4))
+	_hint_button(sp + Vector2(-38, 0), false, 1.0)
+	_hint_arrow(sp + Vector2(-8, 0), 1.0)
+	# A coin.
+	var cc := sp + Vector2(14, 0)
+	draw_circle(cc, 9.0, Color(0.95, 0.75, 0.2))
+	draw_arc(cc, 9.0, 0.0, TAU, 20, Color(0.5, 0.35, 0.05), 1.5, true)
+	if n.role == "beggar":
+		var font := get_theme_default_font()
+		draw_string_outline(font, sp + Vector2(28, 8), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 5, Color.BLACK)
+		draw_string(font, sp + Vector2(28, 8), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
+	else:
+		_hint_action(sp + Vector2(40, 0), "ACT_DRINK", 1.0)
 
 
 ## Near an unsearched bin: a magnifier above it; next to it (where the
@@ -583,9 +782,19 @@ func _draw_lost_list(vs: Vector2) -> void:
 	draw_string_outline(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
 	draw_string(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(1, 0.9, 0.4))
 	var x := r.position.x + 18 + label_w + 16 + size * 0.5
+	var no_phone := GameState.is_lost("phone")
 	for id in _today:
 		var c := Vector2(x, r.get_center().y)
 		draw_circle(c, size * 0.55, Color(1, 1, 1, 0.15))
+		# No phone: hot or cold. The nearer the thing (in blocks), the
+		# warmer and faster the glow behind its icon.
+		if no_phone and GameState.is_lost(id) and GameState.placements.has(id):
+			var bd: float = GameState.seg_distance(main.segment, GameState.placements[id][0])
+			var warm := clampf(1.0 - bd / 4.0, 0.0, 1.0)
+			if warm > 0.0:
+				var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * lerpf(2.0, 12.0, warm))
+				var wc := Color(1.0, lerpf(0.7, 0.2, warm), 0.1, (0.25 + 0.5 * pulse) * warm)
+				draw_circle(c, size * (0.6 + 0.12 * pulse * warm), wc)
 		var m := "own"
 		if GameState.is_lost(id):
 			m = "blob" if _forgotten(id) else "lost"
