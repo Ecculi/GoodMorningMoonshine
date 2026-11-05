@@ -582,7 +582,7 @@ func _place_lost_items() -> void:
 		# The phone is always dropped close to where the day starts (about a
 		# block away), so finding it first is an easy start; the rest
 		# lie around home.
-		var near_phone := id == "phone"
+		var near_phone: bool = id == "phone"
 		for attempt in 300:
 			var cand := CityMap.random_segment(rng)
 			var c := _seg_center(cand)
