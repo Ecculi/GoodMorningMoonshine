@@ -226,8 +226,10 @@ func _draw_map(r: Rect2) -> void:
 		draw_circle(a, 4.5, Color(0.95, 0.55, 0.15, hint_a))
 		draw_circle(b, 4.5, Color(0.95, 0.55, 0.15, hint_a))
 		var hint_c := (a + b) * 0.5
-		draw_circle(hint_c, 13.0, Color(1, 1, 1, 0.9))
-		LostItems.draw_icon(self, h["id"], hint_c, 20.0, "own")
+		# Small: half the old size, on a thin light disc so the streets
+		# and the orange block stay readable.
+		draw_circle(hint_c, 6.5, Color(1, 1, 1, 0.75))
+		LostItems.draw_icon(self, h["id"], hint_c, 10.0, "own")
 	# Where am I.
 	var seg: Vector3i = main.segment
 	var f := clampf((main.player.position.x + 16.0) / 32.0, 0.0, 1.0)
