@@ -58,8 +58,10 @@ jobs:
         with:
           path: build/web
 
+  # Publish only from main; other branches just check that the game builds.
   deploy:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
