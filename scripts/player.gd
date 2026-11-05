@@ -129,6 +129,7 @@ func punch_charge() -> float:
 func _process(delta: float) -> void:
 	_clock += delta
 	_punch_cooldown = maxf(0.0, _punch_cooldown - delta)
+	_snow_slip_cd = maxf(0.0, _snow_slip_cd - GameState.world_dt)
 	hand_hint_t = maxf(0.0, hand_hint_t - delta)
 	# _handle_action sets these again while the button is held.
 	GameState.charging = false
@@ -426,7 +427,7 @@ func _stumble_chance(low: float, high: float) -> float:
 	if p > GameState.PROMILLE_DRUNK:
 		c += lerpf(low, high, clampf((p - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
 	if GameState.weather == "snow":
-		c += 0.05 * (2.0 if GameState.is_lost("shoes") else 1.0)
+		c += 0.02 * (2.0 if GameState.is_lost("shoes") else 1.0)
 	if running:
 		c *= 1.5
 	return clampf(c, 0.0, 0.9)
@@ -498,7 +499,11 @@ func _collide_cars(before: Vector3) -> void:
 
 var _slide_v := Vector3.ZERO
 var _slip_dir := Vector2.ZERO
-const SNOW_SLIP_PROMILLE := 1.1
+const SNOW_SLIP_PROMILLE := 1.5
+## Only sharp turns can slip, and at most one roll per this many seconds.
+const SNOW_SLIP_MIN_ANGLE := 75.0
+const SNOW_SLIP_COOLDOWN := 2.0
+var _snow_slip_cd := 0.0
 
 
 ## Snow above 1.1 per mille: a sharp change of direction can land the
@@ -517,11 +522,12 @@ func _check_snow_slip(want: Vector2, speed: float) -> void:
 		return
 	_slip_dir = nd
 	var p := GameState.promille
-	if p < SNOW_SLIP_PROMILLE:
+	if p < SNOW_SLIP_PROMILLE or absf(angle) < SNOW_SLIP_MIN_ANGLE or _snow_slip_cd > 0.0:
 		return
+	_snow_slip_cd = SNOW_SLIP_COOLDOWN
 	var turn := pow(absf(angle) / 180.0, 2.0)  # about-turn = 1
 	var drunk := clampf((p - SNOW_SLIP_PROMILLE) / 1.5, 0.0, 1.0)
-	var chance := turn * lerpf(0.08, 0.4, drunk)
+	var chance := turn * lerpf(0.04, 0.2, drunk)
 	if running:
 		chance *= 1.4
 	if GameState.is_lost("shoes"):
