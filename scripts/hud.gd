@@ -72,6 +72,49 @@ func show_found(id: String) -> void:
 	_found_t = FOUND_TIME
 
 
+## Gull droppings on the "view": white splats that fade bit by bit.
+const SPLAT_TIME := 7.0
+var _splats: Array = []
+
+
+func splat() -> void:
+	var vs := get_viewport_rect().size
+	_splats.append({
+		"pos": Vector2(randf_range(vs.x * 0.15, vs.x * 0.85), randf_range(vs.y * 0.1, vs.y * 0.7)),
+		"size": randf_range(50.0, 95.0), "t": SPLAT_TIME, "seed": randi(),
+	})
+
+
+func _draw_splats() -> void:
+	var dt := get_process_delta_time()
+	for sp in _splats.duplicate():
+		sp["t"] -= dt
+		if sp["t"] <= 0.0:
+			_splats.erase(sp)
+			continue
+		# Holds for a moment, then fades slowly.
+		var a := clampf(sp["t"] / (SPLAT_TIME * 0.7), 0.0, 1.0)
+		var r := RandomNumberGenerator.new()
+		r.seed = sp["seed"]
+		var c: Vector2 = sp["pos"]
+		var s: float = sp["size"]
+		var col := Color(0.96, 0.96, 0.9, 0.85 * a)
+		var shade := Color(0.82, 0.84, 0.72, 0.8 * a)
+		draw_circle(c, s * 0.42, shade)
+		draw_circle(c, s * 0.36, col)
+		# Splashes round the edge and a couple of runs down.
+		for i in 9:
+			var d := Vector2.from_angle(r.randf() * TAU)
+			draw_circle(c + d * s * r.randf_range(0.35, 0.65), s * r.randf_range(0.06, 0.15), col)
+		for i in 2:
+			var x0 := c.x + r.randf_range(-0.25, 0.25) * s
+			var ln := s * r.randf_range(0.4, 0.9) * (1.0 - a * 0.3 + 0.3)
+			draw_line(Vector2(x0, c.y), Vector2(x0, c.y + ln), col, s * 0.09)
+			draw_circle(Vector2(x0, c.y + ln), s * 0.07, col)
+		# A greyish-green centre.
+		draw_circle(c + Vector2(s * 0.06, -s * 0.04), s * 0.12, Color(0.45, 0.5, 0.35, 0.7 * a))
+
+
 func think(items: Array) -> void:
 	_bubble_items = items
 	_bubble_on = true
@@ -187,6 +230,7 @@ func _draw() -> void:
 		clampf(GameState.strain / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_hangover_warning()
+	_draw_splats()
 	_draw_offscreen_lost(vs)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_phone_icon(vs, font)

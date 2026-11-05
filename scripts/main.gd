@@ -1167,6 +1167,22 @@ func _spawn_animal(kind: String, pos: Vector3):
 	return a
 
 
+## A gull was trodden on: the other gulls come over and bomb the player
+## for a while. If there are hardly any, a couple fly in from the side.
+func gull_trampled(victim) -> void:
+	var others: Array = []
+	for a in animals:
+		if a != victim and a.kind == "gull":
+			others.append(a)
+	while others.size() < 2:
+		var side := -1.0 if rng.randf() < 0.5 else 1.0
+		var g = _spawn_animal("gull", Vector3(side * 24.0, 0, rng.randf_range(-6.0, 4.0)))
+		g.position.y = 4.0
+		others.append(g)
+	for i in others.size():
+		others[i].start_bombing(1.0 + i * 0.8)
+
+
 func remove_animal(a) -> void:
 	animals.erase(a)
 	a.queue_free()

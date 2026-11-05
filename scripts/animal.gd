@@ -16,7 +16,12 @@ extends Node3D
 
 const Item = preload("res://scripts/item.gd")
 
-enum A { IDLE, WANDER, FLY_TO, FLEE, FOLLOW, LEAD, ATTACK, EAT }
+enum A { IDLE, WANDER, FLY_TO, FLEE, FOLLOW, LEAD, ATTACK, EAT, BOMB }
+
+## Gull revenge: after the player treads on a gull, the others circle
+## above and drop on them for a while.
+const BOMB_TIME := 12.0
+const BOMB_HEIGHT := 3.2
 
 ## Breeds: size, colour (body, ears/patches), speed, how often angry,
 ## bite damage, hit points.
@@ -197,6 +202,14 @@ func _gull(dt: float) -> void:
 	match state:
 		A.IDLE:
 			position.y = move_toward(position.y, 0.0, 3.0 * dt)
+			# Trodden on: a puff of feathers, off it goes, and the others
+			# will get even.
+			if _player_dist() < 0.35 and GameState.moving and position.y < 0.05:
+				_feathers()
+				state = A.FLEE
+				dir = 1 if position.x >= main.player.position.x else -1
+				main.gull_trampled(self)
+				return
 			# Food in the player's hand: here we go.
 			if _player_has_food() and _player_dist() < 7.0 and _cooldown <= 0.0:
 				state = A.FLY_TO
@@ -229,6 +242,46 @@ func _gull(dt: float) -> void:
 			position.y += 2.2 * dt
 			position.x += dir * 4.5 * dt
 			position.z -= 0.6 * dt
+		A.BOMB:
+			# Circle above the player and let go now and then.
+			_timer -= dt
+			if _timer <= 0.0:
+				state = A.FLEE
+				return
+			var p: Vector3 = main.player.position
+			var ang := _t * 1.6 + float(get_instance_id() % 7)
+			var over := p + Vector3(cos(ang) * 1.2, 0, sin(ang) * 0.5)
+			position.y = move_toward(position.y, BOMB_HEIGHT, 2.5 * dt)
+			_move_to(over, 5.5, dt)
+			if _cooldown <= 0.0 and position.y > BOMB_HEIGHT - 0.6:
+				_cooldown = _rng.randf_range(1.2, 2.6)
+				var dr = Dropping.new()
+				dr.main = main
+				main.add_child(dr)
+				dr.global_position = position + Vector3(0, -0.05, 0)
+				# A little lead: aimed where the player is heading.
+				dr.vel = Vector3(main.player.facing * (1.2 if GameState.moving else 0.0), 0, 0)
+
+
+## Another gull was trodden on: come and get even (start a little later).
+func start_bombing(delay: float) -> void:
+	if kind != "gull" or state == A.FLEE:
+		return
+	state = A.BOMB
+	_timer = BOMB_TIME + delay
+	_cooldown = delay + _rng.randf_range(0.5, 1.5)
+	carrying_food = false
+
+
+## A puff of feathers where the gull was.
+func _feathers() -> void:
+	main.popup("!", position + Vector3(0, 0.6, 0), Color(1, 1, 1))
+	for i in 14:
+		var f = Feather.new()
+		main.add_child(f)
+		f.global_position = position + Vector3(0, 0.25, 0)
+		f.vel = Vector3(_rng.randf_range(-1.6, 1.6), _rng.randf_range(1.2, 2.8), _rng.randf_range(-1.0, 1.0))
+		f.spin = Vector3(_rng.randf_range(-6, 6), _rng.randf_range(-6, 6), _rng.randf_range(-6, 6))
 
 
 ## A punch at the gull: it flies off without the food.
@@ -364,3 +417,105 @@ func _animate(dt: float, speed: float) -> void:
 		_head.rotation.z = 0.25
 	elif _head != null:
 		_head.rotation.z = 0.0
+
+
+## A feather from a trodden-on gull: puffs up, then sways down slowly and
+## fades away on the ground.
+class Feather extends MeshInstance3D:
+	var vel := Vector3.ZERO
+	var spin := Vector3.ZERO
+	var _life := 0.0
+	var _phase := randf() * TAU
+
+	## Street surface height (sidewalks are a kerb higher).
+	func _ground_y(p: Vector3) -> float:
+		if p.z < -5.0 or (p.z > 2.5 and p.z < 5.8):
+			return 0.13
+		return 0.01
+
+	func _ready() -> void:
+		var qm := QuadMesh.new()
+		qm.size = Vector2(0.09, 0.035)
+		mesh = qm
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.97, 0.97, 0.96) if randf() < 0.7 else Color(0.65, 0.68, 0.72)
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material_override = m
+
+	func _process(_d: float) -> void:
+		var dt: float = GameState.world_dt
+		if dt <= 0.0:
+			return
+		_life += dt
+		var gy := _ground_y(global_position)
+		if global_position.y > gy:
+			# Air drag: falls slowly, swaying side to side.
+			_phase += dt * 5.0
+			vel.y = move_toward(vel.y, -0.45, 6.0 * dt)
+			vel.x = move_toward(vel.x, sin(_phase) * 0.5, 3.0 * dt)
+			vel.z = move_toward(vel.z, 0.0, 3.0 * dt)
+			global_position += vel * dt
+			rotation += spin * dt
+			spin = spin.move_toward(Vector3(0, 0, sin(_phase) * 2.0), 4.0 * dt)
+		else:
+			global_position.y = gy
+			rotation.x = -PI * 0.5
+		if _life > 6.0:
+			var m: StandardMaterial3D = material_override
+			m.albedo_color.a = maxf(0.0, 1.0 - (_life - 6.0) / 2.0)
+			if _life > 8.0:
+				queue_free()
+
+
+## A gull dropping: falls; hits the player's head (a splat on the screen)
+## or lands on the street as a white spot that fades.
+class Dropping extends MeshInstance3D:
+	var main
+	var vel := Vector3.ZERO
+	var _landed := 0.0
+
+	## Street surface height (sidewalks are a kerb higher).
+	func _ground_y(p: Vector3) -> float:
+		if p.z < -5.0 or (p.z > 2.5 and p.z < 5.8):
+			return 0.13
+		return 0.01
+
+	func _ready() -> void:
+		var sm := SphereMesh.new()
+		sm.radius = 0.045
+		sm.height = 0.09
+		sm.radial_segments = 8
+		sm.rings = 4
+		mesh = sm
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.95, 0.95, 0.88)
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material_override = m
+
+	func _process(_d: float) -> void:
+		var dt: float = GameState.world_dt
+		if dt <= 0.0:
+			return
+		if _landed > 0.0:
+			_landed += dt
+			var m: StandardMaterial3D = material_override
+			m.albedo_color.a = maxf(0.0, 1.0 - _landed / 8.0)
+			if _landed > 8.0:
+				queue_free()
+			return
+		vel.y -= 9.8 * dt
+		global_position += vel * dt
+		var p: Vector3 = main.player.global_position
+		var flat := Vector2(global_position.x - p.x, global_position.z - p.z).length()
+		if global_position.y < p.y + 1.9 and global_position.y > p.y + 0.9 and flat < 0.42:
+			main.hud.splat()
+			queue_free()
+			return
+		var gy := _ground_y(global_position)
+		if global_position.y <= gy:
+			# A flat white spot on the street.
+			global_position.y = gy
+			scale = Vector3(1.6, 0.15, 1.6)
+			_landed = 0.001
+
