@@ -446,6 +446,10 @@ func _curb_chance() -> float:
 	return clampf(c, 0.0, 0.9)
 
 
+## True while pushing against an obstacle (see _check_stumbles).
+var _obstacle_contact := false
+
+
 func _check_stumbles(before: Vector3) -> void:
 	# Over the curb (only where there is a sidewalk, not in the crossings).
 	if absf(position.x) < BLOCK_HALF_X:
@@ -454,7 +458,9 @@ func _check_stumbles(before: Vector3) -> void:
 				if randf() < _curb_chance():
 					_trip()
 					return
-	# Into an obstacle: blocked; maybe down.
+	# Into an obstacle: blocked; maybe down. The chance is rolled once per
+	# bump, not again every frame while pushing against it (e.g. standing
+	# at a bin to search it).
 	for o in main.obstacles():
 		var d := Vector2(position.x - o[0], position.z - o[1])
 		var min_d: float = o[2] + 0.25
@@ -462,10 +468,12 @@ func _check_stumbles(before: Vector3) -> void:
 			var out := d.normalized() if d.length() > 0.001 else Vector2(-facing, 0)
 			position.x = o[0] + out.x * min_d
 			position.z = o[1] + out.y * min_d
-			if Vector2(before.x - o[0], before.z - o[1]).length() >= min_d - 0.01:
+			if not _obstacle_contact:
+				_obstacle_contact = true
 				if randf() < _stumble_chance(0.08, 0.35):
 					_trip()
 			return
+	_obstacle_contact = false
 
 
 ## Cars are solid: no walking through them. Walking into a side can make
