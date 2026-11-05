@@ -284,11 +284,11 @@ func _populate_block() -> void:
 				kind = Item.Kind.COFFEE  # rare
 			elif r < 0.06:
 				kind = Item.Kind.ENERGY  # rare
-			elif r < 0.15:
+			elif r < 0.30:
 				kind = Item.Kind.BOTTLE
-			elif r < 0.35:
+			elif r < 0.50:
 				kind = Item.Kind.FOOD
-			elif r < 0.65:
+			elif r < 0.75:
 				kind = Item.Kind.COIN
 			spawn_item(kind, Vector3(rng.randf_range(-15.0, 15.0), 0, _random_z()), rng.randi_range(1, 3))
 	for i in rng.randi_range(2, 5):
@@ -625,7 +625,7 @@ func try_search_bin(pos: Vector3) -> bool:
 		var r := RandomNumberGenerator.new()
 		r.seed = hash("bin|%d|%s|%s|%d" % [GameState.day, GameState.home_seg, segment, i])
 		r.randi()  # warm up: similar seeds give similar first numbers
-		if r.randf() < 0.5:
+		if r.randf() < 0.7:
 			var roll := r.randf()
 			var drink := Item.Drink.BEER if roll < 0.5 else (Item.Drink.SPIRITS if roll < 0.85 else Item.Drink.MYSTERY)
 			player._pickup(spawn_item(Item.Kind.BOTTLE, player.position, 1, drink))

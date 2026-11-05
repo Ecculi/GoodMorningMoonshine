@@ -24,6 +24,10 @@ const PROMILLE_MAX_SHOWN := 4.0
 const PROMILLE_DECAY := 0.0135
 const RUN_DECAY_MULT := 1.6
 const DRINK_AMOUNT := 0.4
+## Health per 1.0 per mille drunk (beer +7, spirits +18).
+const DRINK_HEALTH := 30.0
+## Share of damage that being drunk numbs away at 2.0 per mille and above.
+const DRUNK_NUMB := 0.33
 const FOOD_HEALTH := 12.0
 
 ## Sleep always burns at least this much alcohol...
@@ -127,6 +131,11 @@ var battery := 20.0
 var phone_msgs: Array = []
 ## Yesterday's photo: {"id": item id, "seg": Vector3i, "street": String} or {}.
 var phone_photo := {}
+## Map hints: [{"id": item id, "at": Vector2 map grid point}]. The circle is
+## only roughly where the thing is (within about a block).
+var phone_map_hints: Array = []
+const MAP_HINT_CHANCE := 0.7
+const MAP_HINT_FUZZ := 0.6
 ## Open full-screen thing that freezes the world: "", "phone" or "shop".
 var modal := ""
 var rng := RandomNumberGenerator.new()
@@ -250,6 +259,8 @@ func drink(amount := DRINK_AMOUNT) -> float:
 	if hunger >= HUNGER_EMPTY_STOMACH:
 		amount *= 1.4
 	promille += amount
+	# A drink brings health back too (more from stronger stuff).
+	health = minf(100.0, health + amount * DRINK_HEALTH)
 	return amount
 
 
@@ -259,6 +270,8 @@ func eat() -> void:
 
 
 func damage(amount: float) -> void:
+	# Drunk, blows and falls hurt less (up to a third less from 2.0 per mille).
+	amount *= 1.0 - DRUNK_NUMB * clampf((promille - 0.5) / 1.5, 0.0, 1.0)
 	health -= amount
 	if health <= 0.0 and not over:
 		_die("HEADLINE_BEATEN")
@@ -508,6 +521,7 @@ func _make_phone_hints() -> void:
 	battery = 50.0 if day == 1 else rng.randf_range(8.0, 25.0)
 	phone_msgs.clear()
 	phone_photo = {}
+	phone_map_hints.clear()
 	var candidates: Array = []
 	for id in lost:
 		if id != "phone":
@@ -523,6 +537,12 @@ func _make_phone_hints() -> void:
 		var id: String = candidates[rng.randi() % candidates.size()]
 		var seg: Vector3i = placements[id][0]
 		phone_photo = {"id": id, "seg": seg, "street": _hint_street(seg)}
+	# Map: a rough circle around where each of most lost things lies.
+	for id in candidates:
+		if rng.randf() < MAP_HINT_CHANCE:
+			var at := _seg_center(placements[id][0]) + Vector2(rng.randf_range(-MAP_HINT_FUZZ, MAP_HINT_FUZZ),
+				rng.randf_range(-MAP_HINT_FUZZ, MAP_HINT_FUZZ))
+			phone_map_hints.append({"id": id, "at": at})
 
 
 func _hint_street(seg: Vector3i) -> String:
