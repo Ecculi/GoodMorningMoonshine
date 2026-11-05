@@ -48,6 +48,8 @@ func show_card(m: String, title: String, sub: String) -> void:
 
 func hide_card() -> void:
 	mode = ""
+	_death_photo = null
+	_death_caption = ""
 
 
 ## Morning: the character pats their pockets; missing things are crossed out.
@@ -728,9 +730,20 @@ func _draw_headline(vs: Vector2, font: Font) -> void:
 	draw_rect(Rect2(r.position, Vector2(w, 64)), Color(0.85, 0.1, 0.12))
 	draw_string(font, r.position + Vector2(0, 46), tr("PAPER_NAME"), HORIZONTAL_ALIGNMENT_CENTER, w, 38, Color.WHITE)
 	# Headline.
-	draw_multiline_string(font, r.position + Vector2(30, 130), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER,
-		w - 60, 44, 4, Color(0.08, 0.08, 0.08))
-	_draw_photo(Rect2(r.position + Vector2(w * 0.5 - 110, 200), Vector2(220, maxf(h - 330, 60))))
+	draw_multiline_string(font, r.position + Vector2(30, 112), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER,
+		w - 60, 38, 3, Color(0.08, 0.08, 0.08))
+	# Big photo on the left, the caption beside it.
+	var ph_h := maxf(h - 300, 80.0)
+	var ph := Rect2(r.position + Vector2(30, 192), Vector2(ph_h * 480.0 / 330.0, ph_h))
+	if ph.size.x > w * 0.62:
+		ph.size = Vector2(w * 0.62, w * 0.62 * 330.0 / 480.0)
+	_draw_photo(ph)
+	draw_string(font, Vector2(ph.position.x, ph.end.y + 16), tr("PHOTO_CREDIT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
+		Color(0.35, 0.35, 0.35))
+	if _death_caption != "":
+		var cx := ph.end.x + 18
+		draw_multiline_string(font, Vector2(cx, ph.position.y + 20), _death_caption, HORIZONTAL_ALIGNMENT_LEFT,
+			r.end.x - cx - 24, 20, 8, Color(0.15, 0.15, 0.15))
 	draw_line(r.position + Vector2(30, h - 110), r.position + Vector2(w - 30, h - 110), Color(0.2, 0.2, 0.2), 2.0)
 	draw_string(font, r.position + Vector2(0, h - 60), card_sub, HORIZONTAL_ALIGNMENT_CENTER, w, 34, Color(0.1, 0.1, 0.1))
 	# "Press to play again" as an icon: the action button with a play arrow.
@@ -740,8 +753,22 @@ func _draw_headline(vs: Vector2, font: Font) -> void:
 		draw_colored_polygon(PackedVector2Array([bc + Vector2(-7, -11), bc + Vector2(12, 0), bc + Vector2(-7, 11)]), Color.WHITE)
 
 
+## The death photo and its caption (set before the card shows).
+var _death_photo: Texture2D = null
+var _death_caption := ""
+
+
+func set_death_photo(tex: Texture2D, caption: String) -> void:
+	_death_photo = tex
+	_death_caption = caption
+
+
 ## Placeholder "news photo": the character's silhouette in a grey frame.
 func _draw_photo(r: Rect2) -> void:
+	if _death_photo != null:
+		draw_texture_rect(_death_photo, r, false)
+		draw_rect(r, Color(0.15, 0.15, 0.15), false, 3.0)
+		return
 	draw_rect(r, Color(0.55, 0.55, 0.55))
 	draw_rect(r, Color(0.15, 0.15, 0.15), false, 3.0)
 	var c := r.get_center()

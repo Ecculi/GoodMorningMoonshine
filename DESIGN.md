@@ -405,6 +405,9 @@ Hahmoideat:
 
 ## Kuolema
 
+- **Lööppi kuolinsyyn mukaan:** peli muistaa, mikä viimeksi vei healthia (tappelu, auto, koira, portsari, kaatuminen, kylmä, nälkä, krapula, uupumus, tai selviäminen nollaan promilleen), ja lööppiin arvotaan siihen sopiva humoristinen otsikko ja kuvateksti (2–4 vaihtoehtoa kullekin).
+- **Kuva kuoleman hetkestä:** hahmo lysähtää, ja hetken päästä "lukijan kuva" otetaan eri kulmasta kuin pelikamera: katutasolta vinosti (vähän kallellaan), ylhäältä kuin ikkunasta tai tekijän olan yli. Kuva on seepiansävyinen, rakeinen ja reunoilta tumma kuin sanomalehdessä. Lööpissä on iso kuva, sen vieressä kuvateksti ja alla "Kuva: lukijan kuva".
+
 - Kuolema esitetään **paikallislehden lööppinä**, jossa on hahmon kuva ja humoristinen otsikko kuolinsyystä, esimerkiksi "Lokki vei viimeisen makkaran – nälkä voitti". Lehden nimi on keksitty.
 - Sen jälkeen näytetään **pisteet ja ennätyslista**.
   - Ennätyslista on aluksi **vain omalla laitteella**. **Yhteinen maailmanlaajuinen lista** lisätään myöhemmin; se vaatii palvelimen ja huijauksen eston.

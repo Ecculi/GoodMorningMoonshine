@@ -415,7 +415,7 @@ func _dog(dt: float) -> void:
 			var spot := p + Vector3(side * 0.6, 0, sin(_t * 2.3) * 0.4)
 			_move_to(spot, speed * _charge_k, dt)
 			if _player_dist() < 0.9:
-				main.player.take_hit(breed["bite"], position.x)
+				main.player.take_hit(breed["bite"], position.x, "dog")
 				main.popup("Hau!", position + Vector3(0, 0.9, 0), Color(1, 0.5, 0.4))
 				_rest_t = _rng.randf_range(1.5, 3.0)
 				_rest_z = _rng.randf_range(-0.8, 0.8)

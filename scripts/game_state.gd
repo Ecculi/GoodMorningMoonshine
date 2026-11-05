@@ -222,6 +222,7 @@ func _process(delta: float) -> void:
 	cold = clampf(cold + cold_rate() * world_dt, 0.0, 100.0)
 	if cold >= COLD_HURTS:
 		health -= 0.8 * world_dt
+		last_hurt = "cold"
 
 	if promille <= 0.0:
 		_die("HEADLINE_SOBER")
@@ -268,13 +269,16 @@ func _tick_body(dt: float, is_running: bool) -> void:
 	promille = maxf(0.0, promille - PROMILLE_DECAY * dt * mult)
 	_absorb(dt)
 	clock_min += float(DAY_END_MIN - DAY_START_MIN) / DAY_ACTIVE_SECONDS * dt
-	health -= hangover_drain() * dt
+	if hangover_drain() > 0.0:
+		health -= hangover_drain() * dt
+		last_hurt = "hangover"
 	health = minf(100.0, health + mend_rate() * dt)
 	# Being cold makes you hungry faster.
 	var hunger_mult := 1.5 if cold >= COLD_HUNGRY else 1.0
 	hunger = minf(100.0, hunger + HUNGER_RATE * dt * mult * hunger_mult)
 	if hunger >= HUNGER_HURTS:
 		health -= 1.0 * dt
+		last_hurt = "hunger"
 	# Tiredness grows, faster when running and in the dark.
 	var h := clock_min / 60.0
 	var dark := 3.0 if h >= 22.0 else (2.0 if h >= 20.0 else 1.0)
@@ -391,7 +395,13 @@ func eat() -> void:
 	hunger = maxf(0.0, hunger - FOOD_HUNGER)
 
 
-func damage(amount: float) -> void:
+## What last hurt the character (for the death headline): "fight", "car",
+## "dog", "bouncer", "fall", "cold", "hunger", "hangover", "exhaust".
+var last_hurt := "fight"
+
+
+func damage(amount: float, source := "fight") -> void:
+	last_hurt = source
 	# Drunk, blows and falls hurt less: the drunker, the less (from 0.5 per
 	# mille up to today's passing-out limit).
 	amount *= 1.0 - DRUNK_NUMB * clampf((promille - 0.5) / maxf(pass_out_promille - 0.5, 0.1), 0.0, 1.0)
@@ -493,6 +503,7 @@ func new_game() -> void:
 	money = 0
 	confiscated = -1
 	soiled = false
+	last_hurt = "fight"
 	hunger = 20.0
 	strain = 0.0
 	exhausted = false

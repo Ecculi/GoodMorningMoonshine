@@ -660,7 +660,7 @@ func _try_shop(sh: Dictionary) -> bool:
 			ok = true
 		if not ok:
 			popup("X", door + Vector3(1.0, 0, 0), Color(0.9, 0.3, 0.3))
-			player.take_hit(3.0, sh["x"] + 2.0)
+			player.take_hit(3.0, sh["x"] + 2.0, "bouncer")
 			return true
 	shop_type = sh["type"]
 	shop_sel = 0
@@ -850,8 +850,90 @@ func _on_day_ended(cause: String) -> void:
 	hud.hide_card()
 
 
+## How many headlines and captions there are per cause (keys HL_<CAUSE>_n
+## and CAP_<CAUSE>_n in the translations).
+const HEADLINES := {"SOBER": [4, 3], "FIGHT": [4, 3], "CAR": [4, 3], "DOG": [3, 3], "BOUNCER": [3, 2],
+	"FALL": [3, 2], "COLD": [3, 2], "HUNGER": [2, 2], "HANGOVER": [3, 2], "EXHAUST": [2, 2]}
+
+
+## Death: the character collapses, a moment later a "reader's photo" is
+## taken from another angle, and the paper runs the story with a headline
+## and caption that fit what happened.
 func _on_player_died(cause: String) -> void:
-	hud.show_card("dead", tr(cause), tr("SCORE") % GameState.score())
+	var fam := "SOBER" if cause == "HEADLINE_SOBER" else GameState.last_hurt.to_upper()
+	if not HEADLINES.has(fam):
+		fam = "FIGHT"
+	var n: Array = HEADLINES[fam]
+	var title := tr("HL_%s_%d" % [fam, rng.randi_range(1, n[0])])
+	var caption := tr("CAP_%s_%d" % [fam, rng.randi_range(1, n[1])])
+	player.collapse_dead()
+	await get_tree().create_timer(1.4).timeout
+	var photo: ImageTexture = await _take_death_photo()
+	hud.set_death_photo(photo, caption)
+	hud.show_card("dead", title, tr("SCORE") % GameState.score())
+
+
+## A news photo of the scene from a different angle than the game camera
+## (street level, from above, or over the shoulder of whoever did it),
+## turned into a grainy sepia newspaper print.
+func _take_death_photo() -> ImageTexture:
+	var body: Vector3 = player.body_position()
+	var sv := SubViewport.new()
+	sv.size = Vector2i(480, 330)
+	sv.world_3d = get_viewport().world_3d
+	sv.render_target_update_mode = SubViewport.UPDATE_ONCE
+	add_child(sv)
+	var cam := Camera3D.new()
+	cam.fov = 55.0
+	sv.add_child(cam)
+	cam.current = true
+	var look := body + Vector3(0, 0.25, 0)
+	var culprit = null
+	for nb in npcs:
+		if nb.is_hostile() and not nb.is_down() and nb.position.distance_to(body) < 6.0:
+			culprit = nb
+	var pick := rng.randi() % 3
+	if pick == 2 and culprit != null:
+		# Over the shoulder of the one who did it.
+		var away: Vector3 = culprit.position - body
+		away.y = 0.0
+		away = away.normalized() if away.length() > 0.01 else Vector3(1, 0, 0)
+		cam.position = culprit.position + away * 0.7 + Vector3(0, 1.75, 0.35)
+	elif pick == 1:
+		# From above, as if from a window.
+		cam.position = body + Vector3(rng.randf_range(-0.6, 0.6), 4.2, 1.2)
+	else:
+		# Street level, a bit to the side, slightly tilted.
+		var side := -1.0 if rng.randf() < 0.5 else 1.0
+		cam.position = body + Vector3(side * 2.2, 0.55, 2.0)
+	cam.look_at(look, Vector3.UP)
+	if pick == 0:
+		cam.rotate_object_local(Vector3.FORWARD, rng.randf_range(-0.15, 0.15))
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	var img := sv.get_texture().get_image()
+	sv.queue_free()
+	_newsprint(img)
+	return ImageTexture.create_from_image(img)
+
+
+## Newspaper look: sepia-tinted grey, more contrast, grain, dark corners.
+func _newsprint(img: Image) -> void:
+	img.convert(Image.FORMAT_RGB8)
+	var w := img.get_width()
+	var h := img.get_height()
+	var r := RandomNumberGenerator.new()
+	r.seed = rng.randi()
+	for y in h:
+		for x in w:
+			var c := img.get_pixel(x, y)
+			var g := c.r * 0.3 + c.g * 0.59 + c.b * 0.11
+			g = clampf((g - 0.5) * 1.35 + 0.5, 0.0, 1.0)
+			var dx := (float(x) / w - 0.5) * 2.0
+			var dy := (float(y) / h - 0.5) * 2.0
+			g *= 1.0 - 0.35 * clampf(dx * dx + dy * dy - 0.4, 0.0, 1.0)
+			g = clampf(g + r.randf_range(-0.06, 0.06), 0.0, 1.0)
+			img.set_pixel(x, y, Color(g * 1.0, g * 0.93, g * 0.8))
 
 
 # --- Queries used by the player, NPCs and items -------------------------------------

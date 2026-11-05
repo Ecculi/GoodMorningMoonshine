@@ -19,3 +19,59 @@ SIGN_POLICE,POLIISI
 HICCUP,hik!
 SLEEP_TIRED,Nukahti väsymykseen
 SLEEP_FELL,Kaatui ja jäi siihen nukkumaan
+HL_SOBER_1,Selvisi – ja se koitui kohtaloksi
+HL_SOBER_2,Mies raitistui kertaheitolla – lääkärit ymmällään
+HL_SOBER_3,"Viimeiset sanat: ""Otetaanko vielä yhdet?"""
+HL_SOBER_4,Promillet loppuivat kesken päivän – niin myös kaikki muu
+CAP_SOBER_1,"Kuvassa vainaja hetki sen jälkeen, kun pullo tyhjeni lopullisesti."
+CAP_SOBER_2,"Silminnäkijä: ""Hän näytti yhtäkkiä niin kirkkaalta."""
+CAP_SOBER_3,"Lähipiiri: ""Hän ei ollut koskaan ollut selvin päin näin pitkään."""
+HL_FIGHT_1,Kirkkokadun kulkija sai turpiinsa viimeisen kerran
+HL_FIGHT_2,"""Hän aloitti"", kertovat kaikki osapuolet"
+HL_FIGHT_3,Paikallinen nyrkkeilylupaus ei sittenkään ollut lupaus
+HL_FIGHT_4,Riita alkoi tupakasta – päättyi katukiveykseen
+CAP_FIGHT_1,Kuvassa tappelun häviäjä. Voittaja ei halunnut kuvaan.
+CAP_FIGHT_2,"Ohikulkija: ""Hän huusi jotain Kärpistä, ja sitten tuli turpaan."""
+CAP_FIGHT_3,"Poliisi epäilee, että asia selviää vasta, kun kaikki ovat selvinneet."
+HL_CAR_1,Auto voitti – taas
+HL_CAR_2,"Kuljettaja: ""Luulin häntä roskasäkiksi"""
+HL_CAR_3,Konepellillä matkannut mies ei maksanut kyydistä
+HL_CAR_4,Suojatie oli kolmen metrin päässä
+CAP_CAR_1,Auto selvisi pienin naarmuin.
+CAP_CAR_2,"Kuljettaja kertoo jarruttaneensa ""melkein ajoissa""."
+CAP_CAR_3,Paikalta löytyi yksi kenkä ja paljon itseluottamusta.
+HL_DOG_1,Koira kaatoi aikuisen miehen
+HL_DOG_2,"Omistaja: ""Se on ihan kiltti, se vain leikkii"""
+HL_DOG_3,"Makkara olisi pelastanut, arvioi eläinlääkäri"
+CAP_DOG_1,Koira ei suostunut kommentoimaan.
+CAP_DOG_2,Koira palkittiin tapahtuman jälkeen nakilla.
+CAP_DOG_3,"Naapurit kuvailevat koiraa ""tavallisesti rauhalliseksi""."
+HL_BOUNCER_1,Portsari heitti ulos – lopullisesti
+HL_BOUNCER_2,"Portsari: ""Hänellä oli likaiset housut"""
+HL_BOUNCER_3,Baarin ovella sattui – sisään ei päässyt kukaan
+CAP_BOUNCER_1,Portsari palasi ovelle kuin mitään ei olisi tapahtunut.
+CAP_BOUNCER_2,"Baarin edustaja: ""Pukukoodimme on selvä."""
+HL_FALL_1,Reunakivi koitui kohtaloksi
+HL_FALL_2,Liukastui viimeisen kerran
+HL_FALL_3,Mies kaatui omaan nerokkuuteensa
+CAP_FALL_1,"Kaupungin mukaan reunakivi on ""täysin standardin mukainen""."
+CAP_FALL_2,"Silminnäkijä: ""Se näytti melkein tahalliselta."""
+HL_COLD_1,Pakkanen yllätti oululaisen – taas
+HL_COLD_2,"Takki olisi auttanut, toteaa poliisi"
+HL_COLD_3,Jäätyi pystyyn kuin lipputanko
+CAP_COLD_1,Ilmatieteen laitos muistuttaa: talvi tulee joka vuosi.
+CAP_COLD_2,Takki löytyi myöhemmin naulakosta.
+HL_HUNGER_1,Nälkä vei miehen – grilli oli auki
+HL_HUNGER_2,"Makkara olisi pelastanut, arvioi grillin myyjä"
+CAP_HUNGER_1,Viimeinen ateria: puolikas tölkki ja toivo.
+CAP_HUNGER_2,Grillin jono oli tapahtumahetkellä lyhyt.
+HL_HANGOVER_1,Krapula vei miehen – asiantuntijat järkyttyneitä
+HL_HANGOVER_2,Aamukalja jäi juomatta – seuraukset karmeat
+HL_HANGOVER_3,"""Ei enää ikinä"", hän sanoi – ja piti lupauksensa"
+CAP_HANGOVER_1,"Kuvassa mies, joka ""vain lepuutti silmiään hetken""."
+CAP_HANGOVER_2,"Kioskin myyjä: ""Hän kysyi, joko kaljaa saa."""
+HL_EXHAUST_1,Hengästyi hengiltä
+HL_EXHAUST_2,Juoksulenkki venyi liian pitkäksi
+CAP_EXHAUST_1,Viimeiset metrit hän käveli. Sitten ei enää.
+CAP_EXHAUST_2,"Urheiluseura järkyttyi: ""Hän ei ollut edes jäsen."""
+PHOTO_CREDIT,Kuva: lukijan kuva
