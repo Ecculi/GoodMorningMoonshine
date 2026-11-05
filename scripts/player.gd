@@ -249,6 +249,7 @@ func _process(delta: float) -> void:
 	model.rotation.y = lerp_angle(model.rotation.y, _yaw_target, 1.0 - exp(-14.0 * delta))
 	model.animate(1.0 if moving else 0.0, delta * ts, speed / ts / WALK_SPEED, silly_amount())
 	model.set_windup(punch_charge())
+	model.shade_eyes = move_toward(model.shade_eyes, main.shade_amount(), delta * 3.0)
 
 	_handle_action(delta)
 	_check_pickups()

@@ -84,6 +84,11 @@ var shop_sel := 0
 var shop_flash := ""
 var shop_flash_t := 0.0
 var _glare := 0.0
+
+
+## 0..1: how far the player shades the eyes with a hand (dazzled).
+func shade_amount() -> float:
+	return smoothstep(0.18, 0.4, _glare)
 var _scrambled := {}
 var _friend_refused := false
 var _focus_y := 0.58
@@ -1254,7 +1259,8 @@ func _update_sun() -> void:
 		var low := 1.0 - clampf(rad_to_deg(elev) / 45.0, 0.0, 1.0) * 0.5
 		want_glare = clampf(player.facing * to_sun.x * 1.2 + maxf(0.0, -to_sun.z) * 0.5, 0.0, 1.0) * low * 0.8
 	_glare = lerpf(_glare, want_glare, 0.05)
-	tilt_mat.set_shader_parameter("glare", _glare)
+	# The hand shading the eyes takes the worst of it off.
+	tilt_mat.set_shader_parameter("glare", _glare * (1.0 - 0.3 * shade_amount()))
 	# Cloud shadows only on sunny days; they drift while time moves.
 	clouds.visible = not cloudy and day_light > 0.15
 	if clouds.visible:

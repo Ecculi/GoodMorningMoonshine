@@ -169,6 +169,7 @@ func _draw() -> void:
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_phone_icon(vs, font)
 	_draw_charge()
+	_draw_shading_hand(vs)
 	_draw_hand_hint(font)
 	_draw_bin_hint()
 	_draw_head_heart(delta_draw())
@@ -293,6 +294,48 @@ func _draw_hand_hint(_font: Font) -> void:
 		_hint_button(c + Vector2(-30, 0), rows[i][0], a)
 		_hint_arrow(c + Vector2(4, 0), a)
 		_hint_action(c + Vector2(32, 0), rows[i][1], a)
+
+
+## Dazzled by the sun: the player's own hand comes down into view at the
+## top of the screen, palm down like a visor, dark against the light.
+func _draw_shading_hand(vs: Vector2) -> void:
+	if main == null or mode != "" or GameState.modal != "":
+		return
+	var amt: float = main.shade_amount()
+	if amt <= 0.01:
+		return
+	var u := vs.y
+	var o := Vector2(vs.x * 0.16, lerpf(-u * 0.24, 0.0, amt))
+	var pt := func(x: float, y: float) -> Vector2:
+		return o + Vector2(x, y) * u
+	var col := Color(0.36, 0.26, 0.22, 0.95 * amt)
+	# Soft edge first (a little wider and fainter), then the hand itself.
+	for pass_i in 2:
+		var grow := 0.012 if pass_i == 0 else 0.0
+		var c := Color(col.r, col.g, col.b, col.a * (0.35 if pass_i == 0 else 1.0))
+		var g := grow * u
+		# Forearm from the top-left, wrist, palm.
+		draw_colored_polygon(PackedVector2Array([pt.call(-0.02, -0.06) + Vector2(-g, -g),
+			pt.call(0.17, -0.06) + Vector2(g, -g), pt.call(0.31, 0.08) + Vector2(g, 0),
+			pt.call(0.21, 0.145) + Vector2(-g, g)]), c)
+		draw_colored_polygon(PackedVector2Array([pt.call(0.2, 0.055) + Vector2(-g, -g),
+			pt.call(0.41, 0.055) + Vector2(g, -g), pt.call(0.43, 0.155) + Vector2(g, g),
+			pt.call(0.22, 0.17) + Vector2(-g, g)]), c)
+		# Four fingers pointing ahead, slightly fanned, and the thumb.
+		var fingers := [[0.068, 0.17], [0.093, 0.19], [0.118, 0.18], [0.143, 0.15]]
+		for f in fingers:
+			var a: Vector2 = pt.call(0.4, f[0])
+			var b: Vector2 = pt.call(0.4 + f[1], f[0] + 0.006)
+			var w := 0.024 * u + g * 2.0
+			draw_line(a, b, c, w)
+			draw_circle(b, w * 0.5, c)
+		var t0: Vector2 = pt.call(0.27, 0.15)
+		var t1: Vector2 = pt.call(0.34, 0.215)
+		draw_line(t0, t1, c, 0.028 * u + g * 2.0)
+		draw_circle(t1, 0.014 * u + g, c)
+	# Sunlight catching the edge of the fingers.
+	for f in [0.068, 0.093, 0.118, 0.143]:
+		draw_line(pt.call(0.42, f - 0.012), pt.call(0.55, f - 0.009), Color(1, 0.9, 0.7, 0.25 * amt), 2.0)
 
 
 ## Near an unsearched bin: a magnifier above it; next to it (where the
