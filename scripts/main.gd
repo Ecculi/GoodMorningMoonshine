@@ -169,6 +169,17 @@ func _check_transitions() -> void:
 	if GameState.over:
 		return
 	var p: Vector3 = player.position
+	# Walked out of the picture at the left or right: on to the next block
+	# as soon as the character has fully disappeared from view.
+	var off := _offscreen_side()
+	if off != 0 and off == player.facing and p.z >= Z_MIN - 0.05 and p.z <= Z_MAX + 0.05 \
+			and CityMap.is_valid(CityMap.next_along(segment, off)):
+		_go_to(CityMap.next_along(segment, off), Vector3(-off * (NEXT_BLOCK_X - 0.5), 0, p.z), off)
+		# Start just outside the view on the other side, walking in.
+		var edge := _view_edge_x(-off, p.z)
+		var x := clampf(edge - off * 0.7, -(NEXT_BLOCK_X - 0.5), NEXT_BLOCK_X - 0.5)
+		player.position.x = x
+		return
 	if p.x >= NEXT_BLOCK_X:
 		_go_to(CityMap.next_along(segment, 1), Vector3(-NEXT_BLOCK_X + 0.5, 0, p.z), 1)
 	elif p.x <= -NEXT_BLOCK_X:
@@ -177,6 +188,36 @@ func _check_transitions() -> void:
 		_turn(p.x > 0.0, true)
 	elif p.z >= TURN_DOWN_Z:
 		_turn(p.x > 0.0, false)
+
+
+## 1 / -1 when the player is completely out of view on the right / left,
+## otherwise 0.
+func _offscreen_side() -> int:
+	var w := get_viewport().get_visible_rect().size.x
+	var side := 0
+	for k in 4:
+		var q: Vector3 = player.global_position + Vector3(0.45 if k % 2 == 0 else -0.45, 0.0 if k < 2 else 1.9, 0)
+		if camera.is_position_behind(q):
+			return 0
+		var sx := camera.unproject_position(q).x
+		var sd := 1 if sx > w else (-1 if sx < 0.0 else 0)
+		if sd == 0 or (side != 0 and sd != side):
+			return 0
+		side = sd
+	return side
+
+
+## World x of the left (-1) or right (1) edge of the view at depth z and
+## about waist height.
+func _view_edge_x(side: int, z: float) -> float:
+	var vs := get_viewport().get_visible_rect().size
+	var sy := camera.unproject_position(Vector3(camera.position.x, 0.9, z)).y
+	var o := camera.project_ray_origin(Vector2(0.0 if side < 0 else vs.x, sy))
+	var d := camera.project_ray_normal(Vector2(0.0 if side < 0 else vs.x, sy))
+	if absf(d.z) < 0.0001:
+		return camera.position.x + side * 15.0
+	var t := (z - o.z) / d.z
+	return o.x + d.x * t
 
 
 func _turn(at_right: bool, up: bool) -> void:
