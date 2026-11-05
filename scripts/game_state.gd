@@ -7,6 +7,7 @@ const LostItems = preload("res://scripts/lost_items.gd")
 
 signal day_ended(cause: String)
 signal player_died(cause: String)
+signal achievement_unlocked(id: String)
 
 const DAY_START_MIN := 7 * 60
 const DAY_END_MIN := 24 * 60
@@ -174,6 +175,7 @@ func _ready() -> void:
 	rng.randomize()
 	_setup_input()
 	TranslationServer.set_locale("fi")
+	_load_achievements()
 
 
 func _process(delta: float) -> void:
@@ -219,6 +221,7 @@ func _process(delta: float) -> void:
 		return
 
 	_tick_body(world_dt, running)
+	_check_achievements(world_dt)
 	cold = clampf(cold + cold_rate() * world_dt, 0.0, 100.0)
 	if cold >= COLD_HURTS:
 		health -= 0.8 * world_dt
@@ -335,6 +338,7 @@ var trip_t := 0.0
 
 
 func take_pills() -> void:
+	trip_kinds.clear()
 	drink(PILLS_PROMILLE)
 	trip_t = TRIP_TIME
 
@@ -359,6 +363,9 @@ func drink(amount := DRINK_AMOUNT) -> float:
 		amount *= 1.4
 	# Into the stomach now; into the blood (and the health) bit by bit.
 	_doses.append([amount, 0.0])
+	if drinks_today == 0 and clock_min < 8.0 * 60.0:
+		unlock("MORNING_BEER")
+	drinks_today += 1
 	return amount
 
 
@@ -464,6 +471,10 @@ func is_lost(id: String) -> bool:
 func find_item(id: String) -> void:
 	lost.erase(id)
 	placements.erase(id)
+	found_today.append(id)
+	# Everything found, the phone last (so without its map and hints).
+	if lost.is_empty() and id == "phone" and found_today.size() >= 2:
+		unlock("NO_MAP")
 
 
 ## Entering the home door ends the day. Without keys the character sleeps
@@ -472,6 +483,9 @@ func find_item(id: String) -> void:
 func go_home(place: String) -> void:
 	if lost.is_empty():
 		bonus += 500
+		unlock("CLEAN_DAY")
+	if place == "home" and promille > 2.5:
+		unlock("HOME_DRUNK")
 	sleep_place = place
 	var causes := {"home": "SLEEP_HOME", "stairs": "SLEEP_STAIRS", "basement": "SLEEP_BASEMENT", "friend": "SLEEP_FRIEND"}
 	_end_day(causes[place])
@@ -503,6 +517,8 @@ func new_game() -> void:
 	money = 0
 	confiscated = -1
 	soiled = false
+	street_nights = 0
+	_reset_day_counters()
 	last_hurt = "fight"
 	hunger = 20.0
 	strain = 0.0
@@ -537,6 +553,10 @@ func new_game() -> void:
 func new_day() -> void:
 	_doses.clear()
 	var at_sleep := promille
+	_reset_day_counters()
+	street_nights = street_nights + 1 if sleep_place == "street" else 0
+	if street_nights >= 3:
+		unlock("LAUNDRY")
 	if sleep_place == "street":
 		soiled = true
 	elif sleep_place == "home" or sleep_place == "friend":
@@ -787,3 +807,119 @@ func _add_axis(action: String, axis: JoyAxis, value: float) -> void:
 	ev.axis = axis
 	ev.axis_value = value
 	InputMap.action_add_event(action, ev)
+
+
+# --- Achievements -------------------------------------------------------------
+
+## Achievement ids; names and descriptions are ACH_<ID> / ACH_<ID>_DESC in
+## the translations. Unlocked ones are kept on the device.
+const ACHIEVEMENTS := [
+	"SAUSAGE_KO", "ONE_PUNCH", "PUNKS_ALL", "THROWN_OUT", "BOUNCER_KO", "COP_STOP", "THREE_TARGETS",
+	"GULL_STEP", "SPLATS3", "DOG_LEAD", "FOOD_STOLEN", "DOG_CALM",
+	"DOCTOR", "SOBER_30", "ELEPHANTS", "MORNING_BEER", "HOME_DRUNK", "PROMILLE_333",
+	"CLEAN_DAY", "NO_MAP", "BEGGAR_PAY",
+	"GRAVITY5", "BONNET_SURVIVE", "RUN_OVER_SURVIVE", "LAUNDRY", "HEADLINES10",
+]
+const ACH_FILE := "user://achievements.cfg"
+## Seconds of game time in the mending zone / under the hangover limit.
+const DOCTOR_TIME := 60.0
+const SOBER_TIME := 30.0
+const PROMILLE_333 := 3.33333
+
+var achieved := {}
+var headlines_seen := {}
+## Per day.
+var found_today: Array = []
+var falls_today := 0
+var drinks_today := 0
+var item_hit_ids := {}
+var trip_kinds := {}
+var _mend_t := 0.0
+var _sober_t := 0.0
+## Nights on the street in a row.
+var street_nights := 0
+
+
+func unlock(id: String) -> void:
+	if achieved.has(id) or not ACHIEVEMENTS.has(id):
+		return
+	achieved[id] = true
+	_save_achievements()
+	achievement_unlocked.emit(id)
+
+
+func _load_achievements() -> void:
+	var cf := ConfigFile.new()
+	if cf.load(ACH_FILE) != OK:
+		return
+	if cf.has_section("unlocked"):
+		for id in cf.get_section_keys("unlocked"):
+			achieved[id] = true
+	if cf.has_section("headlines"):
+		for k in cf.get_section_keys("headlines"):
+			headlines_seen[k] = true
+
+
+func _save_achievements() -> void:
+	var cf := ConfigFile.new()
+	for id in achieved:
+		cf.set_value("unlocked", id, true)
+	for k in headlines_seen:
+		cf.set_value("headlines", k, true)
+	cf.save(ACH_FILE)
+
+
+## A death headline was shown (ten different ones = an achievement).
+func saw_headline(key: String) -> void:
+	if headlines_seen.has(key):
+		return
+	headlines_seen[key] = true
+	_save_achievements()
+	if headlines_seen.size() >= 10:
+		unlock("HEADLINES10")
+
+
+## A thrown thing hit someone (three different people in a day).
+func item_hit(who: Object) -> void:
+	item_hit_ids[who.get_instance_id()] = true
+	if item_hit_ids.size() >= 3:
+		unlock("THREE_TARGETS")
+
+
+func fell_down() -> void:
+	falls_today += 1
+	if falls_today >= 5:
+		unlock("GRAVITY5")
+
+
+func saw_vision(kind: String) -> void:
+	trip_kinds[kind] = true
+	if trip_kinds.size() >= 4:
+		unlock("ELEPHANTS")
+
+
+## Timed and threshold achievements, every tick of game time.
+func _check_achievements(dt: float) -> void:
+	if promille > PROMILLE_333:
+		unlock("PROMILLE_333")
+	if mend_rate() > 0.0:
+		_mend_t += dt
+		if _mend_t >= DOCTOR_TIME:
+			unlock("DOCTOR")
+	else:
+		_mend_t = 0.0
+	if promille < PROMILLE_HANGOVER:
+		_sober_t += dt
+		if _sober_t >= SOBER_TIME:
+			unlock("SOBER_30")
+	else:
+		_sober_t = 0.0
+
+
+func _reset_day_counters() -> void:
+	found_today.clear()
+	falls_today = 0
+	drinks_today = 0
+	item_hit_ids.clear()
+	_mend_t = 0.0
+	_sober_t = 0.0

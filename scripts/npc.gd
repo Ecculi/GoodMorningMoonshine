@@ -534,6 +534,7 @@ func _fight(dt: float) -> void:
 func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 	if state == S.KO:
 		return
+	times_hit += 1
 	hp -= dmg
 	_knock = 3.5 * knock_mult * signf(position.x - attacker.position.x)
 	_windup = -1.0
@@ -563,9 +564,27 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 		_mark.visible = true
 
 
+## Sausage hits taken (three knock you out, with an achievement).
+var _sausage_hits := 0
+## Times punched or hit (for "one punch").
+var times_hit := 0
+
+
 func hit_by_item(kind: int) -> void:
 	if state == S.KO:
 		return
+	GameState.item_hit(self)
+	if kind == Item.Kind.FOOD:
+		_sausage_hits += 1
+		if _sausage_hits >= 3:
+			# Out cold from a pelting with sausages.
+			_dazed = true
+			_ko_time = randf_range(DAZE_TIME_MIN, DAZE_TIME_MAX)
+			main.popup("*", position + Vector3(0, 1.9, 0), Color(1, 0.9, 0.4))
+			_knock_out(Vector3(signf(position.x - main.player.position.x) * 1.5, 1.0, 0))
+			main.report_crime(position, false)
+			GameState.unlock("SAUSAGE_KO")
+			return
 	# Hard things can knock them out for a moment.
 	if randf() < DAZE_CHANCE.get(kind, 0.0):
 		if kind == Item.Kind.BOTTLE:
@@ -585,6 +604,8 @@ func hit_by_item(kind: int) -> void:
 	# moment (they stagger back), harder things for longer. A good throw
 	# buys time to get away.
 	if is_hostile():
+		if role == "police" and state == S.CHASE and kind == Item.Kind.BOTTLE:
+			GameState.unlock("COP_STOP")
 		var stop: float = STAGGER_TIME.get(kind, 0.8)
 		if kind == Item.Kind.BOTTLE:
 			hp -= 1
@@ -691,6 +712,15 @@ func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
 	state = S.KO
 	_timer = 0.0
 	_ko_count += 1
+	if role == "bouncer":
+		GameState.unlock("BOUNCER_KO")
+	if role == "punk" and gang.size() >= 2:
+		var all_down := true
+		for g in gang:
+			if is_instance_valid(g) and g.state != S.KO:
+				all_down = false
+		if all_down:
+			GameState.unlock("PUNKS_ALL")
 	_mark.visible = false
 	model.raise_arm(false)
 	if model.sitting:

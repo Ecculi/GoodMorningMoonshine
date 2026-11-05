@@ -127,6 +127,7 @@ func _ready() -> void:
 	add_child(DebugTools.new())
 
 	GameState.day_ended.connect(_on_day_ended)
+	GameState.achievement_unlocked.connect(func(id): hud.show_achievement(id))
 	GameState.player_died.connect(_on_player_died)
 	_new_game()
 
@@ -869,7 +870,9 @@ func _on_player_died(cause: String) -> void:
 	if not HEADLINES.has(fam):
 		fam = "FIGHT"
 	var n: Array = HEADLINES[fam]
-	var title := tr("HL_%s_%d" % [fam, rng.randi_range(1, n[0])])
+	var hl_key := "HL_%s_%d" % [fam, rng.randi_range(1, n[0])]
+	GameState.saw_headline(hl_key)
+	var title := tr(hl_key)
 	var caption := tr("CAP_%s_%d" % [fam, rng.randi_range(1, n[1])])
 	# Now and then a caption that fits any death.
 	if rng.randf() < 0.2:
@@ -1241,6 +1244,7 @@ func punk_meet(p) -> void:
 ## Beggar paid: a tip about where one of the lost things is (like the
 ## cellmate), or a shrug when nothing is lost.
 func beggar_tip(pos: Vector3) -> void:
+	GameState.unlock("BEGGAR_PAY")
 	var candidates: Array = []
 	for id in GameState.placements:
 		candidates.append(id)
@@ -1265,6 +1269,7 @@ func _spawn_animal(kind: String, pos: Vector3):
 ## A gull was trodden on: the other gulls come over and bomb the player
 ## for a while. If there are hardly any, a couple fly in from the side.
 func gull_trampled(victim) -> void:
+	GameState.unlock("GULL_STEP")
 	var others: Array = []
 	for a in animals:
 		if a != victim and a.kind == "gull":
@@ -1297,7 +1302,9 @@ func _update_trip(delta: float) -> void:
 		return
 	_vision_cd = rng.randf_range(1.2, 3.0)
 	var v = Vision.new()
-	v.setup(["elephant", "mushroom", "eye", "spiral"][rng.randi() % 4], rng)
+	var vk: String = ["elephant", "mushroom", "eye", "spiral"][rng.randi() % 4]
+	v.setup(vk, rng)
+	GameState.saw_vision(vk)
 	# Added to the block so it goes when the street changes.
 	level.add_child(v)
 	var side := -1.0 if rng.randf() < 0.5 else 1.0

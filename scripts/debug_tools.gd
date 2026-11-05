@@ -1,6 +1,7 @@
 extends CanvasLayer
 ## F1 = help: what the game is about and the controls (the game waits
 ## while it is open). Gamepad: Back / Select.
+## F2 = the list of achievements (got ones ticked).
 ##
 ## Debug tools are hidden: open the help and press F12 to switch them on
 ## (or off). Only then do these work, and small buttons for them appear
@@ -10,18 +11,22 @@ extends CanvasLayer
 
 const DEBUG_PROMILLE_STEP := 0.1
 ## Lines of controls in the help (HELP_KEY_1 ... in the translations).
-const HELP_KEY_LINES := 7
+const HELP_KEY_LINES := 3
 
 var debug_on := false
 var _help: PanelContainer
 var _debug_line: Label
 var _buttons: VBoxContainer
+var _ach: PanelContainer
+var _ach_title: Label
+var _ach_grid: GridContainer
 
 
 func _ready() -> void:
 	layer = 20
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_help()
+	_build_achievements()
 	_buttons = VBoxContainer.new()
 	_buttons.position = Vector2(12, 130)
 	_buttons.visible = false
@@ -34,30 +39,77 @@ func _ready() -> void:
 
 
 func _build_help() -> void:
-	_help = PanelContainer.new()
-	_help.visible = false
-	_help.set_anchors_preset(Control.PRESET_CENTER)
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.08, 0.08, 0.1, 0.92)
-	sb.set_corner_radius_all(12)
-	sb.content_margin_left = 28
-	sb.content_margin_right = 28
-	sb.content_margin_top = 20
-	sb.content_margin_bottom = 20
-	_help.add_theme_stylebox_override("panel", sb)
-	add_child(_help)
+	_help = _panel()
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	_help.add_child(box)
 	_label(box, tr("HELP_TITLE"), 30, Color(1, 0.85, 0.35))
-	_label(box, tr("HELP_GOAL"), 19, Color(0.95, 0.95, 0.95), 560)
+	_label(box, tr("HELP_GOAL"), 18, Color(0.95, 0.95, 0.95), 480)
 	var keys: Array = []
 	for i in range(1, HELP_KEY_LINES + 1):
 		keys.append(tr("HELP_KEY_%d" % i))
-	_label(box, "\n".join(keys), 18, Color(0.85, 0.88, 0.95), 560)
+	_label(box, "\n".join(keys), 17, Color(0.85, 0.88, 0.95), 480)
 	_label(box, tr("HELP_CLOSE"), 15, Color(0.6, 0.6, 0.65))
 	_debug_line = _label(box, tr("HELP_DEBUG"), 15, Color(1, 0.5, 0.4), 560)
 	_debug_line.visible = false
+
+
+func _panel() -> PanelContainer:
+	var p := PanelContainer.new()
+	p.visible = false
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.08, 0.08, 0.1, 0.92)
+	sb.set_corner_radius_all(12)
+	sb.content_margin_left = 24
+	sb.content_margin_right = 24
+	sb.content_margin_top = 18
+	sb.content_margin_bottom = 18
+	p.add_theme_stylebox_override("panel", sb)
+	add_child(p)
+	return p
+
+
+func _build_achievements() -> void:
+	_ach = _panel()
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	_ach.add_child(box)
+	_ach_title = _label(box, "", 26, Color(1, 0.85, 0.35))
+	_ach_grid = GridContainer.new()
+	_ach_grid.columns = 2
+	_ach_grid.add_theme_constant_override("h_separation", 24)
+	_ach_grid.add_theme_constant_override("v_separation", 6)
+	box.add_child(_ach_grid)
+	_label(box, tr("HELP_CLOSE"), 15, Color(0.6, 0.6, 0.65))
+
+
+## Fills the list: got ones bright with a tick, the rest grey.
+func _refresh_achievements() -> void:
+	for c in _ach_grid.get_children():
+		c.queue_free()
+	var got := 0
+	for id in GameState.ACHIEVEMENTS:
+		var have: bool = GameState.achieved.has(id)
+		if have:
+			got += 1
+		var text := ("✔ " if have else "○ ") + tr("ACH_" + id) + " – " + tr("ACH_%s_DESC" % id)
+		_label(_ach_grid, text, 14, Color(0.95, 0.9, 0.6) if have else Color(0.6, 0.6, 0.65), 360)
+	_ach_title.text = tr("ACH_LIST") % [got, GameState.ACHIEVEMENTS.size()]
+
+
+func _toggle_achievements() -> void:
+	if _ach.visible:
+		_ach.visible = false
+		if GameState.modal == "help":
+			GameState.modal = ""
+		return
+	if _help.visible:
+		_help.visible = false
+	elif GameState.modal != "" or GameState.over:
+		return
+	_refresh_achievements()
+	_ach.visible = true
+	GameState.modal = "help"
 
 
 func _label(parent: Control, text: String, size: int, col: Color, width := 0) -> Label:
@@ -84,11 +136,14 @@ func _button(text: String, cb: Callable) -> void:
 
 func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed("help"):
+		if _ach.visible:
+			_toggle_achievements()
 		_toggle_help()
-	if _help.visible:
-		# Keep it in the middle whatever the window size.
-		var vs := get_viewport().get_visible_rect().size
-		_help.position = (vs - _help.size) * 0.5
+	# Keep the open panel in the middle whatever the window size.
+	var vs := get_viewport().get_visible_rect().size
+	for p in [_help, _ach]:
+		if p.visible:
+			p.position = (vs - p.size) * 0.5
 
 
 func _toggle_help() -> void:
@@ -105,6 +160,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.pressed and not event.echo):
 		return
 	var key: int = event.physical_keycode
+	if key == KEY_F2:
+		_toggle_achievements()
+		return
+	if _ach.visible:
+		if key == KEY_ESCAPE:
+			_toggle_achievements()
+		return
 	if _help.visible:
 		if key == KEY_ESCAPE:
 			_toggle_help()

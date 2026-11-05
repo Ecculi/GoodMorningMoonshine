@@ -82,15 +82,11 @@ CAP_CAR_4,"Kuljettaja: ""En ehtinyt jarruttaa, koska en nähnyt häntä. Ja vaik
 CAP_CAR_5,"Kuljettaja: ""Hän oli tiellä, ja tie on autoja varten."""
 CAP_CAR_6,"Poliisi muistuttaa, että suojatietä käyttävät myös elävät."
 HELP_TITLE,Ohje
-HELP_GOAL,"Heräät krapulassa, ja tavaroita on hukassa. Etsi ne ja pääse kotiin nukkumaan. Pidä humala sopivana: selvänä kuolet, liikaa juotuasi sammut kadulle."
-HELP_KEY_1,"Liiku: nuolet tai WASD (ohjain: ristiohjain / vasen tatti, puhelin: ohjaussauva)"
-HELP_KEY_2,Juokse: Shift + nuoli tai nuolen kaksoisnapautus (ohjain: RB)
-HELP_KEY_3,"Toiminto: välilyönti, Z tai Enter – lyö, juo, syö, penko roskista, mene ovesta (ohjain: A)"
-HELP_KEY_4,Heitä tai lataa lyönti: pidä toimintonappi pohjassa
-HELP_KEY_5,"Puhelin (viestit, kuva, kartta): P tai Tab (ohjain: Y), selaa vasen / oikea"
-HELP_KEY_6,Tavarat poimitaan kävelemällä niiden päälle.
-HELP_KEY_7,Ohje: F1 (ohjain: Back)
-HELP_CLOSE,Sulje: F1 tai Esc
+HELP_GOAL,"Etsi hukatut tavarat ja mene kotiin. Juo sopivasti: selvänä kuolet, liikaa juotuasi sammut."
+HELP_KEY_1,Nuolet / WASD: liiku  ·  Shift: juokse
+HELP_KEY_2,"Välilyönti: lyö, juo, syö, penko, ovi  ·  pohjassa: heitä"
+HELP_KEY_3,P: puhelin  ·  F1: ohje  ·  F2: saavutukset
+HELP_CLOSE,Esc sulkee
 HELP_DEBUG,"Debug päällä: F5 health täyteen, F6 +0,1 ‰, F7 +100 €, F8 akku +25 %, F9 ei nälkää, kylmää eikä väsymystä. F12 pois."
 HL_SOBER_5,Raitis päivä osoittautui liian raskaaksi
 HL_SOBER_6,Tutkimus: selvä olotila voi olla hengenvaarallinen
@@ -122,3 +118,57 @@ HL_HANGOVER_5,Darra voitti ottelun selvin luvuin
 HL_HANGOVER_6,Mies lupasi lopettaa – maailmankaikkeus otti hänet sanasta
 HL_EXHAUST_3,Mies juoksi itsensä hengiltä – ei edes kilpailussa
 HL_EXHAUST_4,"Liikunta vaarallista, toteaa paikallinen"
+ACH_SAUSAGE_KO,Makkaramestari
+ACH_SAUSAGE_KO_DESC,Tainnuta vastustaja makkaralla heittelemällä.
+ACH_ONE_PUNCH,Kunnon kättely
+ACH_ONE_PUNCH_DESC,Tyrmää joku yhdellä täysin ladatulla lyönnillä.
+ACH_PUNKS_ALL,Punk's Not Dead
+ACH_PUNKS_ALL_DESC,Tyrmää koko punkkariporukka.
+ACH_THROWN_OUT,Ulos ja heti
+ACH_THROWN_OUT_DESC,Portsari nakkaa sinut kadulle.
+ACH_BOUNCER_KO,Portsarin portsari
+ACH_BOUNCER_KO_DESC,Tyrmää portsari.
+ACH_COP_STOP,Pakotie
+ACH_COP_STOP_DESC,Pysäytä takaa-ajava poliisi heittämällä pullo.
+ACH_THREE_TARGETS,Pallomies
+ACH_THREE_TARGETS_DESC,Osu heitetyllä esineellä kolmeen eri hahmoon saman päivän aikana.
+ACH_GULL_STEP,Lokkien vihollinen
+ACH_GULL_STEP_DESC,Astu lokin päälle.
+ACH_SPLATS3,Taivaan lahja
+ACH_SPLATS3_DESC,Kolme lokin paskaa näkökentässä yhtä aikaa.
+ACH_DOG_LEAD,Paras ystävä
+ACH_DOG_LEAD_DESC,Koira johdattaa sinut hukatun tavaran luo.
+ACH_FOOD_STOLEN,Kallis nakki
+ACH_FOOD_STOLEN_DESC,Koira tai lokki vie ruoan kädestä.
+ACH_DOG_CALM,Lauma rauhoittuu
+ACH_DOG_CALM_DESC,Rauhoita vihainen koira heittämällä makkara.
+ACH_DOCTOR,Lääkärin määräys
+ACH_DOCTOR_DESC,"Pysy minuutin ajan 1,0–2,5 promillessa."
+ACH_SOBER_30,Raitis hetki
+ACH_SOBER_30_DESC,"Ole 30 sekuntia alle 0,5 promillessa ja selviä."
+ACH_ELEPHANTS,Vaaleanpunaiset norsut
+ACH_ELEPHANTS_DESC,Näe kaikki neljä näkyä samoista pillereistä.
+ACH_MORNING_BEER,Aamukalja
+ACH_MORNING_BEER_DESC,Juo päivän ensimmäinen juoma ennen kello kahdeksaa.
+ACH_HOME_DRUNK,Kännissä kotiin
+ACH_HOME_DRUNK_DESC,"Mene kotiin nukkumaan yli 2,5 promillessa."
+ACH_PROMILLE_333,Kolmen kolmosen kännit
+ACH_PROMILLE_333_DESC,"Hanki yli 3,33333 promillen humala."
+ACH_CLEAN_DAY,Siisti päivä
+ACH_CLEAN_DAY_DESC,Löydä kaikki hukatut tavarat ja pääse kotiin.
+ACH_NO_MAP,Ilman karttaa
+ACH_NO_MAP_DESC,"Löydä kaikki tavarat niin, että puhelin löytyy viimeisenä."
+ACH_BEGGAR_PAY,Hyvä sydän
+ACH_BEGGAR_PAY_DESC,Maksa kerjäläiselle vihjeestä.
+ACH_GRAVITY5,Painovoiman ystävä
+ACH_GRAVITY5_DESC,Kaadu viisi kertaa saman päivän aikana.
+ACH_BONNET_SURVIVE,Konepellin kyydissä
+ACH_BONNET_SURVIVE_DESC,Selviä hengissä auton konepellin kyydistä.
+ACH_RUN_OVER_SURVIVE,Kova ihminen
+ACH_RUN_OVER_SURVIVE_DESC,Jää auton alle ja selviä hengissä.
+ACH_LAUNDRY,Pyykkipäivä
+ACH_LAUNDRY_DESC,Nuku kadulla kolme yötä peräkkäin.
+ACH_HEADLINES10,Lööppitähti
+ACH_HEADLINES10_DESC,Päädy lehteen kymmenellä eri otsikolla.
+ACH_UNLOCKED,Saavutus!
+ACH_LIST,Saavutukset %d / %d

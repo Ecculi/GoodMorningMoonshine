@@ -78,6 +78,7 @@ func reset(pos: Vector3) -> void:
 	_ride_car = null
 	_fall_t = 0.0
 	_sleep_after_fall = false
+	_car_survive = ""
 	if _ragdoll != null:
 		_ragdoll.queue_free()
 		_ragdoll = null
@@ -100,6 +101,7 @@ func wake_up() -> void:
 	_fall_t = 0.0
 	_rise_t = 0.0
 	_sleep_after_fall = false
+	_car_survive = ""
 	if _ragdoll != null:
 		_ragdoll.queue_free()
 		_ragdoll = null
@@ -343,6 +345,7 @@ var _ragdoll = null
 ## Thrown onto the bonnet: ride along until the car brakes.
 func start_bonnet_ride(car) -> void:
 	_ride_car = car
+	_car_survive = "BONNET_SURVIVE"
 	running = false
 	_press_time = -1.0
 	model.rotation.z = PI * 0.5
@@ -383,6 +386,7 @@ func hit_by_car_front(car_dir: int, car_speed: float) -> void:
 
 
 func run_over(car_dir: int) -> void:
+	_car_survive = "RUN_OVER_SURVIVE"
 	running = false
 	_press_time = -1.0
 	_knock_out(55.0, Vector3(car_dir * 3.0, 0.5, randf_range(-1.0, 1.0)))
@@ -394,6 +398,7 @@ func thrown_out(from_x: float, dmg: float) -> void:
 	if GameState.over or _fall_t > 0.0:
 		return
 	running = false
+	GameState.unlock("THROWN_OUT")
 	var side := signf(position.x - from_x) if position.x != from_x else float(facing)
 	_go_ragdoll(Vector3(side * 2.0, 2.5, 4.5), 1.8)
 	GameState.damage(dmg, "bouncer")
@@ -440,6 +445,10 @@ var _rise_t := 0.0
 
 func _get_up() -> void:
 	car_grace = CAR_GRACE
+	# Back on your feet after a car: you survived it.
+	if _car_survive != "":
+		GameState.unlock(_car_survive)
+		_car_survive = ""
 	model.visible = true
 	if _ragdoll != null:
 		# Rise from the pose the rag doll ended in.
@@ -603,7 +612,12 @@ func _maybe_fall_asleep() -> void:
 		main.popup("Zzz", position + Vector3(0.2 * facing, 1.2, 0.3), Color(0.8, 0.85, 1.0))
 
 
+## Set when hit by a car in a way that earns an achievement if survived.
+var _car_survive := ""
+
+
 func _slip_on_backside() -> void:
+	GameState.fell_down()
 	main.popup("*", position + Vector3(0, 0.8, 0.3), Color(0.85, 0.9, 1.0))
 	# Feet fly forward, body falls back.
 	var back := Vector3(_slide_v.x, 0, _slide_v.z).normalized() if _slide_v.length() > 0.1 else Vector3(facing, 0, 0)
@@ -615,6 +629,7 @@ func _slip_on_backside() -> void:
 
 
 func _trip() -> void:
+	GameState.fell_down()
 	main.popup("*", position + Vector3(0.6 * facing, 0.6, 0.3), Color(1, 0.9, 0.4))
 	_go_ragdoll(Vector3(facing * 4.0, 1.5, randf_range(-0.5, 0.5)), 1.6)
 	GameState.damage(4.0, "fall")
@@ -934,6 +949,8 @@ func _punch(target, charge: float, charged := false) -> void:
 	if dmg > 0 and charge >= 1.0:
 		dmg += 1
 	target.take_hit(dmg, self, 1.0 + charge)
+	if charged and charge >= 1.0 and target.is_down() and target.times_hit == 1:
+		GameState.unlock("ONE_PUNCH")
 
 
 ## Fighting system: one punch is free, but punching again right away

@@ -85,6 +85,8 @@ func splat() -> void:
 		"pos": Vector2(randf_range(vs.x * 0.15, vs.x * 0.85), randf_range(vs.y * 0.1, vs.y * 0.7)),
 		"size": randf_range(50.0, 95.0), "t": SPLAT_TIME, "seed": randi(),
 	})
+	if _splats.size() >= 3:
+		GameState.unlock("SPLATS3")
 
 
 func _draw_splats() -> void:
@@ -115,6 +117,46 @@ func _draw_splats() -> void:
 			draw_circle(Vector2(x0, c.y + ln), s * 0.07, col)
 		# A greyish-green centre.
 		draw_circle(c + Vector2(s * 0.06, -s * 0.04), s * 0.12, Color(0.45, 0.5, 0.35, 0.7 * a))
+
+
+## Achievement unlocked: a banner slides in at the bottom left for a few
+## seconds (a trophy and the name). Several queue up.
+const ACH_TIME := 4.0
+var _ach_queue: Array = []
+var _ach_t := 0.0
+
+
+func show_achievement(id: String) -> void:
+	_ach_queue.append(id)
+
+
+func _draw_achievement(vs: Vector2, font: Font) -> void:
+	if _ach_queue.is_empty():
+		return
+	_ach_t += get_process_delta_time()
+	if _ach_t >= ACH_TIME:
+		_ach_t = 0.0
+		_ach_queue.pop_front()
+		return
+	var id: String = _ach_queue[0]
+	var slide := clampf(_ach_t / 0.3, 0.0, 1.0) * clampf((ACH_TIME - _ach_t) / 0.3, 0.0, 1.0)
+	var name_text := tr("ACH_" + id)
+	var w := maxf(font.get_string_size(name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x, 160.0) + 90.0
+	var r := Rect2(Vector2(lerpf(-w, 16.0, slide), vs.y - 250.0), Vector2(w, 64))
+	draw_rect(r, Color(0.08, 0.08, 0.1, 0.88))
+	draw_rect(r, Color(1, 0.8, 0.25), false, 2.0)
+	# Trophy.
+	var c := r.position + Vector2(34, 32)
+	var gold := Color(1, 0.8, 0.25)
+	draw_colored_polygon(PackedVector2Array([c + Vector2(-13, -16), c + Vector2(13, -16), c + Vector2(8, 2),
+		c + Vector2(-8, 2)]), gold)
+	draw_arc(c + Vector2(-13, -9), 6.0, PI * 0.5, PI * 1.5, 10, gold, 3.0)
+	draw_arc(c + Vector2(13, -9), 6.0, -PI * 0.5, PI * 0.5, 10, gold, 3.0)
+	draw_rect(Rect2(c + Vector2(-3, 2), Vector2(6, 8)), gold)
+	draw_rect(Rect2(c + Vector2(-10, 10), Vector2(20, 5)), gold)
+	draw_string(font, r.position + Vector2(66, 24), tr("ACH_UNLOCKED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15,
+		Color(1, 0.8, 0.35))
+	draw_string(font, r.position + Vector2(66, 50), name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
 
 
 func think(items: Array) -> void:
@@ -243,6 +285,7 @@ func _draw() -> void:
 	_draw_bin_hint()
 	_draw_trade_hint()
 	_draw_found(vs)
+	_draw_achievement(vs, font)
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
 	_draw_lost_list(vs)
