@@ -549,6 +549,28 @@ func _draw_lost_list(vs: Vector2) -> void:
 	if _today.is_empty():
 		return
 	var font := get_theme_default_font()
+	# Everything found: now find the way home (pulsing house + text).
+	var all_found := true
+	for id in _today:
+		if GameState.is_lost(id):
+			all_found = false
+	if all_found:
+		var text := tr("GO_HOME")
+		var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
+		var bw := tw + 90.0
+		var br := Rect2(Vector2((vs.x - bw) * 0.5, 10), Vector2(bw, 60))
+		draw_rect(br, Color(0, 0, 0, 0.45))
+		var hc := Vector2(br.position.x + 34, br.get_center().y + 2)
+		var k := 1.0 + 0.08 * sin(Time.get_ticks_msec() / 200.0)
+		var house := Color(0.25, 0.8, 0.4)
+		draw_rect(Rect2(hc + Vector2(-13, -6) * k, Vector2(26, 20) * k), house)
+		draw_colored_polygon(PackedVector2Array([hc + Vector2(-18, -5) * k, hc + Vector2(0, -22) * k,
+			hc + Vector2(18, -5) * k]), house)
+		draw_rect(Rect2(hc + Vector2(-4, 3) * k, Vector2(8, 11) * k), Color(0.1, 0.1, 0.1, 0.8))
+		var tp := Vector2(br.position.x + 64, br.get_center().y + 9)
+		draw_string_outline(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
+		draw_string(font, tp, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(0.6, 1.0, 0.65))
+		return
 	var size := 44.0
 	var gap := 12.0
 	var label := tr("FIND")
