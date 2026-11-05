@@ -14,9 +14,13 @@ const DOUBLE_TAP := 0.3
 const HOLD_TO_RUN := 1.0
 const PICKUP_RADIUS := 0.6
 const PUNCH_RANGE := 1.3
-## Holding the button with an empty hand pulls the arm back for a
-## stronger punch: full charge hits harder and knocks further.
-const PUNCH_CHARGE_TIME := 1.2
+## Holding the button with an empty hand bends the arm at the elbow and
+## pulls it back: the longer the charge, the further the hit knocks and
+## the more temporary health it costs; a full charge also does one more
+## damage.
+const PUNCH_CHARGE_TIME := 1.0
+const CHARGED_STRAIN_MIN := 4.0
+const CHARGED_STRAIN_MAX := 12.0
 ## Exhausted (heart all light pink): punches only this often and runs
 ## only this long at a time.
 const EXHAUSTED_PUNCH_COOLDOWN := 2.0
@@ -150,6 +154,10 @@ func _process(delta: float) -> void:
 	_update_run(dir, moving, delta)
 	_limit_exhausted_run(moving, delta)
 	var speed := RUN_SPEED if running else WALK_SPEED
+	# Button held (charging): the player slows down with the world,
+	# unless the pills are working.
+	var ts := _time_scale()
+	speed *= ts
 	# Without shoes walking is slower and running much harder.
 	if GameState.is_lost("shoes"):
 		speed *= 0.65 if running else 0.8
@@ -212,14 +220,13 @@ func _process(delta: float) -> void:
 	if look.length() > 0.1:
 		_yaw_target = atan2(-look.y, look.x)
 	model.rotation.y = lerp_angle(model.rotation.y, _yaw_target, 1.0 - exp(-14.0 * delta))
-	model.animate(1.0 if moving else 0.0, delta, speed / WALK_SPEED, silly_amount())
+	model.animate(1.0 if moving else 0.0, delta * ts, speed / ts / WALK_SPEED, silly_amount())
 	model.set_windup(punch_charge())
 
 	_handle_action(delta)
 	_check_pickups()
 	_hunger_signs()
 	_drunk_states(moving)
-	_update_silly(delta)
 	for n in main.npcs:
 		n.check_pickpocket(self)
 
@@ -563,37 +570,14 @@ var _growl_t := 0.0
 var _zzz_t := 0.0
 
 
-## Very drunk: the absurd silly walk (strongest from about 3.2 per mille).
-## From 2.0 per mille there are random bursts of silly steps, more often
-## the drunker you are; from 2.8 it is constant. Blends smoothly in and out.
-const SILLY_START := 2.0
-const SILLY_CONSTANT := 2.8
-var _silly_level := 0.0
-var _silly_burst := 0.0
-var _silly_cd := 3.0
+## Very drunk: the absurd silly walk. It grows gradually with the per
+## mille: starts at 1.8 and is at its strongest from about 2.5.
+const SILLY_START := 1.8
+const SILLY_FULL := 2.5
 
 
 func silly_amount() -> float:
-	return _silly_level
-
-
-func _update_silly(delta: float) -> void:
-	var p := GameState.promille
-	var dt := GameState.world_dt
-	var target := 0.0
-	if p >= SILLY_CONSTANT:
-		target = 1.0
-	elif p >= SILLY_START:
-		if _silly_burst > 0.0:
-			_silly_burst -= dt
-			target = 1.0
-		else:
-			_silly_cd -= dt
-			if _silly_cd <= 0.0:
-				var k := clampf((p - SILLY_START) / (SILLY_CONSTANT - SILLY_START), 0.0, 1.0)
-				_silly_cd = lerpf(6.0, 1.5, k) * randf_range(0.7, 1.3)
-				_silly_burst = randf_range(1.0, 2.0)
-	_silly_level = move_toward(_silly_level, target, delta * 4.0)
+	return clampf((GameState.promille - SILLY_START) / (SILLY_FULL - SILLY_START), 0.0, 1.0)
 
 
 ## Exhausted: heavy breathing, visible even when standing still (real
@@ -697,7 +681,7 @@ func _handle_action(delta: float) -> void:
 		_throw(_press_time)
 	elif _press_time >= LONG_PRESS:
 		GameState.busy_time = maxf(GameState.busy_time, 0.35)
-		_punch(main.find_npc_in_front(position, facing, PUNCH_RANGE), punch_charge())
+		_punch(main.find_npc_in_front(position, facing, PUNCH_RANGE), punch_charge(), true)
 	else:
 		_short_action()
 	_press_time = -1.0
@@ -747,15 +731,31 @@ func _short_action() -> void:
 
 
 ## charge 0..1: a fully charged punch hits one harder and knocks further.
-func _punch(target, charge: float) -> void:
+## Speed of the player's own movement and animation: half while the
+## action button is held, like the rest of the world (the pills keep the
+## player at full speed).
+func _time_scale() -> float:
+	if _press_time >= 0.0 and GameState.focus_t <= 0.0:
+		return GameState.CHARGE_TIME_SCALE
+	return 1.0
+
+
+## charged: a long-press punch with `charge` 0..1 (otherwise a quick one).
+func _punch(target, charge: float, charged := false) -> void:
 	# Exhausted: the arm only obeys every couple of seconds.
 	if GameState.exhausted:
 		main.hud.show_head_heart()
 		if _punch_cooldown > 0.0:
 			return
 		_punch_cooldown = EXHAUSTED_PUNCH_COOLDOWN
-	model.punch()
-	_punch_strain()
+	model.punch(charged)
+	if charged:
+		GameState.add_strain(lerpf(CHARGED_STRAIN_MIN, CHARGED_STRAIN_MAX, charge))
+		main.hud.show_head_heart()
+		_last_punch = _clock
+		_rest_t = 0.0
+	else:
+		_punch_strain()
 	if target == null:
 		return
 	var p := GameState.promille
@@ -771,16 +771,20 @@ func _punch(target, charge: float) -> void:
 		dmg = 2  # Dutch courage: harder punches
 	elif p < GameState.PROMILLE_HANGOVER and randf() < 0.5:
 		dmg = 0  # hangover: a feeble punch that does no harm
-	if dmg > 0:
-		dmg += int(round(charge))
+	if dmg > 0 and charge >= 1.0:
+		dmg += 1
 	target.take_hit(dmg, self, 1.0 + charge)
 
 
 ## Fighting system: one punch is free, but punching again right away
-## (within SPAM_WINDOW) uses up health temporarily. It comes back slowly
-## once you have neither punched nor run for REST_DELAY seconds.
+## (within SPAM_WINDOW) uses up health temporarily. Running uses it up
+## too. It comes back slowly once you have neither punched nor run for
+## REST_DELAY seconds.
 const SPAM_WINDOW := 0.7
 const SPAM_COST := 7.0
+## Temporary health used per second of running: a full heart lasts
+## about 20 s (four blocks) of running.
+const RUN_STRAIN := 5.0
 const REST_DELAY := 5.0
 const STRAIN_RECOVERY := 4.0
 var _last_punch := -10.0
@@ -803,6 +807,9 @@ func _punch_strain() -> void:
 func _update_rest(_delta: float) -> void:
 	var dt := GameState.world_dt
 	_rest_t += dt
+	if GameState.running:
+		GameState.add_strain(RUN_STRAIN * dt)
+		_rest_t = 0.0
 	if GameState.exhausted and _rest_t <= REST_DELAY:
 		_exhaust_t += dt
 		if _exhaust_t > GameState.exhaust_grace():
@@ -810,9 +817,7 @@ func _update_rest(_delta: float) -> void:
 	else:
 		_exhaust_t = 0.0
 	if _rest_t > REST_DELAY:
-		# Running (holding an arrow turns into running) recovers at half speed.
-		var rate := STRAIN_RECOVERY * (0.5 if running and GameState.moving else 1.0)
-		GameState.recover_strain(rate * dt)
+		GameState.recover_strain(STRAIN_RECOVERY * dt)
 
 
 func _consume_hand_item() -> void:

@@ -629,6 +629,10 @@ func try_search_bin(pos: Vector3) -> bool:
 			var drink := Item.Drink.BEER if roll < 0.5 else (Item.Drink.SPIRITS if roll < 0.85 else Item.Drink.MYSTERY)
 			player._pickup(spawn_item(Item.Kind.BOTTLE, player.position, 1, drink))
 			popup("!", top, Color(1, 0.85, 0.3))
+		elif r.randf() < 0.15:
+			# Rare: pills, taken on the spot (see GameState.FOCUS_TIME).
+			GameState.focus_t = GameState.FOCUS_TIME
+			popup("!", top, Color(0.75, 0.85, 1.0))
 		else:
 			popup("-", top, Color(0.8, 0.8, 0.8))
 		return true
