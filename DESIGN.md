@@ -159,14 +159,15 @@ Krapula ei kovene päivien mukaan.
 
   | Toiminto | Kontrolli |
   |---|---|
-  | **Lyö** | lyhyt painallus |
-  | **Ladattu lyönti** (käsi tyhjä) | pitkä painallus: hahmo vetää kättä taaksepäin ja kerää voimaa; mitä pidempään pitää pohjassa, sitä kovempi lyönti. Lyönti lähtee, kun nappi päästetään. |
+  | **Lyö** (nopea lyönti) | lyhyt painallus: käsi nousee suorana eteen |
+  | **Ladattu lyönti** (käsi tyhjä) | pitkä painallus: käsi koukistuu kyynärpäästä ja vetäytyy taaksepäin (nyrkki olkapään tasolle); lataus täyttyy sekunnissa, ja päällä näkyy latausrengas. Lyönti lähtee suorana eteen, kun nappi päästetään. Mitä pidempi lataus, sitä kauemmas vastustaja lentää ja sitä enemmän kuntoa kuluu (väliaikaista healthia 4–12). Täysi lataus tekee yhden vahingon enemmän (selvin päin 2, humalassa 3). |
   | **Syö / juo** käden tavara | lyhyt painallus, kun lähellä ei ole ketään |
   | **Mene sisään** | lyhyt painallus ovella |
   | **Heitä** käden tavara | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää. Latauksen aikana hahmo ei liiku, vaan nuolilla valitaan heiton suunta (myös ylös ja alas). Heitto lähtee, kun nappi päästetään. |
   | **Juokse** | kaksoisnapautus suuntanuolta tai saman suunnan pitäminen hetken pohjassa |
 
-- Kun toimintanappi on pohjassa eikä hahmo liiku, **aika kulkee puolella nopeudella**. Jos hahmo liikkuu samalla, aika kulkee normaalisti.
+- Kun toimintanappi on pohjassa (lyönnin tai heiton lataus), **koko peli kulkee puolella nopeudella**: ohikulkijat, autot, kello ja myös pelaaja itse.
+- **Lääkkeet:** roskiksesta voi joskus löytää lääkepurkin. Kun sen ottaa (lyhyt painallus, kun lähellä ei ole ketään), latauksen aikana vain muu maailma hidastuu ja pelaaja liikkuu täydellä nopeudella noin 90 sekunnin ajan (pelin aikaa). Se on vahva etu, jolla ehtii väistää.
   | **Puhelin auki / kiinni** | oma puhelinnappi (kosketusnäytöllä pieni nappi ison napin yläpuolella, näppäimistöllä P tai Tab, peliohjaimella Y) |
   | **Puhelimen selaus** | vasen / oikea |
 
@@ -322,7 +323,7 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 - **Ostaminen:** kioskista, baarista ja kauppahallista (vaatii lompakon ja rahaa).
 - **Ryöstely ja taskuvarkaus:** ohikulkija voi pudottaa ruokaa tai alkoholia.
 - **Kadun juoppo:** voi tarjota huikan vaihtokauppana.
-- **Roskiksen penkominen:** toimintanappi roskiksen vieressä. Puolessa roskiksista on pullo: olutta (+0,25 ‰), viinaa (+0,6 ‰) tai tuntematonta huumaavaa ainetta (+0,9 ‰, violetti pullo käsin kirjoitetulla etiketillä). Löytö menee käteen. Kukin roskis penkoo kerran päivässä; sisältö pysyy samana koko päivän (myös palatessa kortteliin) ja arvotaan uudelleen seuraavana aamuna. *(Lokit myöhemmin.)*
+- **Roskiksen penkominen:** toimintanappi roskiksen vieressä. Puolessa roskiksista on pullo: olutta (+0,25 ‰), viinaa (+0,6 ‰) tai tuntematonta huumaavaa ainetta (+0,9 ‰, violetti pullo käsin kirjoitetulla etiketillä). Harvoin (noin joka 13. roskis) löytyy lääkepurkki (valkoinen, punainen korkki). Löytö menee käteen. Kukin roskis penkoo kerran päivässä; sisältö pysyy samana koko päivän (myös palatessa kortteliin) ja arvotaan uudelleen seuraavana aamuna. *(Lokit myöhemmin.)*
 - **Terassilta varastaminen:** pelaaja nappaa juoman pöydältä ohi kulkiessaan. Asiakas tai portsari voi suuttua.
 - **Hukatut pullot ja eväät:** kadulla on muiden hukkaamia pulloja ja eväitä. Ne näkyvät epäselvinä kuten muutkin esineet.
 - **Ehtoollisviini:** kirkossa sunnuntaisin (ks. Viikonpäivät ja rannekello).

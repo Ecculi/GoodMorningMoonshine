@@ -14,9 +14,13 @@ const DOUBLE_TAP := 0.3
 const HOLD_TO_RUN := 1.0
 const PICKUP_RADIUS := 0.6
 const PUNCH_RANGE := 1.3
-## Holding the button with an empty hand pulls the arm back for a
-## stronger punch: full charge hits harder and knocks further.
-const PUNCH_CHARGE_TIME := 1.2
+## Holding the button with an empty hand bends the arm at the elbow and
+## pulls it back: the longer the charge, the further the hit knocks and
+## the more temporary health it costs; a full charge also does one more
+## damage.
+const PUNCH_CHARGE_TIME := 1.0
+const CHARGED_STRAIN_MIN := 4.0
+const CHARGED_STRAIN_MAX := 12.0
 ## Exhausted (heart all light pink): punches only this often and runs
 ## only this long at a time.
 const EXHAUSTED_PUNCH_COOLDOWN := 2.0
@@ -150,6 +154,10 @@ func _process(delta: float) -> void:
 	_update_run(dir, moving, delta)
 	_limit_exhausted_run(moving, delta)
 	var speed := RUN_SPEED if running else WALK_SPEED
+	# Button held (charging): the player slows down with the world,
+	# unless the pills are working.
+	var ts := _time_scale()
+	speed *= ts
 	# Without shoes walking is slower and running much harder.
 	if GameState.is_lost("shoes"):
 		speed *= 0.65 if running else 0.8
@@ -212,7 +220,7 @@ func _process(delta: float) -> void:
 	if look.length() > 0.1:
 		_yaw_target = atan2(-look.y, look.x)
 	model.rotation.y = lerp_angle(model.rotation.y, _yaw_target, 1.0 - exp(-14.0 * delta))
-	model.animate(1.0 if moving else 0.0, delta, speed / WALK_SPEED, silly_amount())
+	model.animate(1.0 if moving else 0.0, delta * ts, speed / ts / WALK_SPEED, silly_amount())
 	model.set_windup(punch_charge())
 
 	_handle_action(delta)
@@ -697,7 +705,7 @@ func _handle_action(delta: float) -> void:
 		_throw(_press_time)
 	elif _press_time >= LONG_PRESS:
 		GameState.busy_time = maxf(GameState.busy_time, 0.35)
-		_punch(main.find_npc_in_front(position, facing, PUNCH_RANGE), punch_charge())
+		_punch(main.find_npc_in_front(position, facing, PUNCH_RANGE), punch_charge(), true)
 	else:
 		_short_action()
 	_press_time = -1.0
@@ -738,6 +746,11 @@ func _short_action() -> void:
 			main.popup("!", position + Vector3(0, 2.1, 0), Color(0.6, 1.0, 0.4))
 			_consume_hand_item()
 			return
+		if hand_item.kind == Item.Kind.PILLS:
+			GameState.focus_t = GameState.FOCUS_TIME
+			main.popup("!", position + Vector3(0, 2.1, 0), Color(0.75, 0.85, 1.0))
+			_consume_hand_item()
+			return
 		if hand_item.kind == Item.Kind.FOOD:
 			GameState.eat()
 			main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
@@ -747,15 +760,31 @@ func _short_action() -> void:
 
 
 ## charge 0..1: a fully charged punch hits one harder and knocks further.
-func _punch(target, charge: float) -> void:
+## Speed of the player's own movement and animation: half while the
+## action button is held, like the rest of the world (the pills keep the
+## player at full speed).
+func _time_scale() -> float:
+	if _press_time >= 0.0 and GameState.focus_t <= 0.0:
+		return GameState.CHARGE_TIME_SCALE
+	return 1.0
+
+
+## charged: a long-press punch with `charge` 0..1 (otherwise a quick one).
+func _punch(target, charge: float, charged := false) -> void:
 	# Exhausted: the arm only obeys every couple of seconds.
 	if GameState.exhausted:
 		main.hud.show_head_heart()
 		if _punch_cooldown > 0.0:
 			return
 		_punch_cooldown = EXHAUSTED_PUNCH_COOLDOWN
-	model.punch()
-	_punch_strain()
+	model.punch(charged)
+	if charged:
+		GameState.add_strain(lerpf(CHARGED_STRAIN_MIN, CHARGED_STRAIN_MAX, charge))
+		main.hud.show_head_heart()
+		_last_punch = _clock
+		_rest_t = 0.0
+	else:
+		_punch_strain()
 	if target == null:
 		return
 	var p := GameState.promille
@@ -771,8 +800,8 @@ func _punch(target, charge: float) -> void:
 		dmg = 2  # Dutch courage: harder punches
 	elif p < GameState.PROMILLE_HANGOVER and randf() < 0.5:
 		dmg = 0  # hangover: a feeble punch that does no harm
-	if dmg > 0:
-		dmg += int(round(charge))
+	if dmg > 0 and charge >= 1.0:
+		dmg += 1
 	target.take_hit(dmg, self, 1.0 + charge)
 
 

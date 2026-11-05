@@ -65,6 +65,10 @@ var strain := 0.0
 ## still, time then runs at half speed.
 var charging := false
 const CHARGE_TIME_SCALE := 0.5
+## Pills found in a bin: for a while, while charging only the rest of the
+## world slows down and the player keeps full speed.
+const FOCUS_TIME := 90.0
+var focus_t := 0.0
 ## Cold 0..100 (no meter: the character shivers). Depends on the weather and
 ## missing clothes; warms up indoors and on sunny days.
 var cold := 20.0
@@ -149,11 +153,13 @@ func _process(delta: float) -> void:
 		active = false
 		return
 	busy_time = maxf(0.0, busy_time - delta)
+	# Holding the action button (charging a punch or a throw) slows the
+	# whole world to half speed, moving or not.
 	active = moving or busy_time > 0.0 or charging
-	if moving or busy_time > 0.0:
-		world_dt = delta
-	elif charging:
+	if charging:
 		world_dt = delta * CHARGE_TIME_SCALE
+	elif active:
+		world_dt = delta
 	else:
 		world_dt = 0.0
 	if not active:
@@ -197,6 +203,7 @@ func _tick_body(dt: float, is_running: bool) -> void:
 	tired = minf(100.0, tired + TIRED_RATE * dt * dark * (1.3 if is_running else 1.0))
 	caffeine = maxf(0.0, caffeine - dt / 60.0)
 	jitter_t = maxf(0.0, jitter_t - dt)
+	focus_t = maxf(0.0, focus_t - dt)
 
 
 ## How fast the character gets colder (per second of activity; negative =
@@ -213,6 +220,12 @@ func cold_rate() -> float:
 
 
 ## Coffee or an energy drink: less tired; two in a short time = jitters.
+## Player speed multiplier while the action button is held: half, like
+## the rest of the world, unless the pills are working.
+func player_time_scale() -> float:
+	return CHARGE_TIME_SCALE if charging and focus_t <= 0.0 else 1.0
+
+
 func caffeinate(awake: float) -> void:
 	tired = maxf(0.0, tired - awake)
 	caffeine += 1.0
@@ -331,6 +344,7 @@ func new_game() -> void:
 	tired = 0.0
 	caffeine = 0.0
 	jitter_t = 0.0
+	focus_t = 0.0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	bonus = 0
@@ -380,6 +394,7 @@ func new_day() -> void:
 	tired = {"home": 0.0, "friend": 5.0}.get(sleep_place, 15.0)
 	caffeine = 0.0
 	jitter_t = 0.0
+	focus_t = 0.0
 	strain = 0.0
 	exhausted = false
 	# Morning cold depends on where the night was spent.

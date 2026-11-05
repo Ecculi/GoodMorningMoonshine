@@ -1,7 +1,7 @@
 extends Node3D
 ## An item on the street, in the player's hand, or flying after a throw.
 
-enum Kind { BOTTLE, CAN, FOOD, COIN, COFFEE, ENERGY }
+enum Kind { BOTTLE, CAN, FOOD, COIN, COFFEE, ENERGY, PILLS }
 enum St { GROUND, HELD, FLYING }
 
 const FLIGHT_SPEED := 9.0
@@ -62,6 +62,10 @@ func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:
 		Kind.ENERGY:
 			_cyl(0.05, 0.19, Color(0.1, 0.1, 0.12), Vector3(0, 0.095, 0))
 			_cyl(0.052, 0.06, Color(0.4, 0.95, 0.2), Vector3(0, 0.1, 0))
+		Kind.PILLS:
+			# Small pill jar: white with a red cap.
+			_cyl(0.035, 0.08, Color(0.95, 0.95, 0.92), Vector3(0, 0.04, 0))
+			_cyl(0.037, 0.025, Color(0.85, 0.15, 0.15), Vector3(0, 0.09, 0))
 		Kind.COIN:
 			var c := _cyl(0.09, 0.02, Color(0.95, 0.75, 0.2), Vector3(0, 0.25, 0))
 			c.rotation.x = PI * 0.5

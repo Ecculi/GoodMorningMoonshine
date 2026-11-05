@@ -7,6 +7,8 @@ var leg_l: Node3D
 var leg_r: Node3D
 var arm_l: Node3D
 var arm_r: Node3D
+## Right forearm, hinged at the elbow (child of arm_r).
+var forearm_r: Node3D
 var hand: Node3D
 
 var _walk_phase := 0.0
@@ -39,10 +41,12 @@ func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) ->
 		_box(Vector3(0.152, 1.72, ez), Vector3(0.02, 0.045, 0.045), Color(0.08, 0.08, 0.1))
 		_eyelids.append(_box(Vector3(0.162, 1.74, ez), Vector3(0.02, 0.006, 0.055), skin))
 	arm_l = _limb(Vector3(0, 1.5, -0.29), Vector3(0.12, 0.62, 0.12), shirt)
-	arm_r = _limb(Vector3(0, 1.5, 0.29), Vector3(0.12, 0.62, 0.12), shirt)
+	# Right arm in two parts so it can bend at the elbow for a charged punch.
+	arm_r = _limb(Vector3(0, 1.5, 0.29), Vector3(0.12, 0.32, 0.12), shirt)
+	forearm_r = _limb(Vector3(0, -0.31, 0), Vector3(0.115, 0.31, 0.115), shirt, arm_r)
 	hand = Node3D.new()
-	hand.position = Vector3(0, -0.66, 0)
-	arm_r.add_child(hand)
+	hand.position = Vector3(0, -0.35, 0)
+	forearm_r.add_child(hand)
 
 
 ## `silly` 0..1: a very drunk, absurdly exaggerated walk (high kicks,
@@ -65,16 +69,21 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 	arm_l.rotation.z = lerpf(-s * 0.8, 1.3 * sin(ph + 1.0) + 0.5, k)
 	silly_bounce = absf(sin(ph)) * 0.18 * k
 	silly_lean = (0.22 + 0.08 * sin(ph * 2.0)) * k
+	forearm_r.rotation.z = 0.0
 	if _punch_t > 0.0:
+		# Straight arm forward (quick jab or the released charged punch).
 		_punch_t -= dt
 		arm_r.rotation.z = PI * 0.5
 	elif _windup >= 0.0:
-		# Arm pulled back behind the body, further the longer it charges.
-		arm_r.rotation.z = lerpf(-0.4, -1.4, _windup)
+		# Charging: elbow bends and the arm is drawn back, the fist cocked
+		# up by the shoulder; further the longer it charges.
+		arm_r.rotation.z = lerpf(-0.2, -0.9, _windup)
+		forearm_r.rotation.z = lerpf(1.6, 2.9, _windup)
 	elif _raised:
 		arm_r.rotation.z = 2.5
 	else:
 		arm_r.rotation.z = lerpf(s * 0.8, -1.2 * sin(ph) + 0.6, k)
+		forearm_r.rotation.z = 0.15  # a relaxed little bend
 
 
 ## 0 = eyes open, 1 = closed.
@@ -96,9 +105,13 @@ func rise_from(angle: float, time: float) -> void:
 	tw.parallel().tween_property(self, "position:y", 0.0, time)
 
 
-func punch() -> void:
-	_punch_t = 0.18
+## Quick punch: the arm swings straight up to the front. A charged one
+## (released from the bent pose) stays out a little longer.
+func punch(charged := false) -> void:
+	_punch_t = 0.3 if charged else 0.18
+	_windup = -1.0
 	arm_r.rotation.z = PI * 0.5
+	forearm_r.rotation.z = 0.0
 
 
 ## 0..1 pulls the arm back for a charged punch, -1 releases it.
@@ -147,10 +160,13 @@ func _sphere(pos: Vector3, r: float, c: Color) -> MeshInstance3D:
 	return mi
 
 
-func _limb(pivot: Vector3, size: Vector3, c: Color) -> Node3D:
+func _limb(pivot: Vector3, size: Vector3, c: Color, parent: Node3D = null) -> Node3D:
 	var p := Node3D.new()
 	p.position = pivot
-	add_child(p)
+	if parent != null:
+		parent.add_child(p)
+	else:
+		add_child(p)
 	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = size
