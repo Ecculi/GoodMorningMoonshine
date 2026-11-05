@@ -782,15 +782,14 @@ func _draw_lost_list(vs: Vector2) -> void:
 	draw_string_outline(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
 	draw_string(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(1, 0.9, 0.4))
 	var x := r.position.x + 18 + label_w + 16 + size * 0.5
-	var no_phone := GameState.is_lost("phone")
 	for id in _today:
 		var c := Vector2(x, r.get_center().y)
 		draw_circle(c, size * 0.55, Color(1, 1, 1, 0.15))
-		# No phone: hot or cold. The nearer the thing (in blocks), the
+		# Hot or cold: the nearer the thing (within about 2 blocks), the
 		# warmer and faster the glow behind its icon.
-		if no_phone and GameState.is_lost(id) and GameState.placements.has(id):
+		if GameState.is_lost(id) and GameState.placements.has(id):
 			var bd: float = GameState.seg_distance(main.segment, GameState.placements[id][0])
-			var warm := clampf(1.0 - bd / 4.0, 0.0, 1.0)
+			var warm := clampf(1.0 - bd / 2.0, 0.0, 1.0)
 			if warm > 0.0:
 				var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * lerpf(2.0, 12.0, warm))
 				var wc := Color(1.0, lerpf(0.7, 0.2, warm), 0.1, (0.25 + 0.5 * pulse) * warm)

@@ -480,7 +480,7 @@ Lisätty prototyyppiin:
   - **irtokoira** (kuusi rotua: chihuahua, terrieri, labradori, husky, paimenkoira ja rottweiler; koko, nopeus, luonne ja purennan voima rodun mukaan; vihaisella koiralla on pystyssä olevat niskakarvat ja jäykkä häntä). Kiltti koira seuraa ruokaa kantavaa ja välillä nappaa sen; joskus se haistaa korttelissa olevan hukatun tavaran ja johdattaa sen luo haukkuen. Vihainen koira hyökkää ja puree. Puraisun jälkeen se perääntyy pari askelta ja haukkuu 1,5–3 sekuntia ennen kuin hyökkää uudestaan (ei aina täydellä vauhdilla eikä suoraan). Lyönti saa sen perääntymään ja tarpeeksi monesta se lähtee vinkuen. Koirasta pääsee eroon heittämällä makkaran (se menee syömään ja rauhoittuu) tai osumalla siihen heitetyllä esineellä (se lähtee vinkuen karkuun). Heitetty esine ajaa myös lokin pois.
 - **Ilman puhelinta ei olla hukassa:**
   - Puhelin itse hukkuu aina lähelle päivän aloituspaikkaa (noin korttelin päähän), joten sen löytäminen on helppo alku.
-  - Kun puhelin on hukassa, "Etsi:"-listan tavaroiden takana hehkuu "kuuma–kylmä"-valo: mitä lähempänä tavaraa ollaan (kortteleina), sitä lämpimämpi väri ja nopeampi syke.
+  - "Etsi:"-listan tavaroiden takana hehkuu aina (puhelimen kanssa tai ilman) "kuuma–kylmä"-valo, kun tavara on enintään noin kahden korttelin päässä: mitä lähempänä, sitä lämpimämpi väri ja nopeampi syke.
   - Kerjäläisiä on silloin kaksi kertaa useammin.
 - **Reunanuoli:** jos hukattu tavara on samassa korttelissa mutta ruudun ulkopuolella, ruudun reunassa näkyy oranssi nuoli ja tavaran kuva siihen suuntaan.
 - **Löytö:** kun hukattu tavara löytyy, sen kuva ponnahtaa isona keskelle ruutua valkoiselle pohjalle säteiden ja vihreän rastin kanssa ja liukuu sitten ylös "Etsi:"-listaan.
