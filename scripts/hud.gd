@@ -296,46 +296,55 @@ func _draw_hand_hint(_font: Font) -> void:
 		_hint_action(c + Vector2(32, 0), rows[i][1], a)
 
 
-## Dazzled by the sun: the player's own hand comes down into view at the
-## top of the screen, palm down like a visor, dark against the light.
+## Dazzled by the sun: the player's own hand comes down into view and
+## lies flat across the top of the screen like a visor, covering nearly
+## its whole width: forearm in from the left edge, palm, and the fingers
+## stretched out to the right, dark against the light. Thin bright lines
+## of sun leak between the fingers and along the lower edge.
 func _draw_shading_hand(vs: Vector2) -> void:
 	if main == null or mode != "" or GameState.modal != "":
 		return
 	var amt: float = main.shade_amount()
 	if amt <= 0.01:
 		return
-	var u := vs.y
-	var o := Vector2(vs.x * 0.16, lerpf(-u * 0.24, 0.0, amt))
+	var W := vs.x
+	var H := vs.y
+	# Slides down from above the screen as the glare grows.
+	var oy := lerpf(-H * 0.26, 0.0, amt)
 	var pt := func(x: float, y: float) -> Vector2:
-		return o + Vector2(x, y) * u
-	var col := Color(0.36, 0.26, 0.22, 0.95 * amt)
-	# Soft edge first (a little wider and fainter), then the hand itself.
+		return Vector2(x * W, oy + y * H)
+	var col := Color(0.3, 0.22, 0.19, 0.97 * amt)
+	var soft := Color(col.r, col.g, col.b, col.a * 0.35)
+	var g := 0.008 * H
 	for pass_i in 2:
-		var grow := 0.012 if pass_i == 0 else 0.0
-		var c := Color(col.r, col.g, col.b, col.a * (0.35 if pass_i == 0 else 1.0))
-		var g := grow * u
-		# Forearm from the top-left, wrist, palm.
-		draw_colored_polygon(PackedVector2Array([pt.call(-0.02, -0.06) + Vector2(-g, -g),
-			pt.call(0.17, -0.06) + Vector2(g, -g), pt.call(0.31, 0.08) + Vector2(g, 0),
-			pt.call(0.21, 0.145) + Vector2(-g, g)]), c)
-		draw_colored_polygon(PackedVector2Array([pt.call(0.2, 0.055) + Vector2(-g, -g),
-			pt.call(0.41, 0.055) + Vector2(g, -g), pt.call(0.43, 0.155) + Vector2(g, g),
-			pt.call(0.22, 0.17) + Vector2(-g, g)]), c)
-		# Four fingers pointing ahead, slightly fanned, and the thumb.
-		var fingers := [[0.068, 0.17], [0.093, 0.19], [0.118, 0.18], [0.143, 0.15]]
+		var c := soft if pass_i == 0 else col
+		var e := g if pass_i == 0 else 0.0
+		# Forearm from the left edge, wrist, palm (up to the screen top).
+		draw_colored_polygon(PackedVector2Array([pt.call(-0.02, -0.05) + Vector2(-e, -e),
+			pt.call(0.24, -0.05) + Vector2(e, -e), pt.call(0.25, 0.125) + Vector2(e, e),
+			pt.call(-0.02, 0.15) + Vector2(-e, e)]), c)
+		draw_colored_polygon(PackedVector2Array([pt.call(0.22, -0.05) + Vector2(-e, -e),
+			pt.call(0.56, -0.05) + Vector2(e, -e), pt.call(0.57, 0.175) + Vector2(e, e),
+			pt.call(0.24, 0.17) + Vector2(-e, e)]), c)
+		draw_circle(pt.call(0.56, 0.06), 0.11 * H + e, c)
+		# Four fingers flat to the right, a hair apart, middle one longest.
+		var fingers := [[0.02, 0.86], [0.065, 0.93], [0.11, 0.9], [0.155, 0.8]]
+		var fw := 0.044 * H + e * 2.0
 		for f in fingers:
-			var a: Vector2 = pt.call(0.4, f[0])
-			var b: Vector2 = pt.call(0.4 + f[1], f[0] + 0.006)
-			var w := 0.024 * u + g * 2.0
-			draw_line(a, b, c, w)
-			draw_circle(b, w * 0.5, c)
-		var t0: Vector2 = pt.call(0.27, 0.15)
-		var t1: Vector2 = pt.call(0.34, 0.215)
-		draw_line(t0, t1, c, 0.028 * u + g * 2.0)
-		draw_circle(t1, 0.014 * u + g, c)
-	# Sunlight catching the edge of the fingers.
-	for f in [0.068, 0.093, 0.118, 0.143]:
-		draw_line(pt.call(0.42, f - 0.012), pt.call(0.55, f - 0.009), Color(1, 0.9, 0.7, 0.25 * amt), 2.0)
+			var a: Vector2 = pt.call(0.52, f[0])
+			var b: Vector2 = pt.call(f[1], f[0] + 0.004)
+			draw_line(a, b, c, fw)
+			draw_circle(b, fw * 0.5, c)
+		# Thumb tucked under the palm.
+		var t0: Vector2 = pt.call(0.3, 0.16)
+		var t1: Vector2 = pt.call(0.44, 0.215)
+		draw_line(t0, t1, c, 0.05 * H + e * 2.0)
+		draw_circle(t1, 0.025 * H + e, c)
+	# Sun leaking between the fingers and along the lower edge.
+	var leak := Color(1, 0.92, 0.72, 0.35 * amt)
+	for y in [0.0425, 0.0875, 0.1325]:
+		draw_line(pt.call(0.6, y), pt.call(0.82, y + 0.003), leak, 1.5)
+	draw_line(pt.call(0.25, 0.178), pt.call(0.56, 0.182), Color(1, 0.92, 0.72, 0.2 * amt), 2.0)
 
 
 ## Near an unsearched bin: a magnifier above it; next to it (where the

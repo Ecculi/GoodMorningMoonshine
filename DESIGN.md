@@ -203,7 +203,7 @@ Krapula ei kovene päivien mukaan.
 
   | Sää | Vaikutus |
   |---|---|
-  | **Aurinkoinen** | häikäisee aurinkoa vasten kuljettaessa, jos aurinkolasit ovat hukassa: hahmo nostaa vasemman käden otsalle lipaksi, ja ruudun yläreunaan laskeutuu käden siluetti kuin pelaajan omaan näkökenttään (käsi vähentää häikäisyä vähän) |
+  | **Aurinkoinen** | häikäisee aurinkoa vasten kuljettaessa, jos aurinkolasit ovat hukassa: hahmo nostaa vasemman käden otsalle lipaksi, ja ruudun yläreunaan laskeutuu vaakasuora käsi lipaksi, joka peittää lähes koko yläreunan (kyynärvarsi vasemmalta, sormet oikealle, valoa siivilöityy sormien välistä) kuin pelaajan omaan näkökenttään (käsi vähentää häikäisyä vähän) |
   | **Pilvinen** | neutraali; aurinkolaseja ei tarvita |
   | **Sade** | kylmettyy nopeammin ilman takkia; lätäköitä, joista pyöräilijät roiskivat; näkyvyys hieman huonompi |
   | **Lumi ja pakkanen** | kova kylmä; liukkaat kadut, joten juostessa voi kaatua ja menettää healthia; kengättä erityisen vaikeaa |
