@@ -1,7 +1,7 @@
 extends Node3D
 ## An item on the street, in the player's hand, or flying after a throw.
 
-enum Kind { BOTTLE, CAN, FOOD, COIN }
+enum Kind { BOTTLE, CAN, FOOD, COIN, COFFEE, ENERGY }
 enum St { GROUND, HELD, FLYING }
 
 const FLIGHT_SPEED := 9.0
@@ -21,15 +21,27 @@ var _to := Vector3.ZERO
 var _root: Node3D
 
 
-func setup(k: Kind, v := 1) -> void:
+## Bottle contents: what it is and how much it raises the per mille.
+enum Drink { BOTTLE, BEER, SPIRITS, MYSTERY }
+const DRINK_PROMILLE := {Drink.BOTTLE: 0.4, Drink.BEER: 0.25, Drink.SPIRITS: 0.6, Drink.MYSTERY: 0.9}
+const DRINK_COLOR := {Drink.BOTTLE: Color(0.18, 0.42, 0.2), Drink.BEER: Color(0.45, 0.25, 0.08),
+	Drink.SPIRITS: Color(0.85, 0.9, 0.95), Drink.MYSTERY: Color(0.55, 0.2, 0.7)}
+var drink: Drink = Drink.BOTTLE
+
+
+func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:
 	kind = k
 	value = v
+	drink = d
 	_root = Node3D.new()
 	add_child(_root)
 	match kind:
 		Kind.BOTTLE:
-			_cyl(0.07, 0.3, Color(0.18, 0.42, 0.2), Vector3(0, 0.15, 0))
-			_cyl(0.03, 0.12, Color(0.18, 0.42, 0.2), Vector3(0, 0.36, 0))
+			var bc: Color = DRINK_COLOR[drink]
+			_cyl(0.07, 0.3, bc, Vector3(0, 0.15, 0))
+			_cyl(0.03, 0.12, bc, Vector3(0, 0.36, 0))
+			if drink == Drink.MYSTERY:
+				_cyl(0.072, 0.08, Color(0.95, 0.95, 0.9), Vector3(0, 0.15, 0))  # hand-written label
 		Kind.CAN:
 			_cyl(0.055, 0.17, Color(0.78, 0.8, 0.84), Vector3(0, 0.085, 0))
 			_cyl(0.057, 0.07, Color(0.15, 0.35, 0.75), Vector3(0, 0.085, 0))
@@ -43,6 +55,13 @@ func setup(k: Kind, v := 1) -> void:
 			mi.rotation.z = PI * 0.5
 			mi.position = Vector3(0, 0.05, 0)
 			_root.add_child(mi)
+		Kind.COFFEE:
+			_cyl(0.055, 0.14, Color(0.95, 0.95, 0.93), Vector3(0, 0.07, 0))
+			_cyl(0.05, 0.01, Color(0.35, 0.2, 0.1), Vector3(0, 0.142, 0))
+			_cyl(0.057, 0.04, Color(0.6, 0.4, 0.25), Vector3(0, 0.06, 0))
+		Kind.ENERGY:
+			_cyl(0.05, 0.19, Color(0.1, 0.1, 0.12), Vector3(0, 0.095, 0))
+			_cyl(0.052, 0.06, Color(0.4, 0.95, 0.2), Vector3(0, 0.1, 0))
 		Kind.COIN:
 			var c := _cyl(0.09, 0.02, Color(0.95, 0.75, 0.2), Vector3(0, 0.25, 0))
 			c.rotation.x = PI * 0.5
@@ -107,11 +126,13 @@ func drop_at(pos: Vector3) -> void:
 	global_position = Vector3(pos.x, 0.0, pos.z)
 
 
-func throw_from(start: Vector3, facing: int, dist: float) -> void:
+func throw_from(start: Vector3, dir: Vector3, dist: float) -> void:
 	_to_world()
 	state = St.FLYING
 	_from = start
-	_to = Vector3(start.x + facing * dist, 0.0, start.z)
+	var land: Vector3 = main.clamp_walkable(start + dir.normalized() * dist)
+	_to = Vector3(land.x, 0.0, land.z)
+	dist = Vector2(_to.x - start.x, _to.z - start.z).length()
 	flight_time = maxf(dist / FLIGHT_SPEED, 0.2)
 	_t = 0.0
 	global_position = start

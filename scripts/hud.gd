@@ -1,4 +1,8 @@
 extends Control
+
+const LostItems = preload("res://scripts/lost_items.gd")
+## The morning thought bubble stays until the player has walked this far.
+const BUBBLE_WALK := 5.0
 ## Health heart (colour drains away, no number), alcohol in per mille
 ## inside a bottle icon, money, throw charge, and the full-screen cards
 ## for day changes and death (newspaper headline).
@@ -10,6 +14,20 @@ var card_sub := ""
 var card_time := 0.0
 
 var _hurt := 0.0
+var _fade := 0.0
+var _fade_speed := 4.0
+## Heart above the player's head while punching too fast.
+var _head_heart_t := 0.0
+var _shown_strain := 0.0
+var _bubble_on := false
+## Items shown in the thought bubble (morning: today's lost items).
+var _bubble_items: Array = []
+var _bubble_walked := 0.0
+## A short thought also disappears by itself after this many seconds.
+var _think_t := 0.0
+var _bubble_last := Vector3.ZERO
+## Belongings that were missing this morning (found ones turn coloured).
+var _today: Array = []
 
 
 func _ready() -> void:
@@ -32,8 +50,57 @@ func hide_card() -> void:
 	mode = ""
 
 
+## Morning: the character pats their pockets; missing things are crossed out.
+func show_pocket_check() -> void:
+	_today = GameState.lost.duplicate()
+	_bubble_items = _today
+	_bubble_on = not _today.is_empty()
+	_bubble_walked = 0.0
+	if main != null and main.player != null:
+		_bubble_last = main.player.position
+
+
+## A short thought bubble, e.g. "my phone is missing" (gone after ~2 m).
+func think(items: Array) -> void:
+	_bubble_items = items
+	_bubble_on = true
+	_bubble_walked = BUBBLE_WALK - 2.0
+	if main != null and main.player != null:
+		_bubble_last = main.player.position
+	_think_t = 1.5
+
+
+func show_head_heart() -> void:
+	_head_heart_t = 2.0
+
+
+## Quick fade from black when the view changes to another block.
+func fade_in() -> void:
+	_fade = 1.0
+	_fade_speed = 4.0
+
+
+## Knocked out: the screen goes black and slowly comes back.
+func blackout(seconds: float) -> void:
+	_fade = 1.0
+	_fade_speed = 1.0 / maxf(seconds, 0.1)
+
+
 func _process(delta: float) -> void:
 	_hurt = maxf(0.0, _hurt - delta)
+	_fade = maxf(0.0, _fade - delta * _fade_speed)
+	if _bubble_on and main != null and main.player != null:
+		var p: Vector3 = main.player.position
+		var d := Vector2(p.x - _bubble_last.x, p.z - _bubble_last.z).length()
+		if d < 2.0:  # ignore jumps when the view changes
+			_bubble_walked += d
+		_bubble_last = p
+		if _think_t > 0.0:
+			_think_t -= delta
+			if _think_t <= 0.0:
+				_bubble_on = false
+		if _bubble_walked >= BUBBLE_WALK:
+			_bubble_on = false
 	card_time += delta
 	queue_redraw()
 
@@ -41,13 +108,28 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var font := get_theme_default_font()
 	var vs := get_viewport_rect().size
+	if _fade > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, _fade))
 	if _hurt > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0.8, 0.0, 0.0, _hurt * 0.5))
 
-	_draw_heart(Vector2(46, 46), 58.0, clampf(GameState.health / 100.0, 0.0, 1.0))
+	# Low health: the heart beats and blinks so a near-empty heart is
+	# clearly "still alive, but in danger".
+	var heart_size := 58.0
+	if GameState.health < 15.0 and GameState.health > 0.0:
+		var beat := absf(sin(Time.get_ticks_msec() / 180.0))
+		heart_size = 58.0 + 8.0 * beat
+		draw_circle(Vector2(46, 46), 34.0 + 6.0 * beat, Color(1, 0.1, 0.15, 0.25 * beat))
+	_draw_heart(Vector2(46, 46), heart_size, clampf(GameState.health / 100.0, 0.0, 1.0),
+		clampf(GameState.strain / 100.0, 0.0, 1.0))
 	_draw_bottle(Vector2(118, 10), GameState.promille, font)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_charge()
+	_draw_head_heart(delta_draw())
+	_draw_arrest()
+	_draw_lost_list(vs)
+	if _bubble_on and mode == "" and GameState.modal == "":
+		_draw_pocket_check(vs)
 
 	if mode == "day":
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, clampf(card_time * 2.0, 0.0, 0.9)))
@@ -68,17 +150,26 @@ func _heart_points(center: Vector2, size: float) -> PackedVector2Array:
 	return pts
 
 
-func _draw_heart(center: Vector2, size: float, frac: float) -> void:
+## Red = health, light pink on top = the part temporarily used up by
+## punching too fast (comes back after resting).
+func _draw_heart(center: Vector2, size: float, frac: float, strain := 0.0) -> void:
 	var pts := _heart_points(center, size)
 	draw_colored_polygon(pts, Color(0.32, 0.32, 0.36, 0.9))
 	var s := size / 34.0
 	var top := center.y - 13.0 * s
 	var bottom := center.y + 17.0 * s
 	var level := lerpf(bottom, top, frac)
-	var clip := PackedVector2Array([Vector2(center.x - size, level), Vector2(center.x + size, level),
+	var red_level := lerpf(bottom, top, maxf(0.0, frac - strain))
+	var pink_clip := PackedVector2Array([Vector2(center.x - size, level), Vector2(center.x + size, level),
 		Vector2(center.x + size, bottom + 2.0), Vector2(center.x - size, bottom + 2.0)])
-	for poly in Geometry2D.intersect_polygons(pts, clip):
-		draw_colored_polygon(poly, Color(0.9, 0.12, 0.18))
+	if bottom - level > 0.5:
+		for poly in Geometry2D.intersect_polygons(pts, pink_clip):
+			draw_colored_polygon(poly, Color(1.0, 0.65, 0.72))
+	var clip := PackedVector2Array([Vector2(center.x - size, red_level), Vector2(center.x + size, red_level),
+		Vector2(center.x + size, bottom + 2.0), Vector2(center.x - size, bottom + 2.0)])
+	if bottom - red_level > 0.5:
+		for poly in Geometry2D.intersect_polygons(pts, clip):
+			draw_colored_polygon(poly, Color(0.9, 0.12, 0.18))
 	var outline := pts.duplicate()
 	outline.append(pts[0])
 	draw_polyline(outline, Color(0.08, 0.08, 0.1), 2.0, true)
@@ -121,6 +212,51 @@ func _draw_coin(center: Vector2, amount: int, font: Font) -> void:
 	draw_string(font, center + Vector2(26, 9), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color.WHITE)
 
 
+## Police holding on: a blue-red ring fills around the player.
+func _draw_arrest() -> void:
+	if main == null or main.arrest <= 0.0:
+		return
+	var p: Vector3 = main.player.global_position + Vector3(0, 1.0, 0)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	draw_arc(sp, 34.0, 0, TAU, 40, Color(0, 0, 0, 0.35), 7.0, true)
+	var col := Color(0.25, 0.45, 1.0) if int(Time.get_ticks_msec() / 150) % 2 == 0 else Color(1.0, 0.25, 0.25)
+	draw_arc(sp, 34.0, -PI * 0.5, -PI * 0.5 + TAU * main.arrest, 40, col, 7.0, true)
+
+
+func delta_draw() -> float:
+	return get_process_delta_time()
+
+
+## A small heart above the head: red = health left, light pink = used up by
+## punching too fast. The pink part grows smoothly so it looks like the
+## heart drains. Shown for a moment after each too-fast punch and while
+## exhausted.
+func _draw_head_heart(dt: float) -> void:
+	if main == null or main.player == null:
+		return
+	_shown_strain = lerpf(_shown_strain, GameState.strain, 1.0 - exp(-8.0 * dt))
+	if GameState.exhausted:
+		_head_heart_t = maxf(_head_heart_t, 0.5)
+	_head_heart_t = maxf(0.0, _head_heart_t - dt)
+	if _head_heart_t <= 0.0:
+		return
+	var p: Vector3 = main.player.global_position + Vector3(0, 2.5, 0)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	var a := clampf(_head_heart_t / 0.4, 0.0, 1.0)
+	var hp := maxf(GameState.health, 0.001)
+	var size := 34.0
+	if GameState.exhausted:
+		size += 4.0 * absf(sin(Time.get_ticks_msec() / 160.0))
+	modulate.a = 1.0
+	draw_circle(sp, size * 0.62, Color(0, 0, 0, 0.25 * a))
+	# Here the heart is "full" = current health; pink = share used up.
+	_draw_heart(sp, size, 1.0, clampf(_shown_strain / hp, 0.0, 1.0))
+
+
 func _draw_charge() -> void:
 	if main == null or main.player == null:
 		return
@@ -132,6 +268,16 @@ func _draw_charge() -> void:
 		return
 	var sp: Vector2 = main.camera.unproject_position(p)
 	draw_arc(sp, 16.0, -PI * 0.5, -PI * 0.5 + TAU * c, 32, Color(1, 0.9, 0.3), 5.0, true)
+	# Aim arrow on the ground in the throw direction.
+	var a: Vector2 = main.player.aim
+	var base: Vector3 = main.player.global_position + Vector3(0, 0.15, 0)
+	var tip3 := base + Vector3(a.x, 0, a.y) * (1.2 + c * 1.5)
+	var b2: Vector2 = main.camera.unproject_position(base)
+	var t2: Vector2 = main.camera.unproject_position(tip3)
+	var dir2 := (t2 - b2).normalized()
+	draw_line(b2, t2, Color(1, 0.9, 0.3), 4.0, true)
+	draw_colored_polygon(PackedVector2Array([t2 + dir2 * 12.0, t2 + dir2.orthogonal() * 8.0,
+		t2 - dir2.orthogonal() * 8.0]), Color(1, 0.9, 0.3))
 
 
 func _draw_headline(vs: Vector2, font: Font) -> void:
@@ -168,3 +314,86 @@ func _draw_photo(r: Rect2) -> void:
 	draw_rect(Rect2(c + Vector2(4, 36) * s, Vector2(16, 40) * s), Color(0.2, 0.2, 0.22))
 	# Bottle in hand.
 	draw_rect(Rect2(c + Vector2(28, -6) * s, Vector2(10, 26) * s), Color(0.18, 0.42, 0.2))
+
+
+## Heavy drinking makes the character forget what they were looking for.
+func _forgotten(id: String) -> bool:
+	var p := GameState.promille
+	if p <= GameState.PROMILLE_DRUNK:
+		return false
+	var level := 1 if p < 1.9 else (2 if p < 2.4 else 3)
+	return (LostItems.IDS.find(id) % 3) < level
+
+
+## Today's search list at the top centre: "Find:" and the item icons
+## (grey = still missing, coloured = found).
+func _draw_lost_list(vs: Vector2) -> void:
+	if _today.is_empty():
+		return
+	var font := get_theme_default_font()
+	var size := 44.0
+	var gap := 12.0
+	var label := tr("FIND")
+	var label_w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
+	var icons_w := _today.size() * size + (_today.size() - 1) * gap
+	var w := label_w + 16.0 + icons_w + 36.0
+	var r := Rect2(Vector2((vs.x - w) * 0.5, 10), Vector2(w, size + 16))
+	draw_rect(r, Color(0, 0, 0, 0.45))
+	var ty := r.get_center().y + 9
+	draw_string_outline(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
+	draw_string(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(1, 0.9, 0.4))
+	var x := r.position.x + 18 + label_w + 16 + size * 0.5
+	for id in _today:
+		var c := Vector2(x, r.get_center().y)
+		draw_circle(c, size * 0.55, Color(1, 1, 1, 0.15))
+		var m := "own"
+		if GameState.is_lost(id):
+			m = "blob" if _forgotten(id) else "lost"
+		LostItems.draw_icon(self, id, c, size, m)
+		if m == "own":
+			# Found: a green tick.
+			draw_polyline(PackedVector2Array([c + Vector2(6, 10), c + Vector2(12, 16), c + Vector2(22, 2)]),
+				Color(0.3, 0.95, 0.3), 4.0, true)
+		x += size + gap
+
+
+## Morning: a thought bubble above the character's head with the things
+## that are missing (crossed out). Fades during the last metre of walking.
+func _draw_pocket_check(vs: Vector2) -> void:
+	var head: Vector3 = main.player.global_position + Vector3(0, 2.3, 0)
+	if main.camera.is_position_behind(head):
+		return
+	var a := clampf((BUBBLE_WALK - _bubble_walked) / 1.0, 0.0, 1.0)
+	var anchor: Vector2 = main.camera.unproject_position(head)
+	var size := 46.0
+	var gap := 12.0
+	var w := _bubble_items.size() * size + (_bubble_items.size() - 1) * gap + 36.0
+	var h := size + 30.0
+	var center := anchor + Vector2(30, -h * 0.5 - 46)
+	center.x = clampf(center.x, w * 0.5 + 8, vs.x - w * 0.5 - 8)
+	center.y = maxf(center.y, h * 0.5 + 8)
+	var white := Color(1, 1, 1, 0.92 * a)
+	var edge := Color(0.2, 0.2, 0.25, 0.8 * a)
+	# Small trailing bubbles from the head.
+	draw_circle(anchor + Vector2(6, -10), 5.0, white)
+	draw_circle(anchor + Vector2(14, -26), 8.0, white)
+	# Cloud: rounded body made of overlapping circles.
+	var r := Rect2(center - Vector2(w, h) * 0.5, Vector2(w, h))
+	var bumps := maxi(3, int(w / 34.0))
+	for i in bumps + 1:
+		var x := lerpf(r.position.x + h * 0.3, r.end.x - h * 0.3, float(i) / bumps)
+		draw_circle(Vector2(x, r.position.y + h * 0.3), h * 0.32, edge)
+		draw_circle(Vector2(x, r.end.y - h * 0.3), h * 0.32, edge)
+	draw_rect(r.grow(-2.0), edge)
+	for i in bumps + 1:
+		var x := lerpf(r.position.x + h * 0.3, r.end.x - h * 0.3, float(i) / bumps)
+		draw_circle(Vector2(x, r.position.y + h * 0.3), h * 0.32 - 2.0, white)
+		draw_circle(Vector2(x, r.end.y - h * 0.3), h * 0.32 - 2.0, white)
+	draw_rect(r.grow(-4.0), white)
+	for i in _bubble_items.size():
+		var id: String = _bubble_items[i]
+		var c := Vector2(r.position.x + 18 + size * 0.5 + i * (size + gap), center.y)
+		LostItems.draw_icon(self, id, c, size, "own")
+		var red := Color(0.9, 0.1, 0.1, a)
+		draw_line(c - Vector2(size, size) * 0.38, c + Vector2(size, size) * 0.38, red, 4.0, true)
+		draw_line(c + Vector2(-size, size) * 0.38, c + Vector2(size, -size) * 0.38, red, 4.0, true)
