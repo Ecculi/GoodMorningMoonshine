@@ -96,6 +96,10 @@ func _add_leaf(p: Vector3, airborne: bool, vel := Vector3.ZERO) -> Dictionary:
 		"lift_at": _rng.randf_range(4.0, 6.0) * (2.0 if _wet else 1.0),
 		# Swirl around the centre of a blown heap.
 		"swirl": Vector3.ZERO, "swirl_t": 0.0,
+		# Flips: now and then the wind catches the leaf and it somersaults
+		# once, looping a little in the air.
+		"flip_cd": _rng.randf_range(0.5, 3.0), "flip_t": 0.0, "flip_len": 0.6,
+		"flip_axis": 0, "flip_dir": 1.0, "flip_ang": 0.0,
 	}
 	_leaves.append(lf)
 	_apply(lf)
@@ -230,6 +234,8 @@ func _fly(lf: Dictionary, dt: float) -> void:
 		v.z += tang.y * dt * 3.0
 		st = move_toward(st, 0.0, dt)
 		lf["swirl_t"] = st
+	_flip(lf, v, dt, wind_speed)
+	v = lf["vel"]
 	p += v * dt
 	# Tilt with the swing; tumble when the wind is strong.
 	lf["roll"] = osc * 0.9
@@ -244,7 +250,41 @@ func _fly(lf: Dictionary, dt: float) -> void:
 		lf["pitch"] = 0.0
 		lf["roll"] = 0.0
 		lf["swirl_t"] = 0.0
+		lf["flip_t"] = 0.0
+		lf["flip_ang"] = 0.0
 	lf["pos"] = p
+	lf["vel"] = v
+
+
+## Somersault: a full turn about a random axis over about half a second,
+## while the leaf loops through a small circle (an eddy catches it).
+## More often in stronger wind.
+func _flip(lf: Dictionary, v: Vector3, dt: float, wind_speed: float) -> void:
+	var ft: float = lf["flip_t"]
+	if ft <= 0.0:
+		lf["flip_ang"] = 0.0
+		lf["flip_cd"] -= dt * (0.5 + wind_speed * 0.45)
+		if lf["flip_cd"] <= 0.0 and lf["pos"].y > 0.6:
+			lf["flip_cd"] = _rng.randf_range(1.5, 5.0)
+			lf["flip_len"] = _rng.randf_range(0.4, 0.8)
+			lf["flip_t"] = lf["flip_len"]
+			lf["flip_axis"] = _rng.randi() % 2
+			lf["flip_dir"] = 1.0 if _rng.randf() < 0.5 else -1.0
+		lf["vel"] = v
+		return
+	var flen: float = lf["flip_len"]
+	ft = maxf(0.0, ft - dt)
+	lf["flip_t"] = ft
+	var k := 1.0 - ft / flen  # 0 -> 1 through the flip
+	# Ease in and out so the turn starts and ends softly.
+	var ang := (k * k * (3.0 - 2.0 * k)) * TAU * float(lf["flip_dir"])
+	lf["flip_ang"] = ang
+	# Loop: velocity around a small vertical circle (radius ~0.25 m).
+	var w := TAU / flen
+	var r := 0.25
+	var dir: float = lf["flip_dir"]
+	v.x += -sin(k * TAU) * r * w * dir * dt * 6.0
+	v.y += cos(k * TAU) * r * w * dt * 6.0
 	lf["vel"] = v
 
 
@@ -297,6 +337,13 @@ func _apply(lf: Dictionary) -> void:
 	var mi: MeshInstance3D = lf["mi"]
 	mi.position = lf["pos"]
 	# Quad faces +Z: tip it flat (-90° about X), then yaw, swing and tumble.
-	var b := Basis(Vector3.UP, lf["yaw"]) * Basis(Vector3.FORWARD, lf["roll"]) \
-		* Basis(Vector3.RIGHT, lf["pitch"] - PI * 0.5)
+	# A flip in progress adds a full turn about one axis on top.
+	var pitch: float = lf["pitch"]
+	var roll: float = lf["roll"]
+	if lf["flip_axis"] == 0:
+		pitch += lf["flip_ang"]
+	else:
+		roll += lf["flip_ang"]
+	var b := Basis(Vector3.UP, lf["yaw"]) * Basis(Vector3.FORWARD, roll) \
+		* Basis(Vector3.RIGHT, pitch - PI * 0.5)
 	mi.basis = b
