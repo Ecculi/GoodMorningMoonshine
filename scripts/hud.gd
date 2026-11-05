@@ -159,6 +159,12 @@ func _draw_achievement(vs: Vector2, font: Font) -> void:
 	draw_string(font, r.position + Vector2(66, 50), name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
 
 
+## Something lost during the day joins the find list.
+func add_today(id: String) -> void:
+	if not _today.has(id):
+		_today.append(id)
+
+
 func think(items: Array) -> void:
 	_bubble_items = items
 	_bubble_on = true

@@ -296,6 +296,21 @@ func throw_from(start: Vector3, dir: Vector3, dist: float) -> void:
 	_body.angular_velocity = spin_axis * randf_range(6.0, 12.0) + Vector3(randf_range(-2, 2), randf_range(-2, 2), randf_range(-2, 2))
 
 
+## Knocked out of the hand (e.g. hit by a car): flies off with velocity
+## `vel`, spinning wildly, as a physics object.
+func launch(start: Vector3, vel: Vector3) -> void:
+	_to_world()
+	state = St.FLYING
+	_hit_done = true  # it hits nobody on the way
+	_still_t = 0.0
+	_air_t = 0.0
+	_frozen = false
+	global_position = start
+	_body = _make_body(start)
+	_body.linear_velocity = vel
+	_body.angular_velocity = Vector3(randf_range(-14, 14), randf_range(-8, 8), randf_range(-14, 14))
+
+
 func _to_world() -> void:
 	if get_parent() != null:
 		get_parent().remove_child(self)

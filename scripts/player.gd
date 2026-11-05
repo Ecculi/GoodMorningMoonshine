@@ -344,6 +344,7 @@ var _ragdoll = null
 
 ## Thrown onto the bonnet: ride along until the car brakes.
 func start_bonnet_ride(car) -> void:
+	_car_flings(car.dir)
 	_ride_car = car
 	_car_survive = "BONNET_SURVIVE"
 	running = false
@@ -376,9 +377,22 @@ func _launch(d: int) -> void:
 
 
 ## Run over: straight under the car, which doesn't even slow down.
+## Hit by a car: whatever is in the hand flies up high in an arc, and
+## now and then the shoes fly off too.
+func _car_flings(car_dir: int) -> void:
+	if hand_item != null and is_instance_valid(hand_item):
+		var it = hand_item
+		hand_item = null
+		var start: Vector3 = model.hand.global_position
+		it.launch(start, Vector3(car_dir * randf_range(2.0, 4.5), randf_range(7.5, 11.0), randf_range(-1.2, 1.2)))
+	if randf() < 0.35:
+		main.shoes_fly_off(position, car_dir)
+
+
 ## Hit by the front of a car: no bonnet ride, the impact throws the
 ## character straight away as a rag doll in the car's direction.
 func hit_by_car_front(car_dir: int, car_speed: float) -> void:
+	_car_flings(car_dir)
 	running = false
 	_press_time = -1.0
 	var push := Vector3(car_dir * (2.5 + car_speed * 0.55), 1.8 + car_speed * 0.12, randf_range(-0.8, 0.8))
@@ -386,6 +400,7 @@ func hit_by_car_front(car_dir: int, car_speed: float) -> void:
 
 
 func run_over(car_dir: int) -> void:
+	_car_flings(car_dir)
 	_car_survive = "RUN_OVER_SURVIVE"
 	running = false
 	_press_time = -1.0

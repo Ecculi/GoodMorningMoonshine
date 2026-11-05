@@ -468,6 +468,14 @@ func is_lost(id: String) -> bool:
 	return lost.has(id)
 
 
+## Lost on the spot during the day (e.g. shoes knocked off by a car): it
+## lies at `pos` in block `seg` until found.
+func lose_here(id: String, seg: Vector3i, pos: Vector3) -> void:
+	if not lost.has(id):
+		lost.append(id)
+	placements[id] = [seg, pos]
+
+
 func find_item(id: String) -> void:
 	lost.erase(id)
 	placements.erase(id)

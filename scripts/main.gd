@@ -392,6 +392,8 @@ func _check_lost_pickups() -> void:
 	if GameState.over:
 		return
 	for ln in lost_nodes.duplicate():
+		if ln.has_meta("flying"):
+			continue
 		var d := Vector2(ln.position.x - player.position.x, ln.position.z - player.position.z).length()
 		if d < 0.7:
 			GameState.find_item(ln.id)
@@ -1281,6 +1283,38 @@ func gull_trampled(victim) -> void:
 		others.append(g)
 	for i in others.size():
 		others[i].start_bombing(1.0 + i * 0.8)
+
+
+## Hit by a car: the shoes fly off in a high arc and land a few metres
+## away; they are lost until picked up again.
+func shoes_fly_off(from: Vector3, dir: int) -> void:
+	if GameState.is_lost("shoes"):
+		return
+	var land: Vector3 = clamp_walkable(from + Vector3(dir * rng.randf_range(3.0, 7.0), 0, rng.randf_range(-2.0, 2.0)))
+	land.y = 0.0
+	GameState.lose_here("shoes", segment, land)
+	hud.add_today("shoes")
+	var ln = LostItemNode.new()
+	ln.main = self
+	ln.setup("shoes")
+	add_child(ln)
+	lost_nodes.append(ln)
+	ln.set_meta("flying", true)
+	var start := from + Vector3(0, 0.3, 0)
+	ln.position = start
+	var height := rng.randf_range(3.5, 5.5)
+	var spin := Vector3(rng.randf_range(8, 14), rng.randf_range(-6, 6), rng.randf_range(8, 14))
+	var tw := create_tween()
+	tw.tween_method(func(t: float):
+		if not is_instance_valid(ln):
+			return
+		ln.position = start.lerp(land, t) + Vector3(0, sin(PI * t) * height, 0)
+		ln.rotation = spin * t * (1.0 - t * 0.3)
+		, 0.0, 1.0, 1.4)
+	tw.tween_callback(func():
+		if is_instance_valid(ln):
+			ln.rotation = Vector3(0, ln.rotation.y, 0)
+			ln.remove_meta("flying"))
 
 
 func remove_animal(a) -> void:
