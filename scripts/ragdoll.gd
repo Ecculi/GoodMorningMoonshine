@@ -28,10 +28,10 @@ func build(model: Node3D, velocity: Vector3) -> void:
 	var leg_r := _part(xf, Vector3(0, 0.46, 0.1), Vector3(0.17, 0.88, 0.17), pants, 0.9, s, velocity)
 	var arm_l := _part(xf, Vector3(0, 1.19, -0.29), Vector3(0.12, 0.62, 0.12), shirt, 0.6, s, velocity)
 	var arm_r := _part(xf, Vector3(0, 1.19, 0.29), Vector3(0.12, 0.62, 0.12), shirt, 0.6, s, velocity)
-	_joint(xf, Vector3(0, 0.9, -0.1), torso, leg_l)
-	_joint(xf, Vector3(0, 0.9, 0.1), torso, leg_r)
-	_joint(xf, Vector3(0, 1.5, -0.29), torso, arm_l)
-	_joint(xf, Vector3(0, 1.5, 0.29), torso, arm_r)
+	_joint(xf, Vector3(0, 0.9, -0.1), torso, leg_l, HIP)
+	_joint(xf, Vector3(0, 0.9, 0.1), torso, leg_r, HIP)
+	_joint(xf, Vector3(0, 1.5, -0.29), torso, arm_l, SHOULDER)
+	_joint(xf, Vector3(0, 1.5, 0.29), torso, arm_r, SHOULDER)
 	# A little spin makes it look less stiff.
 	torso.angular_velocity = Vector3(randf_range(-3, 3), randf_range(-2, 2), randf_range(-3, 3))
 
@@ -148,10 +148,26 @@ func _part(xf: Transform3D, local: Vector3, size: Vector3, col: Color, mass: flo
 	return rb
 
 
-func _joint(xf: Transform3D, local: Vector3, a: RigidBody3D, b: RigidBody3D) -> void:
-	var j := PinJoint3D.new()
+## Joint limits in degrees, in the body's own axes (the model faces +x):
+## z = swing forward (+) / back (-), x = sideways, y = twist.
+const HIP := {"z": [-30.0, 100.0], "x": [-20.0, 20.0], "y": [-15.0, 15.0]}
+const SHOULDER := {"z": [-45.0, 170.0], "x": [-70.0, 70.0], "y": [-40.0, 40.0]}
+
+
+## A ball joint that can only bend the way a body can: the parts stay
+## together (no linear movement) and each rotation axis has limits.
+func _joint(xf: Transform3D, local: Vector3, a: RigidBody3D, b: RigidBody3D, limits: Dictionary) -> void:
+	var j := Generic6DOFJoint3D.new()
 	add_child(j)
 	j.top_level = true
-	j.global_position = xf * local
+	j.global_transform = Transform3D(xf.basis.orthonormalized(), xf * local)
+	for axis in ["x", "y", "z"]:
+		var lim: Array = limits[axis]
+		j.set("angular_limit_%s/enabled" % axis, true)
+		j.set("angular_limit_%s/lower_angle" % axis, deg_to_rad(lim[0]))
+		j.set("angular_limit_%s/upper_angle" % axis, deg_to_rad(lim[1]))
+		j.set("linear_limit_%s/enabled" % axis, true)
+		j.set("linear_limit_%s/lower_distance" % axis, 0.0)
+		j.set("linear_limit_%s/upper_distance" % axis, 0.0)
 	j.node_a = j.get_path_to(a)
 	j.node_b = j.get_path_to(b)
