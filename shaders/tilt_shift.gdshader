@@ -75,7 +75,8 @@ void fragment() {
 		float reach = lids * 0.5 + 0.08 * lids * x * x;
 		float top = smoothstep(reach + 0.03, reach - 0.01, SCREEN_UV.y);
 		float bottom = smoothstep(reach + 0.03, reach - 0.01, 1.0 - SCREEN_UV.y);
-		col = mix(col, vec3(0.03, 0.02, 0.02), max(top, bottom));
+		// Semi-transparent: the street still shows through the lids.
+		col = mix(col, vec3(0.05, 0.03, 0.03), max(top, bottom) * 0.72);
 	}
 	COLOR = vec4(col, 1.0);
 }

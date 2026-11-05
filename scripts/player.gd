@@ -144,11 +144,26 @@ func _process(delta: float) -> void:
 		v.z += sin(_sway * 2.3) * 1.6 * drunk
 		v.x += sin(_sway * 1.3) * 0.8 * drunk
 
+	# Snow: slippery. The character slides on after letting go (longer the
+	# drunker) and turns lazily; sharp turns can end on the backside.
+	if GameState.weather == "snow":
+		if moving:
+			_check_snow_slip(Vector2(v.x, v.z), speed)
+		var slide_time := 0.3 + 0.5 * maxf(GameState.promille, 0.0)
+		_slide_v = _slide_v.lerp(v, 1.0 - exp(-delta * 3.0 / slide_time))
+		v = _slide_v
+		if not moving and _slide_v.length() > 0.3:
+			# Still sliding: time keeps running.
+			GameState.busy_time = maxf(GameState.busy_time, 0.05)
+	else:
+		_slide_v = v
+	var sliding := _slide_v.length() > 0.3 and not moving
+
 	var before := position
 	position += (v + _knock) * delta
 	_knock = _knock.move_toward(Vector3.ZERO, 12.0 * delta)
 	position = main.clamp_walkable(position)
-	if moving:
+	if moving or sliding:
 		_check_stumbles(before)
 	_collide_cars(before)
 	# A wrong way that runs into a wall or the curb would leave the
@@ -166,7 +181,7 @@ func _process(delta: float) -> void:
 	var look := Vector2.ZERO
 	if is_aiming():
 		look = aim
-	elif moving:
+	elif moving or sliding:
 		look = Vector2(v.x, v.z)
 	if look.length() > 0.1:
 		_yaw_target = atan2(-look.y, look.x)
@@ -398,6 +413,50 @@ func _collide_cars(before: Vector3) -> void:
 				c.side_bump(self)
 		else:
 			position.x = c.position.x + (1.0 if dx >= 0.0 else -1.0) * hx
+
+
+var _slide_v := Vector3.ZERO
+var _slip_dir := Vector2.ZERO
+const SNOW_SLIP_PROMILLE := 1.1
+
+
+## Snow above 1.1 per mille: a sharp change of direction can land the
+## character on their backside. Walking straight on almost never does;
+## the chance grows with the turn angle and is highest for an about-turn.
+func _check_snow_slip(want: Vector2, speed: float) -> void:
+	if want.length() < 0.1:
+		return
+	var nd := want.normalized()
+	if _slip_dir == Vector2.ZERO:
+		_slip_dir = nd
+		return
+	var angle := rad_to_deg(_slip_dir.angle_to(nd))
+	if absf(angle) < 30.0:
+		_slip_dir = _slip_dir.lerp(nd, 0.2).normalized()
+		return
+	_slip_dir = nd
+	var p := GameState.promille
+	if p < SNOW_SLIP_PROMILLE:
+		return
+	var turn := pow(absf(angle) / 180.0, 2.0)  # about-turn = 1
+	var drunk := clampf((p - SNOW_SLIP_PROMILLE) / 1.5, 0.0, 1.0)
+	var chance := turn * lerpf(0.08, 0.4, drunk)
+	if running:
+		chance *= 1.4
+	if GameState.is_lost("shoes"):
+		chance *= 1.5
+	if randf() < clampf(chance, 0.0, 0.85):
+		_slip_on_backside()
+
+
+func _slip_on_backside() -> void:
+	main.popup("*", position + Vector3(0, 0.8, 0.3), Color(0.85, 0.9, 1.0))
+	# Feet fly forward, body falls back.
+	var back := Vector3(_slide_v.x, 0, _slide_v.z).normalized() if _slide_v.length() > 0.1 else Vector3(facing, 0, 0)
+	_go_ragdoll(-back * 1.5 + Vector3(0, 1.0, 0), 1.6)
+	_slide_v = Vector3.ZERO
+	GameState.damage(3.0)
+	main.hud.flash_hurt()
 
 
 func _trip() -> void:

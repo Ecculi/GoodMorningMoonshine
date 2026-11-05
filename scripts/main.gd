@@ -120,6 +120,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_process_modal(delta)
 	_check_transitions()
+	_update_followers()
 	_update_traffic()
 	var target_x := clampf(player.position.x, -10.0, 10.0)
 	camera.position.x = lerpf(camera.position.x, target_x, 1.0 - exp(-4.0 * delta))
@@ -178,12 +179,53 @@ func _turn(at_right: bool, up: bool) -> void:
 	_go_to(t["seg"], Vector3(x, 0, STREET_Z), -1 if enter_right else 1)
 
 
+## Extra head start (metres) the player gets on pursuers when changing
+## street.
+const FOLLOW_HEAD_START := 4.0
+
+
 func _go_to(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	if not CityMap.is_valid(seg):
 		return
+	# Pursuers (fighting passers-by, chasing police, guards) follow to the
+	# next street, a little further behind than they were.
+	var followers: Array = []
+	for n in npcs:
+		if n.is_hostile() and not n.is_down():
+			var d := Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length()
+			if d < 16.0:
+				followers.append([n.role, d, n.state, n.hp])
 	_save_block_items()
 	_enter_block(seg, pos, facing)
+	# They arrive through the same spot, after the time it takes them to
+	# cover their distance plus the head start.
+	_pending_followers.clear()
+	for f in followers:
+		var spd: float = Npc.POLICE_SPEED if f[0] == "police" else Npc.CHASE_SPEED
+		_pending_followers.append({"role": f[0], "state": f[2], "hp": f[3], "pos": pos, "dir": facing,
+			"t": (f[1] + FOLLOW_HEAD_START) / spd})
 	hud.fade_in()
+
+
+var _pending_followers: Array = []
+
+
+func _update_followers() -> void:
+	var dt := GameState.world_dt
+	if dt <= 0.0:
+		return
+	for f in _pending_followers.duplicate():
+		f["t"] -= dt
+		if f["t"] > 0.0:
+			continue
+		_pending_followers.erase(f)
+		var n = _spawn_npc(false, f["role"])
+		n.position = f["pos"]
+		n.dir = f["dir"]
+		n.hp = f["hp"]
+		n.stationary = false
+		n.state = f["state"]
+		n._mark.visible = true
 
 
 func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
@@ -677,6 +719,7 @@ func _new_game() -> void:
 ## From day 2 on the character wakes up somewhere other than home (they
 ## went out again during the night); further away every day.
 func _new_day() -> void:
+	_pending_followers.clear()
 	_block_items.clear()
 	_searched_bins.clear()
 	_friend_refused = false
@@ -1358,7 +1401,8 @@ func _towards_passout(start: float) -> float:
 
 const DRUNK_CIRCLE_END := 0.8
 var _blink_t := 0.0
-var _blink_cd := 4.0
+var _blink_cd := 8.0
+var _blink_len := 0.9
 
 
 func _update_drunk_circle() -> void:
@@ -1391,14 +1435,24 @@ func _update_eyelids(dt: float) -> void:
 	var blink := 0.0
 	if k > 0.0:
 		if _blink_t > 0.0:
+			# Close (0.3 s), stay nearly shut (longer the drunker: dozing
+			# off), open (0.3 s).
 			_blink_t -= dt
-			var b := 1.0 - _blink_t / 0.9
-			blink = sin(b * PI) * lerpf(0.6, 0.95, k)
+			var gone := _blink_len - _blink_t
+			var shut := lerpf(0.6, 0.95, k)
+			if gone < 0.3:
+				blink = shut * gone / 0.3
+			elif _blink_t < 0.3:
+				blink = shut * maxf(_blink_t, 0.0) / 0.3
+			else:
+				blink = shut
 		else:
 			_blink_cd -= dt
 			if _blink_cd <= 0.0:
-				_blink_t = 0.9
-				_blink_cd = lerpf(7.0, 1.8, k) * randf_range(0.7, 1.3)
+				_blink_len = lerpf(0.9, 3.0, k)
+				_blink_t = _blink_len
+				# Half as often as before.
+				_blink_cd = lerpf(14.0, 3.6, k) * randf_range(0.7, 1.3)
 	if GameState.over:
 		blink = 0.0
 		droop = 0.0
