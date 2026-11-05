@@ -1,6 +1,5 @@
-# Builds the game for the browser and publishes it on GitHub Pages:
-# https://ecculi.github.io/GoodMorningMoonshine/
-# Needs Settings -> Pages -> Source: "GitHub Actions".
+# Checks that the game builds for the browser. (Publishing on GitHub Pages
+# is turned off for now.)
 name: Web build
 
 on:
@@ -10,12 +9,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 env:
   GODOT_VERSION: "4.7"
@@ -53,19 +46,3 @@ jobs:
           ~/godot/godot --headless --path . --import || true
           ~/godot/godot --headless --path . --export-debug "Web" build/web/index.html
           test -f build/web/index.wasm
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: build/web
-
-  # Publish only from main; other branches just check that the game builds.
-  deploy:
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
