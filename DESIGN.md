@@ -279,8 +279,8 @@ Humalan vaikutukset alkavat matalammalla kuin alussa suunniteltiin (kaikki rajat
 
 - **Uni:** yöunet palauttavat suurimman osan. Kotona nukkuminen palauttaa eniten.
 - **Ruoka:** syöminen palauttaa vähän.
-- **Hyvä humala korjaa:** 1,0–2,5 promillessa health palautuu itsestään hitaasti (1 / s liikkuessa). Selvempänä tai kovemmassa humalassa ei.
-- **Alkoholi:** juominen palauttaa healthia juoman vahvuuden mukaan (30 healthia promillea kohden: olut noin +7, pullo +12, tuoppi +15, viina +18, tuntematon aine +27; tyhjään mahaan enemmän).
+- **Hyvä humala korjaa:** 1,0–2,5 promillessa health palautuu itsestään hitaasti (0,4 / s liikkuessa). Selvempänä tai kovemmassa humalassa ei.
+- **Alkoholi:** juominen palauttaa healthia juoman vahvuuden mukaan (15 healthia promillea kohden: olut noin +4, pullo +6, tuoppi +8, viina +9, tuntematon aine +14; tyhjään mahaan enemmän).
 - **Apteekki:** laastaria tai särkylääkettä saa rahalla, mutta ne palauttavat vain vähän.
 - Päivän aikana health ei palaudu itsestään.
 

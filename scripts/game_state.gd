@@ -39,13 +39,13 @@ const HANGOVER_DRAIN_MAX := 4.0
 ## moving; soberer or drunker, it doesn't.
 const MEND_FROM := 1.0
 const MEND_TO := 2.5
-const MEND_RATE := 1.0
+const MEND_RATE := 0.4
 ## Highest per mille today and yesterday: yesterday's peak sets how bad
 ## the hangover shakes are. The first morning follows a big night.
 var today_max := PROMILLE_START
 var yesterday_max := 2.2
-## Health per 1.0 per mille drunk (beer +7, spirits +18).
-const DRINK_HEALTH := 30.0
+## Health per 1.0 per mille drunk (beer about +4, spirits +9).
+const DRINK_HEALTH := 15.0
 ## Share of damage that being drunk numbs away at the passing-out limit
 ## (grows evenly from 0.5 per mille; about a quarter at 2.0).
 const DRUNK_NUMB := 0.6
