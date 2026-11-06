@@ -78,6 +78,7 @@ func reset(pos: Vector3) -> void:
 	_ride_car = null
 	_fall_t = 0.0
 	_sleep_after_fall = false
+	_car_survive = ""
 	if _ragdoll != null:
 		_ragdoll.queue_free()
 		_ragdoll = null
@@ -100,6 +101,7 @@ func wake_up() -> void:
 	_fall_t = 0.0
 	_rise_t = 0.0
 	_sleep_after_fall = false
+	_car_survive = ""
 	if _ragdoll != null:
 		_ragdoll.queue_free()
 		_ragdoll = null
@@ -263,6 +265,7 @@ func _process(delta: float) -> void:
 	model.animate(1.0 if moving else 0.0, delta * ts, speed / ts / WALK_SPEED, silly_amount())
 	model.set_windup(punch_charge())
 	model.shade_eyes = move_toward(model.shade_eyes, main.shade_amount(), delta * 3.0)
+	model.set_shoes(not GameState.is_lost("shoes"))
 
 	_handle_action(delta)
 	_check_pickups()
@@ -342,11 +345,13 @@ var _ragdoll = null
 
 ## Thrown onto the bonnet: ride along until the car brakes.
 func start_bonnet_ride(car) -> void:
+	_car_flings(car.dir)
 	_ride_car = car
+	_car_survive = "BONNET_SURVIVE"
 	running = false
 	_press_time = -1.0
 	model.rotation.z = PI * 0.5
-	GameState.damage(15.0)
+	GameState.damage(15.0, "car")
 	main.hud.flash_hurt()
 
 
@@ -373,16 +378,42 @@ func _launch(d: int) -> void:
 
 
 ## Run over: straight under the car, which doesn't even slow down.
+## Hit by a car: whatever is in the hand flies up high in an arc, and
+## now and then the shoes fly off too.
+func _car_flings(car_dir: int) -> void:
+	if hand_item != null and is_instance_valid(hand_item):
+		var it = hand_item
+		hand_item = null
+		var start: Vector3 = model.hand.global_position
+		it.launch(start, Vector3(car_dir * randf_range(2.0, 4.5), randf_range(7.5, 11.0), randf_range(-1.2, 1.2)))
+	if randf() < 0.35:
+		main.shoes_fly_off(position, car_dir)
+
+
 ## Hit by the front of a car: no bonnet ride, the impact throws the
 ## character straight away as a rag doll in the car's direction.
 func hit_by_car_front(car_dir: int, car_speed: float) -> void:
+	_car_flings(car_dir)
 	running = false
 	_press_time = -1.0
 	var push := Vector3(car_dir * (2.5 + car_speed * 0.55), 1.8 + car_speed * 0.12, randf_range(-0.8, 0.8))
 	_knock_out(40.0, push)
 
 
+## Knocked over by a cyclist or an e-scooter on the sidewalk.
+func hit_by_rider(dir: int, spd: float) -> void:
+	running = false
+	_press_time = -1.0
+	GameState.fell_down()
+	_go_ragdoll(Vector3(dir * spd * 0.45, 1.6, randf_range(-0.6, 0.6)), 1.6)
+	GameState.damage(6.0, "bike")
+	main.hud.flash_hurt()
+	_maybe_fall_asleep()
+
+
 func run_over(car_dir: int) -> void:
+	_car_flings(car_dir)
+	_car_survive = "RUN_OVER_SURVIVE"
 	running = false
 	_press_time = -1.0
 	_knock_out(55.0, Vector3(car_dir * 3.0, 0.5, randf_range(-1.0, 1.0)))
@@ -394,15 +425,29 @@ func thrown_out(from_x: float, dmg: float) -> void:
 	if GameState.over or _fall_t > 0.0:
 		return
 	running = false
+	GameState.unlock("THROWN_OUT")
 	var side := signf(position.x - from_x) if position.x != from_x else float(facing)
 	_go_ragdoll(Vector3(side * 2.0, 2.5, 4.5), 1.8)
-	GameState.damage(dmg)
+	GameState.damage(dmg, "bouncer")
 	main.hud.flash_hurt()
+
+
+## Death: fall down where standing (unless already lying as a rag doll).
+func collapse_dead() -> void:
+	if _ragdoll == null:
+		_go_ragdoll(Vector3(facing * 0.8, 0.3, randf_range(-0.4, 0.4)), 99.0)
+
+
+## Where the body is (the rag doll's torso while lying down).
+func body_position() -> Vector3:
+	if _ragdoll != null:
+		return _ragdoll.torso_position()
+	return position + Vector3(0, 0.8, 0)
 
 
 func _knock_out(dmg: float, push: Vector3) -> void:
 	_go_ragdoll(push, KNOCKOUT_TIME)
-	GameState.damage(dmg)
+	GameState.damage(dmg, "car")
 	main.hud.flash_hurt()
 	main.hud.blackout(1.6)
 
@@ -427,6 +472,10 @@ var _rise_t := 0.0
 
 func _get_up() -> void:
 	car_grace = CAR_GRACE
+	# Back on your feet after a car: you survived it.
+	if _car_survive != "":
+		GameState.unlock(_car_survive)
+		_car_survive = ""
 	model.visible = true
 	if _ragdoll != null:
 		# Rise from the pose the rag doll ended in.
@@ -590,21 +639,27 @@ func _maybe_fall_asleep() -> void:
 		main.popup("Zzz", position + Vector3(0.2 * facing, 1.2, 0.3), Color(0.8, 0.85, 1.0))
 
 
+## Set when hit by a car in a way that earns an achievement if survived.
+var _car_survive := ""
+
+
 func _slip_on_backside() -> void:
+	GameState.fell_down()
 	main.popup("*", position + Vector3(0, 0.8, 0.3), Color(0.85, 0.9, 1.0))
 	# Feet fly forward, body falls back.
 	var back := Vector3(_slide_v.x, 0, _slide_v.z).normalized() if _slide_v.length() > 0.1 else Vector3(facing, 0, 0)
 	_go_ragdoll(-back * 1.5 + Vector3(0, 1.0, 0), 1.6)
 	_slide_v = Vector3.ZERO
-	GameState.damage(3.0)
+	GameState.damage(3.0, "fall")
 	main.hud.flash_hurt()
 	_maybe_fall_asleep()
 
 
 func _trip() -> void:
+	GameState.fell_down()
 	main.popup("*", position + Vector3(0.6 * facing, 0.6, 0.3), Color(1, 0.9, 0.4))
 	_go_ragdoll(Vector3(facing * 4.0, 1.5, randf_range(-0.5, 0.5)), 1.6)
-	GameState.damage(4.0)
+	GameState.damage(4.0, "fall")
 	main.hud.flash_hurt()
 	_maybe_fall_asleep()
 
@@ -921,6 +976,8 @@ func _punch(target, charge: float, charged := false) -> void:
 	if dmg > 0 and charge >= 1.0:
 		dmg += 1
 	target.take_hit(dmg, self, 1.0 + charge)
+	if charged and charge >= 1.0 and target.is_down() and target.times_hit == 1:
+		GameState.unlock("ONE_PUNCH")
 
 
 ## Fighting system: one punch is free, but punching again right away
@@ -960,7 +1017,7 @@ func _update_rest(_delta: float) -> void:
 	if GameState.exhausted and _rest_t <= REST_DELAY:
 		_exhaust_t += dt
 		if _exhaust_t > GameState.exhaust_grace():
-			GameState.damage(GameState.EXHAUST_DAMAGE * dt)
+			GameState.damage(GameState.EXHAUST_DAMAGE * dt, "exhaust")
 	else:
 		_exhaust_t = 0.0
 	if _rest_t > REST_DELAY:
@@ -981,7 +1038,8 @@ func _throw(t: float) -> void:
 	var start := global_position + d3 * 0.4 + Vector3(0, 1.1, 0.25)
 	it.throw_from(start, d3, dist)
 	model.punch()
-	GameState.busy_time = maxf(GameState.busy_time, it.flight_time + 0.1)
+	# Keep time running a little past the landing so it can bounce and roll.
+	GameState.busy_time = maxf(GameState.busy_time, it.flight_time + 0.7)
 
 
 func _check_pickups() -> void:
@@ -1031,7 +1089,7 @@ func hand_short_action_key() -> String:
 	return "ACT_PUNCH"
 
 
-func take_hit(dmg: float, from_x: float) -> void:
+func take_hit(dmg: float, from_x: float, source := "fight") -> void:
 	if GameState.over:
 		return
 	_knock = Vector3(signf(position.x - from_x) * 4.0, 0.0, 0.0)
@@ -1039,4 +1097,4 @@ func take_hit(dmg: float, from_x: float) -> void:
 	# The jacket softens blows.
 	if GameState.is_lost("jacket"):
 		dmg *= 1.3
-	GameState.damage(dmg)
+	GameState.damage(dmg, source)

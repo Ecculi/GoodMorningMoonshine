@@ -8,6 +8,7 @@ const Player = preload("res://scripts/player.gd")
 const Npc = preload("res://scripts/npc.gd")
 const Animal = preload("res://scripts/animal.gd")
 const Vision = preload("res://scripts/vision.gd")
+const Rider = preload("res://scripts/rider.gd")
 const Item = preload("res://scripts/item.gd")
 const Hud = preload("res://scripts/hud.gd")
 const TouchControls = preload("res://scripts/touch_controls.gd")
@@ -68,6 +69,9 @@ var segment: Vector3i = CityMap.START
 var npcs: Array = []
 ## Seagulls and dogs in the current block.
 var animals: Array = []
+## Cyclists and e-scooters on the sidewalks (from day 4).
+var riders: Array = []
+var _rider_timer := 5.0
 ## Punk gangs that already met the player (each offers a beer at most once).
 var _punk_met := {}
 var _next_gang := 0
@@ -127,6 +131,7 @@ func _ready() -> void:
 	add_child(DebugTools.new())
 
 	GameState.day_ended.connect(_on_day_ended)
+	GameState.achievement_unlocked.connect(func(id): hud.show_achievement(id))
 	GameState.player_died.connect(_on_player_died)
 	_new_game()
 
@@ -297,6 +302,7 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	# Wind-blown leaves on the street.
 	var leaves = Leaves.new()
 	level.add_child(leaves)
+	leaves.main = self
 	leaves.setup(seg, GameState.weather)
 	player.position = pos
 	player.facing = facing
@@ -318,6 +324,9 @@ func _clear_block_content() -> void:
 	for a in animals:
 		a.queue_free()
 	animals.clear()
+	for rd in riders:
+		rd.queue_free()
+	riders.clear()
 	var keep = player.hand_item
 	for it in items:
 		if is_instance_valid(it) and it != keep:
@@ -390,6 +399,11 @@ func _check_lost_pickups() -> void:
 	if GameState.over:
 		return
 	for ln in lost_nodes.duplicate():
+		if ln.has_meta("flying"):
+			continue
+		# Someone else's shoes: only taken if the player's own are missing.
+		if ln.has_meta("spare") and not GameState.is_lost("shoes"):
+			continue
 		var d := Vector2(ln.position.x - player.position.x, ln.position.z - player.position.z).length()
 		if d < 0.7:
 			GameState.find_item(ln.id)
@@ -660,7 +674,7 @@ func _try_shop(sh: Dictionary) -> bool:
 			ok = true
 		if not ok:
 			popup("X", door + Vector3(1.0, 0, 0), Color(0.9, 0.3, 0.3))
-			player.take_hit(3.0, sh["x"] + 2.0)
+			player.take_hit(3.0, sh["x"] + 2.0, "bouncer")
 			return true
 	shop_type = sh["type"]
 	shop_sel = 0
@@ -850,8 +864,100 @@ func _on_day_ended(cause: String) -> void:
 	hud.hide_card()
 
 
+## How many headlines and captions there are per cause (keys HL_<CAUSE>_n
+## and CAP_<CAUSE>_n in the translations).
+const HEADLINES := {"SOBER": [8, 3], "FIGHT": [9, 3], "CAR": [9, 6], "DOG": [6, 3], "BOUNCER": [5, 2],
+	"FALL": [6, 2], "COLD": [6, 2], "HUNGER": [4, 2], "HANGOVER": [6, 2], "EXHAUST": [4, 2],
+	"BIKE": [3, 2]}
+
+
+## Captions that fit any death (CAP_ANY_n), used now and then.
+const CAPTIONS_ANY := 1
+
+
+## Death: the character collapses, a moment later a "reader's photo" is
+## taken from another angle, and the paper runs the story with a headline
+## and caption that fit what happened.
 func _on_player_died(cause: String) -> void:
-	hud.show_card("dead", tr(cause), tr("SCORE") % GameState.score())
+	var fam := "SOBER" if cause == "HEADLINE_SOBER" else GameState.last_hurt.to_upper()
+	if not HEADLINES.has(fam):
+		fam = "FIGHT"
+	var n: Array = HEADLINES[fam]
+	var hl_key := "HL_%s_%d" % [fam, rng.randi_range(1, n[0])]
+	GameState.saw_headline(hl_key)
+	var title := tr(hl_key)
+	var caption := tr("CAP_%s_%d" % [fam, rng.randi_range(1, n[1])])
+	# Now and then a caption that fits any death.
+	if rng.randf() < 0.2:
+		caption = tr("CAP_ANY_%d" % rng.randi_range(1, CAPTIONS_ANY))
+	player.collapse_dead()
+	await get_tree().create_timer(1.4).timeout
+	var photo: ImageTexture = await _take_death_photo()
+	hud.set_death_photo(photo, caption)
+	hud.show_card("dead", title, tr("SCORE") % GameState.score())
+
+
+## A news photo of the scene from a different angle than the game camera
+## (street level, from above, or over the shoulder of whoever did it),
+## turned into a grainy sepia newspaper print.
+func _take_death_photo() -> ImageTexture:
+	var body: Vector3 = player.body_position()
+	var sv := SubViewport.new()
+	sv.size = Vector2i(480, 330)
+	sv.world_3d = get_viewport().world_3d
+	sv.render_target_update_mode = SubViewport.UPDATE_ONCE
+	add_child(sv)
+	var cam := Camera3D.new()
+	cam.fov = 55.0
+	sv.add_child(cam)
+	cam.current = true
+	var look := body + Vector3(0, 0.25, 0)
+	var culprit = null
+	for nb in npcs:
+		if nb.is_hostile() and not nb.is_down() and nb.position.distance_to(body) < 6.0:
+			culprit = nb
+	var pick := rng.randi() % 3
+	if pick == 2 and culprit != null:
+		# Over the shoulder of the one who did it.
+		var away: Vector3 = culprit.position - body
+		away.y = 0.0
+		away = away.normalized() if away.length() > 0.01 else Vector3(1, 0, 0)
+		cam.position = culprit.position + away * 0.7 + Vector3(0, 1.75, 0.35)
+	elif pick == 1:
+		# From above, as if from a window.
+		cam.position = body + Vector3(rng.randf_range(-0.6, 0.6), 4.2, 1.2)
+	else:
+		# Street level, a bit to the side, slightly tilted.
+		var side := -1.0 if rng.randf() < 0.5 else 1.0
+		cam.position = body + Vector3(side * 2.2, 0.55, 2.0)
+	cam.look_at(look, Vector3.UP)
+	if pick == 0:
+		cam.rotate_object_local(Vector3.FORWARD, rng.randf_range(-0.15, 0.15))
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	var img := sv.get_texture().get_image()
+	sv.queue_free()
+	_newsprint(img)
+	return ImageTexture.create_from_image(img)
+
+
+## Newspaper look: sepia-tinted grey, more contrast, grain, dark corners.
+func _newsprint(img: Image) -> void:
+	img.convert(Image.FORMAT_RGB8)
+	var w := img.get_width()
+	var h := img.get_height()
+	var r := RandomNumberGenerator.new()
+	r.seed = rng.randi()
+	for y in h:
+		for x in w:
+			var c := img.get_pixel(x, y)
+			var g := c.r * 0.3 + c.g * 0.59 + c.b * 0.11
+			g = clampf((g - 0.5) * 1.35 + 0.5, 0.0, 1.0)
+			var dx := (float(x) / w - 0.5) * 2.0
+			var dy := (float(y) / h - 0.5) * 2.0
+			g *= 1.0 - 0.35 * clampf(dx * dx + dy * dy - 0.4, 0.0, 1.0)
+			g = clampf(g + r.randf_range(-0.06, 0.06), 0.0, 1.0)
+			img.set_pixel(x, y, Color(g * 1.0, g * 0.93, g * 0.8))
 
 
 # --- Queries used by the player, NPCs and items -------------------------------------
@@ -1102,10 +1208,16 @@ func _spawn_street_folk() -> void:
 		d.position.z = rng.randf_range(-7.0, -5.8) if rng.randf() < 0.5 else rng.randf_range(3.3, 4.8)
 	if GameState.day >= 2 and rng.randf() < 0.2:
 		_spawn_punks()
-	for i in (rng.randi_range(1, 3) if rng.randf() < 0.55 else 0):
+	# From day 4 a can collector beats you to the bins.
+	if GameState.day >= 4 and rng.randf() < 0.4:
+		_spawn_npc(false, "collector")
+	# New things keep turning up as the days go by: gulls from day 2,
+	# dogs (helpers or enemies) from day 3.
+	var gulls := rng.randi_range(1, 3) if GameState.day >= 2 and rng.randf() < 0.55 else 0
+	for i in gulls:
 		var z := rng.randf_range(-7.4, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.0, 5.2)
 		_spawn_animal("gull", Vector3(rng.randf_range(-14.0, 14.0), 0, z))
-	if rng.randf() < 0.3:
+	if GameState.day >= 3 and rng.randf() < 0.3:
 		var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
 		_spawn_animal("dog", Vector3(rng.randf_range(-14.0, 14.0), 0, z))
 
@@ -1151,6 +1263,7 @@ func punk_meet(p) -> void:
 ## Beggar paid: a tip about where one of the lost things is (like the
 ## cellmate), or a shrug when nothing is lost.
 func beggar_tip(pos: Vector3) -> void:
+	GameState.unlock("BEGGAR_PAY")
 	var candidates: Array = []
 	for id in GameState.placements:
 		candidates.append(id)
@@ -1175,6 +1288,7 @@ func _spawn_animal(kind: String, pos: Vector3):
 ## A gull was trodden on: the other gulls come over and bomb the player
 ## for a while. If there are hardly any, a couple fly in from the side.
 func gull_trampled(victim) -> void:
+	GameState.unlock("GULL_STEP")
 	var others: Array = []
 	for a in animals:
 		if a != victim and a.kind == "gull":
@@ -1186,6 +1300,97 @@ func gull_trampled(victim) -> void:
 		others.append(g)
 	for i in others.size():
 		others[i].start_bombing(1.0 + i * 0.8)
+
+
+## Hit by a car: the shoes fly off in a high arc and land a few metres
+## away; they are lost until picked up again.
+func shoes_fly_off(from: Vector3, dir: int) -> void:
+	if GameState.is_lost("shoes"):
+		return
+	var land: Vector3 = clamp_walkable(from + Vector3(dir * rng.randf_range(3.0, 7.0), 0, rng.randf_range(-2.0, 2.0)))
+	land.y = 0.0
+	GameState.lose_here("shoes", segment, land)
+	hud.add_today("shoes")
+	_fling_shoes(from, land, false)
+
+
+## Someone else hit by a car loses their shoes the same way. A player
+## without shoes can take them (they fit).
+func npc_shoes_fly_off(from: Vector3, dir: int) -> void:
+	var land: Vector3 = clamp_walkable(from + Vector3(dir * rng.randf_range(3.0, 7.0), 0, rng.randf_range(-2.0, 2.0)))
+	land.y = 0.0
+	_fling_shoes(from, land, true)
+
+
+func _fling_shoes(from: Vector3, land: Vector3, spare: bool) -> void:
+	var ln = LostItemNode.new()
+	ln.main = self
+	ln.setup("shoes")
+	add_child(ln)
+	lost_nodes.append(ln)
+	ln.set_meta("flying", true)
+	if spare:
+		ln.set_meta("spare", true)
+	var start := from + Vector3(0, 0.3, 0)
+	ln.position = start
+	var height := rng.randf_range(3.5, 5.5)
+	var spin := Vector3(rng.randf_range(8, 14), rng.randf_range(-6, 6), rng.randf_range(8, 14))
+	var fly := func(t: float) -> void:
+		if not is_instance_valid(ln):
+			return
+		ln.position = start.lerp(land, t) + Vector3(0, sin(PI * t) * height, 0)
+		ln.rotation = spin * t * (1.0 - t * 0.3)
+	var landed := func() -> void:
+		if is_instance_valid(ln):
+			ln.rotation = Vector3(0, ln.rotation.y, 0)
+			ln.remove_meta("flying")
+	var tw := create_tween()
+	tw.tween_method(fly, 0.0, 1.0, 1.4)
+	tw.tween_callback(landed)
+
+
+## Can collector's next target: the nearest unsearched bin or bottle/can
+## lying in the street within 14 m ({} if none).
+func collector_target(pos: Vector3) -> Dictionary:
+	var best := {}
+	var best_d := 14.0
+	if level != null:
+		var bins: Array = level.get_meta("bins", [])
+		for i in bins.size():
+			if _searched_bins.has("%s:%d" % [_key(segment), i]):
+				continue
+			var bp := Vector3(bins[i], 0, -7.0)
+			var d := Vector2(bp.x - pos.x, bp.z - pos.z).length()
+			if d < best_d:
+				best_d = d
+				best = {"type": "bin", "i": i, "pos": bp}
+	for it in items:
+		if not is_instance_valid(it) or it == player.hand_item or not it.can_pickup():
+			continue
+		if it.kind != Item.Kind.CAN and it.kind != Item.Kind.BOTTLE:
+			continue
+		var ip: Vector3 = it.global_position
+		var d := Vector2(ip.x - pos.x, ip.z - pos.z).length()
+		if d < best_d:
+			best_d = d
+			best = {"type": "item", "item": it, "pos": Vector3(ip.x, 0, ip.z)}
+	return best
+
+
+## The collector got to a bin first: it's empty for the player now.
+func collector_take_bin(i: int) -> void:
+	var key := "%s:%d" % [_key(segment), i]
+	if _searched_bins.has(key):
+		return
+	_searched_bins[key] = true
+	var bins: Array = level.get_meta("bins", [])
+	if i < bins.size():
+		popup("kolin", Vector3(bins[i], 1.4, -7.5), Color(0.85, 0.85, 0.9))
+
+
+func remove_rider(rd) -> void:
+	riders.erase(rd)
+	rd.queue_free()
 
 
 func remove_animal(a) -> void:
@@ -1207,7 +1412,9 @@ func _update_trip(delta: float) -> void:
 		return
 	_vision_cd = rng.randf_range(1.2, 3.0)
 	var v = Vision.new()
-	v.setup(["elephant", "mushroom", "eye", "spiral"][rng.randi() % 4], rng)
+	var vk: String = ["elephant", "mushroom", "eye", "spiral"][rng.randi() % 4]
+	v.setup(vk, rng)
+	GameState.saw_vision(vk)
 	# Added to the block so it goes when the street changes.
 	level.add_child(v)
 	var side := -1.0 if rng.randf() < 0.5 else 1.0
@@ -1284,7 +1491,20 @@ func _spawn_npc(at_edge: bool, role := "civ"):
 ## pedestrian street (Rotuaari).
 func _update_traffic() -> void:
 	var dt := GameState.world_dt
-	if dt <= 0.0 or GameState.over or _is_pedestrian_street():
+	if dt <= 0.0 or GameState.over:
+		return
+	# From day 4: cyclists and e-scooters tear along the sidewalks (also on
+	# the pedestrian street).
+	if GameState.day >= 4:
+		_rider_timer -= dt
+		if _rider_timer <= 0.0:
+			_rider_timer = rng.randf_range(7.0, 16.0)
+			var rd = Rider.new()
+			rd.main = self
+			rd.setup(rng, 1 if rng.randf() < 0.5 else -1)
+			add_child(rd)
+			riders.append(rd)
+	if _is_pedestrian_street():
 		return
 	_car_timer -= dt
 	if _car_timer <= 0.0:
@@ -1519,7 +1739,10 @@ func _build_physics_ground() -> void:
 	body.collision_layer = 1
 	body.collision_mask = 0
 	add_child(body)
-	for spec in [[Vector3(0, -0.45, -10), Vector3(400, 1.0, 120)], [Vector3(0, 10, -8.6), Vector3(400, 20, 1.0)]]:
+	# Street, facade, and the two raised sidewalks (a kerb higher) so thrown
+	# things and rag dolls rest on top of them.
+	for spec in [[Vector3(0, -0.45, -10), Vector3(400, 1.0, 120)], [Vector3(0, 10, -8.6), Vector3(400, 20, 1.0)],
+			[Vector3(0, -0.38, -6.8), Vector3(400, 1.0, 3.6)], [Vector3(0, -0.38, 4.15), Vector3(400, 1.0, 3.3)]]:
 		var cs := CollisionShape3D.new()
 		var sh := BoxShape3D.new()
 		sh.size = spec[1]

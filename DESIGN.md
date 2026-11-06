@@ -65,7 +65,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - Katujen järjestys on tiedostossa `scripts/city_map.gd`, jossa sitä on helppo korjata. *Avoinna:* osittaisten katujen (Ojakatu, Vaarankatu, Kajaaninkatu, Linnankatu, Heikinkatu) ja puistojen toteutus.
 - **Maamerkit:** Kauppatori, kauppahalli, Rotuaari, tuomiokirkko, poliisiasema, rautatieasema, puistot (Snellmanin, Otto Karhin, Franzénin, Vaaranpuisto, Mannerheimin) ja kanava. Meri on luoteessa.
 - Käytetään **oikeita kadunnimiä ja julkisia paikkoja**. **Yritysten nimet** (ravintolat, hotellit, kauppakeskukset) korvataan keksityillä nimillä.
-- **Autoja liikkuu kaduilla harvakseltaan** (oikeanpuoleinen liikenne, satunnaisesti kumpaankin suuntaan). Autot pysähtyvät, jos joku (pelaaja tai muu hahmo) on suojatiellä, ja toisen auton taakse. Muualla tiellä kävelevän päälle auto ajaa. Pelaajalle käy satunnaisesti jokin näistä: tavallisimmin (65 %) **keula osuu** ja hahmo lentää heti rätkänukkena auton kulkusuuntaan (sitä kauemmas, mitä kovempaa auto ajoi; vie healthia 40, ja auto jarruttaa), välillä (25 %) **konepellille** (hahmo lennähtää konepellille, auto jatkaa 0,3–0,9 s ja jarruttaa, jolloin hahmo lentää kadulle ja menettää tajunnan hetkeksi) tai harvoin (10 %) **yliajo** (hahmo kaatuu heti auton alle, eikä auto hidasta lainkaan). Konepellille-tapaus vie healthia yhteensä 40, yliajo 55; ruutu pimenee ja hahmo makaa tajuttomana noin 4 s. Autot pysähtyvät tiellä makaavan hahmon eteen, ja ylös noustua auto ei osu 1,5 sekuntiin. Ohikulkija kaatuu. Humalassa autoa on vaikeampi väistää. **Kävelykadulla (Rotuaari eli Kauppurienkatu) ei ole autoja lainkaan.** Autot ovat kiinteitä: niiden läpi ei voi kävellä. Kylkeen törmääminen saa toisinaan (noin joka kolmas kerta) auton pysähtymään, ja kuljettaja nousee tappelemaan; hän palaa autoon ja ajaa pois, kun pelaaja pakenee tarpeeksi kauas tai kun hän tokenee tyrmäyksestä. Takana tulevat autot jonottavat sillä aikaa.
+- **Autoja liikkuu kaduilla harvakseltaan** (oikeanpuoleinen liikenne, satunnaisesti kumpaankin suuntaan). Autot pysähtyvät, jos joku (pelaaja tai muu hahmo) on suojatiellä, ja toisen auton taakse. Muualla tiellä kävelevän päälle auto ajaa. Pelaajalle käy satunnaisesti jokin näistä: tavallisimmin (65 %) **keula osuu** ja hahmo lentää heti rätkänukkena auton kulkusuuntaan (sitä kauemmas, mitä kovempaa auto ajoi; vie healthia 40, ja auto jarruttaa), välillä (25 %) **konepellille** (hahmo lennähtää konepellille, auto jatkaa 0,3–0,9 s ja jarruttaa, jolloin hahmo lentää kadulle ja menettää tajunnan hetkeksi) tai harvoin (10 %) **yliajo** (hahmo kaatuu heti auton alle, eikä auto hidasta lainkaan). Törmäyksessä kädessä oleva esine lentää pyörien korkeassa kaaressa ylös ja putoaa kadulle (pullo särkyy), ja noin joka kolmannella kerralla kengät lentävät jalasta muutaman metrin päähän: hahmo on paljain jaloin, kunnes hakee ne ("Etsi:"-listaan). Konepellille-tapaus vie healthia yhteensä 40, yliajo 55; ruutu pimenee ja hahmo makaa tajuttomana noin 4 s. Autot pysähtyvät tiellä makaavan hahmon eteen, ja ylös noustua auto ei osu 1,5 sekuntiin. Ohikulkija kaatuu, ja puolet kerroista hänen kenkänsä lentävät jalasta; jos pelaajan omat kengät ovat hukassa, hän voi ottaa ne (ne käyvät), muuten ne jäävät kadulle. Humalassa autoa on vaikeampi väistää. **Kävelykadulla (Rotuaari eli Kauppurienkatu) ei ole autoja lainkaan.** Autot ovat kiinteitä: niiden läpi ei voi kävellä. Kylkeen törmääminen saa toisinaan (noin joka kolmas kerta) auton pysähtymään, ja kuljettaja nousee tappelemaan; hän palaa autoon ja ajaa pois, kun pelaaja pakenee tarpeeksi kauas tai kun hän tokenee tyrmäyksestä. Takana tulevat autot jonottavat sillä aikaa.
 - **Veteen voi pudota:** humalassa horjuva hahmo voi pudota rannasta, laiturilta tai kanavaan. Hän pääsee ylös, mutta on läpimärkä: **tulee todella kylmä**, ja vaatteet toimivat kuin ne olisivat hukassa, kunnes ne kuivuvat sisätiloissa. Kylmä vesi myös **piristää**, joten väsymys vähenee vähän. **Tavarat eivät huku** veteen pudotessa.
 - **Rakennuksiin pääsee sisälle**, esimerkiksi kioskiin ja rautatieasemalle.
 - Osassa rakennuksista on ovet kahdelle eri kadulle. Ne toimivat **oikoteinä**: yhdestä ovesta sisään, toisesta ulos eri kadulle.
@@ -106,7 +106,43 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 ### Vaikeutuminen
 
-Päivät vaikeutuvat vähitellen kolmella tavalla:
+**Periaate: joka päivä jotain uutta.** Pelin edetessä pitää koko ajan tulla uusia asioita ja haasteita, jotta pelaaja kokee jatkuvasti jotain uutta ja haluaa pelata uudestaan nähdäkseen, mitä myöhemmin tulee vastaan. Uudet hahmot ja mekaniikat tuodaan peliin vähitellen päivä kerrallaan, ei kaikkea heti ensimmäisenä päivänä:
+
+| Päivä | Uutta |
+|---|---|
+| 1 | perusasiat: ohikulkijat, poliisit, vartijat, portsari, kerjäläinen, kadun juoppo, autot |
+| 2 | lokit ja punkkariporukat |
+| 3 | koirat (voivat auttaa tai olla vihollisia) |
+| 4 | pyöräilijät ja sähköpotkulaudat (kaahaavat jalkakäytävillä, myös kävelykadulla; soittavat kelloa tai tööttäävät, kun pelaaja on edessä, väistävät vähän, mutta kaatavat, jos ei väistä: 6 healthia) ja tölkinkerääjä (sininen kassi; ehtii roskiksiin ennen pelaajaa ja poimii kadulla lojuvat pullot ja tölkit) |
+| myöhemmin | lisää ideoita alla (Tulevat haasteet) |
+
+#### Tulevat haasteet (ideoita, ei vielä pelissä)
+
+Uudet hahmot päivä kerrallaan:
+
+- **Päivä 5:** **taskuvaras** (törmää ohimennen ja vie tavaran, joka muuttuu kesken päivän hukatuksi; saa takaisin kiinni ottamalla) ja **mummo** (hidas, mutta käsilaukku osuu kovaa).
+- **Päivä 6:** **some-vaikuttaja** (kuvaa pelaajaa; video leviää ja poliisit tunnistavat loppupäivän helpommin) ja **pappi** (auttaja: antaa pullaa tai kahvia kylmissään tai nälkäiselle).
+- **Päivä 7:** **lokkiparvet** (useampi lokki hyökkää ruoan perään yhtä aikaa) ja **poliisiparit**.
+- **Päivä 8 ja myöhemmin:** **turisti** (kysyy tietä; oikea neuvo tuo rahaa), **ääripuolueen edustaja** (tunkee lentolehtistä, ei pääse eroon) ja **poliitikko** (vaalikoju: ilmaista kahvia ja karkkia).
+
+Vaikeammat hukatut tavarat myöhempinä päivinä:
+
+- tavara on **jonkun hallussa** (ostettava, vaihdettava tai napattava)
+- tavara on **koiran suussa** (koira juoksee karkuun; makkaralla vaihtoon)
+- tavara on **puussa tai katoksen päällä** (pudotettava heittämällä)
+
+Erikoispäivät (satunnaisesti, tuovat vaihtelua):
+
+- **Kärppien voittopäivä:** kaduilla juhlijoita, halaajia ja ilmaisia juomia, mutta myös enemmän tappeluita ja poliiseja.
+- **Katujen siivouspäivä:** lakaisukone kulkee kadulla ja imaisee maassa olevat tavarat; hukatut tavarat pitää ehtiä hakea ennen sitä.
+- **Myrsky:** tuuli työntää hahmoa, roskat ja lehdet lentävät, heitot kaartuvat.
+- **Kova pakkanen:** kylmä kasvaa nopeasti, kadut liukkaita.
+- **Tietyöt:** jokin katu on suljettu, ja pitää kiertää.
+- **Poliisin puhallusratsia:** poliisi pysäyttää ja puhalluttaa; liian humalainen viedään putkaan.
+
+Päivän pikkutehtävät (vapaaehtoisia, palkintona rahaa tai pisteitä): esimerkiksi vie kaverille makkara, palauta löydetty lompakko omistajalleen, hae juoppo-tutulle pullo.
+
+Päivät vaikeutuvat lisäksi vähitellen kolmella tavalla:
 
 - **Etsintäsäde kasvaa:** koti ja hukatut tavarat ovat kauempana toisistaan.
 - **Enemmän hukattua:** joka päivä hukkuu useampi tavara.
@@ -341,6 +377,8 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
 
 ## Tappelu
 
+- **Parannettavaa:** tappelumekaniikka on vielä aika huono (lyönneissä ei ole painoa, osuman tuntuma on heikko ja vastustajat ovat ennalta-arvattavia). Parannusideat: issue #40 (osuman tuntuma, osumareaktiot, väistö ja vastahyökkäys, vastustajien vaihtelu, yhdistelmät, ympäristö ja ryhmätappelun vuorottelu). Ladatun lyönnin käsianimaation pitää näkyä selvästi (käsi koukkuun ja taakse): issue #41.
+
 - Pelissä on tappelua. Pelaaja voi lyödä muita, ja muut voivat hyökätä pelaajan kimppuun.
 - **Rämpytys ei kannata:** yksi lyönti on ilmainen, mutta jos lyö uudestaan heti perään (alle 0,7 s), health kuluu väliaikaisesti (7 / lyönti). Väliaikainen kulutus näkyy sydämessä vaaleanpunaisena, ja jokaisesta liian nopeasta lyönnistä pelaajan pään päälle ilmestyy sydän, joka tyhjenee (punainen vähenee ja vaaleanpunainen kasvaa); se näkyy pari sekuntia viimeisen lyönnin jälkeen ja koko uupumuksen ajan. Myös **juokseminen** kuluttaa healthia väliaikaisesti (3 / s; täysi sydän riittää noin 33 sekunnin eli 6–7 korttelin juoksuun). Kun pelaaja ei ole lyönyt eikä juossut 5 sekuntiin, vaaleanpunainen osa palautuu hitaasti, mutta vain liikkuessa (paikallaan seisten aika ei kulje, eikä mikään palaudu). Kun väliaikainen kulutus vie koko healthin (koko sydän vaaleanpunainen), pelaaja on **uupunut** (hengästynyt), kunnes noin 30 % sydämestä on taas punaista: hahmo lyö vain noin kerran kahdessa sekunnissa ja jaksaa juosta vain muutaman askeleen kerrallaan (kaksoisnapautuksella tai ohjaussauvalla). Uupunut hahmo hengittää raskaasti (rintakehä nousee ja laskee, hengityshöyryä nousee) myös paikallaan seistessä.
 - **Healthin koko määrä kuvastaa kuntoa:** sydän saa olla kokonaan vaaleanpunainen vain hetken. Täydellä healthilla aikaa on 10 sekuntia, lähes tyhjällä vain 1 sekunti (pelin aikaa). Sen jälkeen health alkaa vähetä vähitellen, kunnes pelaaja lepää ja punainen alkaa taas nousta.
@@ -350,6 +388,8 @@ Mitä enemmän alkoholia, sitä voimakkaammin nämä vaikuttavat:
   - **Kevyt esine** (tölkki, tyhjä muovipussi) ärsyttää kohdetta mutta ei juuri satuta.
   - **Raskas esine** (pullo, täysi pussi) tainnuttaa kohteen hetkeksi. Prototyypissä: pullo 60 % ja täysi energiajuomatölkki 40 % todennäköisyydellä (tyhjä tölkki on kevyt); kohde makaa 3–5 sekuntia ja nousee vihaisena.
   - **Ruoka** houkuttelee lokit ja koirat paikalle. Sillä voi harhauttaa vihaisen koiran.
+- **Heitettävät esineet ovat fysiikkaesineitä:** heitetty esine lentää, pyörii, pomppii seinistä ja maasta ja jää makaamaan kyljelleen siihen, mihin päätyi. Osuma ihmiseen tai eläimeen kimmottaa sen takaisin. Pullo särkyy ensimmäiseen osumaan. Makkara on löysä: kädessä sen päät roikkuvat ja heiluvat liikkeen mukana, lennossa se vipattaa ja maassa se lojuu loivalla mutkalla.
+- **Tappelija ei jää kävelijästä:** vihainen jalankulkija liikkuu nopeammin kuin pelaaja kävelee (3,2 vs. 2,6 m/s) mutta hitaammin kuin pelaaja juoksee. Lyönti alkaa jo vajaan puolentoista metrin päästä, ja valmistelun aikana hän astuu perään, joten pelkkä eteenpäin käveleminen ei väistä: pitää juosta, väistää syvyyssuunnassa tai lyödä takaisin.
 - **Heitto takaa-ajajaan:** jos perässä juoksevaan tai tappelevaan (ohikulkija, punkkari, poliisi, vartija, portsari) osuu heitetty esine, hän horjahtaa taaksepäin ja pysähtyy hetkeksi: pullo 2,2 s, energiajuomatölkki 1,8 s, kahvi 1,6 s, tölkki 1,2 s, ruoka 0,9 s. Hyvä heitto antaa aikaa paeta. (Kova esine voi myös tainnuttaa kokonaan, ks. yllä.)
 - **Tyrmäysten raja:** kun samaa hahmoa on tyrmätty 2–4 kertaa (raja arvotaan hahmokohtaisesti; myös heiton tainnutukset lasketaan), se jää tajuttomaksi maahan eikä enää nouse ajamaan takaa.
 
@@ -405,6 +445,9 @@ Hahmoideat:
 
 ## Kuolema
 
+- **Lööppi kuolinsyyn mukaan:** peli muistaa, mikä viimeksi vei healthia (tappelu, auto, koira, portsari, kaatuminen, kylmä, nälkä, krapula, uupumus, tai selviäminen nollaan promilleen), ja lööppiin arvotaan siihen sopiva humoristinen otsikko ja kuvateksti (2–4 vaihtoehtoa kullekin).
+- **Kuva kuoleman hetkestä:** hahmo lysähtää, ja hetken päästä "lukijan kuva" otetaan eri kulmasta kuin pelikamera: katutasolta vinosti (vähän kallellaan), ylhäältä kuin ikkunasta tai tekijän olan yli. Kuva on seepiansävyinen, rakeinen ja reunoilta tumma kuin sanomalehdessä. Lööpissä on iso kuva, sen vieressä kuvateksti ja alla "Kuva: lukijan kuva".
+
 - Kuolema esitetään **paikallislehden lööppinä**, jossa on hahmon kuva ja humoristinen otsikko kuolinsyystä, esimerkiksi "Lokki vei viimeisen makkaran – nälkä voitti". Lehden nimi on keksitty.
 - Sen jälkeen näytetään **pisteet ja ennätyslista**.
   - Ennätyslista on aluksi **vain omalla laitteella**. **Yhteinen maailmanlaajuinen lista** lisätään myöhemmin; se vaatii palvelimen ja huijauksen eston.
@@ -425,6 +468,10 @@ Hahmoideat:
   - **Bonus:** 500 pistettä, jos pääsee kotiin ja kaikki sen päivän hukatut tavarat on löydetty.
 
 ## Pelin opettaminen
+
+- **Saavutukset (F2):** 26 saavutusta, jotka tallentuvat laitteelle. Avautuessa vasempaan alakulmaan liukuu pokaali ja nimi. Listassa suorittamattomista näkyy vain nimi; joka kerta listan avatessa yhdestä satunnaisesta suorittamattomasta näkyy myös selitys valkoisella. Lista: Makkaramestari (tainnuta makkaroilla, kolme osumaa), Kunnon kättely, Punk's Not Dead, Ulos ja heti, Portsarin portsari, Pakotie, Pallomies, Lokkien vihollinen, Taivaan lahja, Paras ystävä, Kallis nakki, Lauma rauhoittuu, Lääkärin määräys, Raitis hetki, Vaaleanpunaiset norsut, Aamukalja, Kännissä kotiin, Kolmen kolmosen kännit (yli 3,33333 ‰), Siisti päivä, Ilman karttaa, Hyvä sydän, Painovoiman ystävä, Konepellin kyydissä, Kova ihminen, Pyykkipäivä ja Lööppitähti.
+
+- **Ohje (F1, peliohjaimella Back):** lyhyt tavoite ja näppäimet näppäimistölle, ohjaimelle ja puhelimelle; peli odottaa ohjeen ajan. Debug-työkalut ovat piilossa: ne kytketään päälle painamalla ohjeessa F12, jonka jälkeen F5–F10 toimivat (F10 hyppää seuraavaan päivään).
 
 - Erillistä opetusosiota ei ole.
 - **Poikkeus: käden esineen vihje.** Kun pelaaja poimii esineen käteen, pään yläpuolelle tulee viideksi sekunniksi ikonivihje ilman tekstiä: napin kuva (näppäimistöllä välilyönti, kosketusnäytöllä iso pyöreä nappi) → toiminnon kuva (juo: kallistettu pullo, syö: makkara, lyö: nyrkki), ja alla napin kuva kellon kanssa (pidä pohjassa) → heittokaari. Tämä näkyy joka kerta.
@@ -489,7 +536,7 @@ Lisätty prototyyppiin:
   - Kerjäläisiä on silloin kaksi kertaa useammin.
 - **Reunanuoli:** jos hukattu tavara on samassa korttelissa mutta ruudun ulkopuolella, ruudun reunassa näkyy oranssi nuoli ja tavaran kuva siihen suuntaan.
 - **Löytö:** kun hukattu tavara löytyy, sen kuva ponnahtaa isona keskelle ruutua valkoiselle pohjalle säteiden ja vihreän rastin kanssa ja liukuu sitten ylös "Etsi:"-listaan.
-- **Tuulessa lentävät lehdet:** kaduilla on syksyn lehtiä (ei lumella). Tuulella on hitaasti vaihteleva perussuunta ja välillä puuskia. Maassa makaavat lehdet liukuvat nykien ja kääntyilevät tuulen voimistuessa ja nousevat ilmaan kovassa puuskassa. Ilmassa lehti putoaa hitaasti heilurimaisesti puolelta toiselle (hidastuu heilahduksen päissä ja kallistuu sen mukana) ja pyörii kovassa tuulessa. Välillä tuuli nappaa lehden niin, että se kiepsahtaa kerran ympäri ja tekee samalla pienen silmukan ilmassa (kovassa tuulessa useammin). Välillä puuska nostaa pienen kasan lehtiä yhdessä pyörteeksi. Sateella lehdet ovat märkiä ja raskaita. Lehdet liikkuvat vain, kun pelin aika kulkee.
+- **Tuulessa lentävät lehdet:** kaduilla on syksyn lehtiä (ei lumella). Tuulella on hitaasti vaihteleva perussuunta ja välillä puuskia. Maassa makaavat lehdet liukuvat nykien ja kääntyilevät tuulen voimistuessa ja nousevat ilmaan kovassa puuskassa. Ilmassa lehti putoaa hitaasti heilurimaisesti puolelta toiselle (hidastuu heilahduksen päissä ja kallistuu sen mukana) ja pyörii kovassa tuulessa. Välillä tuuli nappaa lehden niin, että se kiepsahtaa kerran ympäri ja tekee samalla pienen silmukan ilmassa (kovassa tuulessa useammin). Välillä puuska nostaa pienen kasan lehtiä yhdessä pyörteeksi. Ohi ajava auto vetää ilmaa mukanaan: lähellä auton kylkeä ja sen perässä lehdet pöllähtävät liikkeelle ja ilmaan auton kulkusuuntaan. Sateella lehdet ovat märkiä ja raskaita. Lehdet liikkuvat vain, kun pelin aika kulkee.
 - **Sää:** joka päivä arvotaan aurinkoinen (liikkuvat pilvien varjot), pilvinen (pehmeä valo), sade (pisarat, harmaa valo, sumu) tai lumi ja pakkanen (hiutaleet, lumikerros kaduilla, reunakiven yli tai esteeseen törmätessä voi liukastua, kengättä helpommin). Sade ja lumi pysähtyvät ilmaan, kun aika on pysähdyksissä.
 - **Lumi on liukas:** lumisateella hahmo liukuu napin päästämisen jälkeen (selvin päin noin 0,3 s, humalassa pidempään: 0,3 s + 0,5 s jokaista promillea kohti) ja kääntyy laiskasti; liu'un aikana aika kulkee. Yli 1,1 promillessa jyrkkä käännös voi kaataa hahmon perseelleen: suoraan kävellessä tuskin koskaan, todennäköisyys kasvaa käännöksen jyrkkyyden mukaan ja on suurin, kun kääntyy yhtäkkiä vastakkaiseen suuntaan (humala, juoksu ja kengättömyys lisäävät).
 - **Kylmä:** ei mittaria; hahmo tärisee, kun on kylmissään: nopea, pieni värinä, kädet halaavat vartaloa, kasvot sinertävät ja suusta nousee höyryä. Kylmä kasvaa sateella ja pakkasella, ilman takkia ja märillä/kylmillä jaloilla nopeammin; aurinkoisella säällä hahmo lämpenee. Kylmissään nälkä kasvaa 1,5-kertaisesti, ja kova kylmä kuluttaa healthia. Humalassa (yli 1,3 ‰) kylmä tuntuu vähemmän. Kioskissa ja baarissa lämpenee, mutta aika kuluu sillä aikaa. **Kylmissään voi myös lämmitellä:** juokseminen lämmittää (kylmä vähenee juostessa, myös sateella ja pakkasella), jokainen lyönti lämmittää vähän, ja tiukka viina lämmittää heti (viina paljon, tuntematon aine melkein yhtä paljon, tavallinen pullo vähän, olut ei lainkaan). Aamun kylmyys riippuu yöpaikasta.

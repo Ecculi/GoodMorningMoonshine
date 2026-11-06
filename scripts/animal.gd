@@ -241,6 +241,7 @@ func _gull(dt: float) -> void:
 			if _move_to(hand, 5.0, dt) or (position - hand).length() < 0.45:
 				# Snatched!
 				main.player._consume_hand_item()
+				GameState.unlock("FOOD_STOLEN")
 				carrying_food = true
 				main.popup("!", main.player.position + Vector3(0, 2.3, 0), Color(1, 0.6, 0.5))
 				state = A.FLEE
@@ -305,6 +306,7 @@ func _feathers() -> void:
 func hit_by_item(_kind: int) -> void:
 	if state == A.FLEE:
 		return
+	GameState.item_hit(self)
 	if kind == "gull":
 		dir = 1 if position.x >= main.player.position.x else -1
 		state = A.FLEE
@@ -382,6 +384,7 @@ func _dog(dt: float) -> void:
 			# Now and then it just grabs the food and legs it.
 			if _follow_t > 3.0 and _player_dist() < 1.2 and _rng.randf() < 0.25 * dt:
 				main.player._consume_hand_item()
+				GameState.unlock("FOOD_STOLEN")
 				carrying_food = true
 				main.popup("!", p + Vector3(0, 2.3, 0), Color(1, 0.6, 0.5))
 				_run_off("Hau!")
@@ -394,6 +397,7 @@ func _dog(dt: float) -> void:
 					main.popup("Hau!", position + Vector3(0, 0.9, 0), Color(1, 1, 1))
 				if _player_dist() < 1.5:
 					state = A.WANDER
+					GameState.unlock("DOG_LEAD")
 		A.ATTACK:
 			if _player_dist() > 12.0:
 				state = A.WANDER
@@ -415,7 +419,7 @@ func _dog(dt: float) -> void:
 			var spot := p + Vector3(side * 0.6, 0, sin(_t * 2.3) * 0.4)
 			_move_to(spot, speed * _charge_k, dt)
 			if _player_dist() < 0.9:
-				main.player.take_hit(breed["bite"], position.x)
+				main.player.take_hit(breed["bite"], position.x, "dog")
 				main.popup("Hau!", position + Vector3(0, 0.9, 0), Color(1, 0.5, 0.4))
 				_rest_t = _rng.randf_range(1.5, 3.0)
 				_rest_z = _rng.randf_range(-0.8, 0.8)
@@ -429,6 +433,8 @@ func _dog(dt: float) -> void:
 			if _move_to(_food_item.global_position, speed, dt):
 				main.remove_item(_food_item)
 				_food_item = null
+				if angry:
+					GameState.unlock("DOG_CALM")
 				angry = false
 				state = A.WANDER
 				main.popup("♥", position + Vector3(0, 0.9, 0), Color(1, 0.5, 0.6))

@@ -8,6 +8,8 @@ extends Node3D
 ## - "bouncer": stands by the bar door; hit him and he runs after you like
 ##   the police, throws you out onto the street by the scruff of the neck,
 ##   then walks back to the door
+## - "collector": can collector (from day 4); gets to the bins before the
+##   player and picks up bottles and cans lying in the street
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -20,7 +22,9 @@ const Ragdoll = preload("res://scripts/ragdoll.gd")
 enum S { WALK, FIGHT, STUNNED, KO, LEAVE, CHASE, RETURN }
 
 const EDGE_X := 25.0
-const CHASE_SPEED := 2.3
+## Faster than the player walks (2.6), slower than running (6.4): walking
+## away is no escape, running is.
+const CHASE_SPEED := 3.2
 const WINDUP := 0.45
 const ATTACK_COOLDOWN := 1.3
 const HIT_DAMAGE := 9.0
@@ -125,6 +129,20 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			stationary = true
 			chase_speed = BOUNCER_SPEED
 			telegraphs = true
+		"collector":
+			model = PersonModel.new(Color(0.35, 0.4, 0.3), Color(0.3, 0.28, 0.25), skin,
+				Color(0.45, 0.42, 0.38), 0.97)
+			speed = 1.3
+			# A big bag of cans in the hand.
+			var bag := MeshInstance3D.new()
+			var bgm := BoxMesh.new()
+			bgm.size = Vector3(0.3, 0.42, 0.3)
+			bag.mesh = bgm
+			var bgmat := StandardMaterial3D.new()
+			bgmat.albedo_color = Color(0.15, 0.35, 0.75)
+			bag.material_override = bgmat
+			bag.position = Vector3(0, -0.25, 0)
+			model.hand.add_child(bag)
 		"punk":
 			# Black leather jacket, ripped jeans, a bright mohawk.
 			model = PersonModel.new(Color(0.08, 0.08, 0.09), Color(0.25, 0.3, 0.45), skin,
@@ -173,6 +191,18 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			model = PersonModel.new(SHIRTS[rng.randi() % SHIRTS.size()], PANTS[rng.randi() % PANTS.size()],
 				skin, HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.92, 1.06))
 	add_child(model)
+	match role:
+		"police", "bouncer":
+			model.set_shoe_color(Color(0.05, 0.05, 0.06))
+		"guard":
+			model.set_shoe_color(Color(0.1, 0.1, 0.12))
+		"beggar", "drunk":
+			model.set_shoe_color(Color(0.3, 0.22, 0.15))
+		"punk":
+			model.set_shoe_color(Color(0.08, 0.08, 0.08))  # boots
+		_:
+			model.set_shoe_color([Color(0.12, 0.1, 0.09), Color(0.35, 0.22, 0.12), Color(0.85, 0.85, 0.85),
+				Color(0.15, 0.25, 0.5), Color(0.6, 0.15, 0.15)][rng.randi() % 5])
 	_mark = Label3D.new()
 	_mark.text = "!"
 	_mark.font_size = 96
@@ -274,6 +304,41 @@ func offer_trade(p: Node3D) -> bool:
 			GameState.drink(0.3)
 			main.popup("glug", p.position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
 	GameState.busy_time = maxf(GameState.busy_time, 0.6)
+	return true
+
+
+## Can collector: heads for the nearest unsearched bin or bottle/can in
+## the street, empties it into the bag, and goes on to the next.
+## Returns true while busy with that (instead of just walking).
+var _goal := {}
+var _rummage_t := 0.0
+
+
+func _collect(dt: float) -> bool:
+	if _rummage_t > 0.0:
+		_rummage_t -= dt
+		model.animate(0.0, dt)
+		return true
+	if _goal.is_empty() or (_goal["type"] == "item" and not is_instance_valid(_goal["item"])):
+		_goal = main.collector_target(position)
+		if _goal.is_empty():
+			return false
+	var to := Vector2(_goal["pos"].x - position.x, _goal["pos"].z - position.z)
+	if to.length() < 0.35:
+		if _goal["type"] == "bin":
+			main.collector_take_bin(_goal["i"])
+		elif is_instance_valid(_goal["item"]) and _goal["item"].can_pickup():
+			main.popup("kolin", position + Vector3(0, 1.8, 0), Color(0.85, 0.85, 0.9))
+			main.remove_item(_goal["item"])
+		model.punch()
+		_rummage_t = 1.0
+		_goal = {}
+		return true
+	var stp := to.normalized() * minf(speed * dt, to.length())
+	position.x += stp.x
+	position.z += stp.y
+	dir = 1 if stp.x >= 0.0 else -1
+	model.animate(1.0, dt, speed / 1.3)
 	return true
 
 
@@ -444,6 +509,8 @@ func _walk(dt: float) -> void:
 		return
 	if role == "punk":
 		main.punk_meet(self)
+	if role == "collector" and _collect(dt):
+		return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
 	if position.x > EDGE_X:
@@ -503,21 +570,27 @@ func _fight(dt: float) -> void:
 		dir = 1 if dx >= 0.0 else -1
 	_cooldown -= dt
 
+	var target := Vector2(p.position.x - dir * 0.8, p.position.z)
+	var cur := Vector2(position.x, position.z)
 	if _windup >= 0.0:
+		# Winding up: keeps stepping after the player (a lunge), so just
+		# walking on doesn't dodge it. Running or stepping aside does.
 		_windup += dt
-		model.animate(0.0, dt)
+		var lunge := cur.move_toward(target, chase_speed * 0.9 * dt)
+		position.x = lunge.x
+		position.z = lunge.y
+		model.animate(0.6, dt, 1.4)
 		if _windup >= WINDUP:
 			_windup = -1.0
 			model.raise_arm(false)
 			model.punch()
 			_cooldown = ATTACK_COOLDOWN
-			# The player can dodge by moving away in depth or sideways.
-			if dx * dir > -0.2 and absf(dx) < 1.3 and absf(dz) < 0.5:
+			dx = p.position.x - position.x
+			dz = p.position.z - position.z
+			if dx * dir > -0.2 and absf(dx) < 1.5 and absf(dz) < 0.6:
 				p.take_hit(hit_damage, position.x)
 		return
 
-	var target := Vector2(p.position.x - dir * 0.9, p.position.z)
-	var cur := Vector2(position.x, position.z)
 	if cur.distance_to(target) > 0.25:
 		var nxt := cur.move_toward(target, chase_speed * dt)
 		position.x = nxt.x
@@ -525,15 +598,17 @@ func _fight(dt: float) -> void:
 		model.animate(1.0, dt, 1.6)
 	else:
 		model.animate(0.0, dt)
-		if _cooldown <= 0.0:
-			_windup = 0.0
-			if telegraphs:
-				model.raise_arm(true)
+	# Close enough: start the punch (no need to stand right next to them).
+	if _cooldown <= 0.0 and absf(dx) < 1.4 and absf(dz) < 0.6:
+		_windup = 0.0
+		if telegraphs:
+			model.raise_arm(true)
 
 
 func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 	if state == S.KO:
 		return
+	times_hit += 1
 	hp -= dmg
 	_knock = 3.5 * knock_mult * signf(position.x - attacker.position.x)
 	_windup = -1.0
@@ -550,6 +625,11 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 		var push := Vector3(away * randf_range(1.3, 1.8), randf_range(1.3, 1.8), randf_range(-0.3, 0.3))
 		if attacker.has_method("_check_hits"):
 			push = Vector3(attacker.dir * 7.0, 3.5, randf_range(-0.8, 0.8))
+			# Run over: half the time the shoes fly off.
+			if not _shoeless and randf() < 0.5:
+				_shoeless = true
+				model.set_shoes(false)
+				main.npc_shoes_fly_off(position, attacker.dir)
 		_knock_out(push)
 	elif role == "bouncer":
 		provoke()
@@ -563,9 +643,29 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 		_mark.visible = true
 
 
+## Sausage hits taken (three knock you out, with an achievement).
+var _sausage_hits := 0
+## Times punched or hit (for "one punch").
+var times_hit := 0
+## Lost their shoes to a car.
+var _shoeless := false
+
+
 func hit_by_item(kind: int) -> void:
 	if state == S.KO:
 		return
+	GameState.item_hit(self)
+	if kind == Item.Kind.FOOD:
+		_sausage_hits += 1
+		if _sausage_hits >= 3:
+			# Out cold from a pelting with sausages.
+			_dazed = true
+			_ko_time = randf_range(DAZE_TIME_MIN, DAZE_TIME_MAX)
+			main.popup("*", position + Vector3(0, 1.9, 0), Color(1, 0.9, 0.4))
+			_knock_out(Vector3(signf(position.x - main.player.position.x) * 1.5, 1.0, 0))
+			main.report_crime(position, false)
+			GameState.unlock("SAUSAGE_KO")
+			return
 	# Hard things can knock them out for a moment.
 	if randf() < DAZE_CHANCE.get(kind, 0.0):
 		if kind == Item.Kind.BOTTLE:
@@ -585,6 +685,8 @@ func hit_by_item(kind: int) -> void:
 	# moment (they stagger back), harder things for longer. A good throw
 	# buys time to get away.
 	if is_hostile():
+		if role == "police" and state == S.CHASE and kind == Item.Kind.BOTTLE:
+			GameState.unlock("COP_STOP")
 		var stop: float = STAGGER_TIME.get(kind, 0.8)
 		if kind == Item.Kind.BOTTLE:
 			hp -= 1
@@ -691,6 +793,15 @@ func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
 	state = S.KO
 	_timer = 0.0
 	_ko_count += 1
+	if role == "bouncer":
+		GameState.unlock("BOUNCER_KO")
+	if role == "punk" and gang.size() >= 2:
+		var all_down := true
+		for g in gang:
+			if is_instance_valid(g) and g.state != S.KO:
+				all_down = false
+		if all_down:
+			GameState.unlock("PUNKS_ALL")
 	_mark.visible = false
 	model.raise_arm(false)
 	if model.sitting:

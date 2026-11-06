@@ -1,14 +1,22 @@
-# Checks that the game builds for the browser. (Publishing on GitHub Pages
-# is turned off for now.)
+# Builds the game for the browser. From main it is also published on
+# GitHub Pages: https://ecculi.github.io/GoodMorningMoonshine/
+# Needs Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
+# Other branches only check that the game builds.
 name: Web build
 
 on:
   push:
-    branches: [main, docs/oulu-map-hrrfs7]
+    branches: ["**"]
   workflow_dispatch:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   GODOT_VERSION: "4.7"
@@ -40,9 +48,38 @@ jobs:
           unzip -q -j templates.tpz "templates/web_nothreads_*" "templates/version.txt" -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
           rm templates.tpz
 
-      - name: Export (debug build, so the F1-F3 test buttons are on screen)
+      # The export succeeds even with broken scripts, so run the game
+      # headless for a moment and fail on any script error in the log.
+      - name: Check scripts
+        run: |
+          ~/godot/godot --headless --path . --import > import.log 2>&1 || true
+          timeout 60 ~/godot/godot --headless --path . --quit-after 600 > run.log 2>&1 || true
+          cat run.log
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Compile Error|ERROR: .*\.gd" import.log run.log; then
+            echo "::error::GDScript errors found (see above)"
+            exit 1
+          fi
+
+      # Release build: the debug tools are still there behind F1 -> F12.
+      - name: Export
         run: |
           mkdir -p build/web
           ~/godot/godot --headless --path . --import || true
-          ~/godot/godot --headless --path . --export-debug "Web" build/web/index.html
+          ~/godot/godot --headless --path . --export-release "Web" build/web/index.html
           test -f build/web/index.wasm
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  # Publish only from main.
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -30,6 +30,7 @@ const COLORS := [Color(0.85, 0.55, 0.12), Color(0.75, 0.3, 0.1), Color(0.92, 0.7
 	Color(0.55, 0.32, 0.12), Color(0.68, 0.18, 0.08), Color(0.6, 0.55, 0.2)]
 
 var seg := Vector3i.ZERO
+var main
 var _leaves: Array = []
 var _rng := RandomNumberGenerator.new()
 var _t := 0.0
@@ -128,7 +129,33 @@ func _wind(p: Vector3) -> Vector3:
 	var w := _base + _gust
 	var wobble := sin(_t * 0.7 + p.x * 0.35) * 0.4 + sin(_t * 1.9 + p.z * 0.8) * 0.25
 	var side := sin(_t * 0.5 + p.x * 0.2) * 0.35 * absf(w)
-	return Vector3(w * (1.0 + wobble * 0.3) + wobble, 0.0, side)
+	return Vector3(w * (1.0 + wobble * 0.3) + wobble, 0.0, side) + _car_wind(p)
+
+
+## Passing cars drag the air along: strongest close beside and just behind
+## the car, in the direction it drives, so leaves whirl up after it.
+func _car_wind(p: Vector3) -> Vector3:
+	var w := Vector3.ZERO
+	if main == null:
+		return w
+	for c in main.cars:
+		if not is_instance_valid(c):
+			continue
+		var spd: float = c.speed
+		if spd < 0.5:
+			continue
+		var d: float = float(c.dir)
+		var along: float = (p.x - c.position.x) * d  # + ahead of the car, - behind
+		var dz: float = p.z - c.position.z
+		# A wake trailing a few metres behind, a little in front, and about
+		# a lane to each side.
+		var fx := exp(-pow(along + 1.5, 2.0) / (2.0 * 2.8 * 2.8))
+		var fz := exp(-dz * dz / (2.0 * 1.4 * 1.4))
+		var k := fx * fz
+		w.x += d * spd * 0.9 * k
+		# Pushed out sideways a little by the car's front.
+		w.z += signf(dz) * spd * 0.25 * k * (1.0 if along > -0.5 else 0.3)
+	return w
 
 
 func _process(_delta: float) -> void:

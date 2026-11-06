@@ -19,3 +19,161 @@ SIGN_POLICE,POLIISI
 HICCUP,hik!
 SLEEP_TIRED,Nukahti väsymykseen
 SLEEP_FELL,Kaatui ja jäi siihen nukkumaan
+HL_SOBER_1,Selvisi – ja se koitui kohtaloksi
+HL_SOBER_2,Mies raitistui kertaheitolla – lääkärit ymmällään
+HL_SOBER_3,"Viimeiset sanat: ""Otetaanko vielä yhdet?"""
+HL_SOBER_4,Promillet loppuivat kesken päivän – niin myös kaikki muu
+CAP_SOBER_1,"Kuvassa vainaja hetki sen jälkeen, kun pullo tyhjeni lopullisesti."
+CAP_SOBER_2,"Silminnäkijä: ""Hän näytti yhtäkkiä niin kirkkaalta."""
+CAP_SOBER_3,"Lähipiiri: ""Hän ei ollut koskaan ollut selvin päin näin pitkään."""
+HL_FIGHT_1,Kirkkokadun kulkija sai turpiinsa viimeisen kerran
+HL_FIGHT_2,"""Hän aloitti"", kertovat kaikki osapuolet"
+HL_FIGHT_3,Paikallinen nyrkkeilylupaus ei sittenkään ollut lupaus
+HL_FIGHT_4,Riita alkoi tupakasta – päättyi katukiveykseen
+CAP_FIGHT_1,Kuvassa tappelun häviäjä. Voittaja ei halunnut kuvaan.
+CAP_FIGHT_2,"Ohikulkija: ""Hän huusi jotain Kärpistä, ja sitten tuli turpaan."""
+CAP_FIGHT_3,"Poliisi epäilee, että asia selviää vasta, kun kaikki ovat selvinneet."
+HL_CAR_1,Auto voitti – taas
+HL_CAR_2,"Kuljettaja: ""Luulin häntä roskasäkiksi"""
+HL_CAR_3,Konepellillä matkannut mies ei maksanut kyydistä
+HL_CAR_4,Suojatie oli kolmen metrin päässä
+CAP_CAR_1,Auto selvisi pienin naarmuin.
+CAP_CAR_2,"Kuljettaja kertoo jarruttaneensa ""melkein ajoissa""."
+CAP_CAR_3,Paikalta löytyi yksi kenkä ja paljon itseluottamusta.
+HL_DOG_1,Koira kaatoi aikuisen miehen
+HL_DOG_2,"Omistaja: ""Se on ihan kiltti, se vain leikkii"""
+HL_DOG_3,"Makkara olisi pelastanut, arvioi eläinlääkäri"
+CAP_DOG_1,Koira ei suostunut kommentoimaan.
+CAP_DOG_2,Koira palkittiin tapahtuman jälkeen nakilla.
+CAP_DOG_3,"Naapurit kuvailevat koiraa ""tavallisesti rauhalliseksi""."
+HL_BOUNCER_1,Portsari heitti ulos – lopullisesti
+HL_BOUNCER_2,"Portsari: ""Hänellä oli likaiset housut"""
+HL_BOUNCER_3,Baarin ovella sattui – sisään ei päässyt kukaan
+CAP_BOUNCER_1,Portsari palasi ovelle kuin mitään ei olisi tapahtunut.
+CAP_BOUNCER_2,"Baarin edustaja: ""Pukukoodimme on selvä."""
+HL_FALL_1,Reunakivi koitui kohtaloksi
+HL_FALL_2,Liukastui viimeisen kerran
+HL_FALL_3,Mies kaatui omaan nerokkuuteensa
+CAP_FALL_1,"Kaupungin mukaan reunakivi on ""täysin standardin mukainen""."
+CAP_FALL_2,"Silminnäkijä: ""Se näytti melkein tahalliselta."""
+HL_COLD_1,Pakkanen yllätti oululaisen – taas
+HL_COLD_2,"Takki olisi auttanut, toteaa poliisi"
+HL_COLD_3,Jäätyi pystyyn kuin lipputanko
+CAP_COLD_1,Ilmatieteen laitos muistuttaa: talvi tulee joka vuosi.
+CAP_COLD_2,Takki löytyi myöhemmin naulakosta.
+HL_HUNGER_1,Nälkä vei miehen – grilli oli auki
+HL_HUNGER_2,"Makkara olisi pelastanut, arvioi grillin myyjä"
+CAP_HUNGER_1,Viimeinen ateria: puolikas tölkki ja toivo.
+CAP_HUNGER_2,Grillin jono oli tapahtumahetkellä lyhyt.
+HL_HANGOVER_1,Krapula vei miehen – asiantuntijat järkyttyneitä
+HL_HANGOVER_2,Aamukalja jäi juomatta – seuraukset karmeat
+HL_HANGOVER_3,"""Ei enää ikinä"", hän sanoi – ja piti lupauksensa"
+CAP_HANGOVER_1,"Kuvassa mies, joka ""vain lepuutti silmiään hetken""."
+CAP_HANGOVER_2,"Kioskin myyjä: ""Hän kysyi, joko kaljaa saa."""
+HL_EXHAUST_1,Hengästyi hengiltä
+HL_EXHAUST_2,Juoksulenkki venyi liian pitkäksi
+CAP_EXHAUST_1,Viimeiset metrit hän käveli. Sitten ei enää.
+CAP_EXHAUST_2,"Urheiluseura järkyttyi: ""Hän ei ollut edes jäsen."""
+PHOTO_CREDIT,Kuva: lukijan kuva
+CAP_ANY_1,"Silminnäkijät ja korvin kuulijat kertoivat, että viimeisinä tekoinaan uhri pieraisi."
+HL_CAR_5,"Kuljettaja: ""En ehtinyt jarruttaa"""
+HL_CAR_6,Jalankulkija hävisi kohtaamisen farmariauton kanssa
+CAP_CAR_4,"Kuljettaja: ""En ehtinyt jarruttaa, koska en nähnyt häntä. Ja vaikka näinkin, niin mitä sitten?"""
+CAP_CAR_5,"Kuljettaja: ""Hän oli tiellä, ja tie on autoja varten."""
+CAP_CAR_6,"Poliisi muistuttaa, että suojatietä käyttävät myös elävät."
+HELP_TITLE,Ohje
+HELP_GOAL,"Selviä päivästä toiseen. Etsi hukatut tavarat ja mene kotiin. Juo sopivasti: selvänä kuolet, liikaa juotuasi sammut."
+HELP_KEY_1,Nuolet / WASD: liiku  ·  Shift: juokse
+HELP_KEY_2,"Välilyönti: lyö, juo, syö, penko, ovi  ·  pohjassa: heitä"
+HELP_KEY_3,P: puhelin  ·  F1: ohje  ·  F2: saavutukset
+HELP_CLOSE,Esc sulkee
+HELP_DEBUG,"Debug päällä: F5 health täyteen, F6 +0,1 ‰, F7 +100 €, F8 akku +25 %, F9 ei nälkää, kylmää eikä väsymystä, F10 seuraava päivä. F12 pois."
+HL_SOBER_5,Raitis päivä osoittautui liian raskaaksi
+HL_SOBER_6,Tutkimus: selvä olotila voi olla hengenvaarallinen
+HL_SOBER_7,Mies kokeili tipattomuutta – tulokset murskaavia
+HL_SOBER_8,"""Hän oli aina juhlien sielu"" – nyt juhlat ohi"
+HL_FIGHT_5,Keskustelu eteni käsirysyksi – käsirysy eteni loppuun
+HL_FIGHT_6,"Mies hävisi väittelyn, nyrkkeilyn ja lopulta kaiken"
+HL_FIGHT_7,"""Mitä sä tuijotat?"" – viimeinen keskustelu"
+HL_FIGHT_8,Ohikulkija sai osuman – ja toisen – ja kolmannen
+HL_FIGHT_9,Sovittelu epäonnistui Kirkkokadulla
+HL_CAR_7,Liikennevalot olivat vihreät – mutta väärälle osapuolelle
+HL_CAR_8,Mies yritti pysäyttää auton – onnistui vain osittain
+HL_CAR_9,Tiellä tapahtui – auto ei edes hidastanut
+HL_DOG_4,Mies kaatui koiran vuoksi – koira tyytyväinen
+HL_DOG_5,"""Se on vain pentu"", kertoo omistaja"
+HL_DOG_6,Rakki voitti – makkara jäi syömättä
+HL_BOUNCER_4,Portsari teki työnsä – liiankin hyvin
+HL_BOUNCER_5,Jonon ohittaminen ei kannattanut
+HL_FALL_4,Painovoima voitti jälleen
+HL_FALL_5,Mies kompastui omiin jalkoihinsa – ja viimeisen kerran
+HL_FALL_6,Katu tuli vastaan odotettua nopeammin
+HL_COLD_4,Oululainen ei uskonut säätiedotusta
+HL_COLD_5,Mies pukeutui kevätsään mukaan – oli marraskuu
+HL_COLD_6,Viima vei miehen ennen kuin takki ehti
+HL_HUNGER_3,Nälkä yllätti kesken kaiken
+HL_HUNGER_4,Mies unohti syödä – ja vähän muutakin
+HL_HANGOVER_4,Huono olo paheni yllättäen lopulliseksi
+HL_HANGOVER_5,Darra voitti ottelun selvin luvuin
+HL_HANGOVER_6,Mies lupasi lopettaa – maailmankaikkeus otti hänet sanasta
+HL_EXHAUST_3,Mies juoksi itsensä hengiltä – ei edes kilpailussa
+HL_EXHAUST_4,"Liikunta vaarallista, toteaa paikallinen"
+ACH_SAUSAGE_KO,Makkaramestari
+ACH_SAUSAGE_KO_DESC,Tainnuta vastustaja makkaralla heittelemällä.
+ACH_ONE_PUNCH,Kunnon kättely
+ACH_ONE_PUNCH_DESC,Tyrmää joku yhdellä täysin ladatulla lyönnillä.
+ACH_PUNKS_ALL,Punk's Not Dead
+ACH_PUNKS_ALL_DESC,Tyrmää koko punkkariporukka.
+ACH_THROWN_OUT,Ulos ja heti
+ACH_THROWN_OUT_DESC,Portsari nakkaa sinut kadulle.
+ACH_BOUNCER_KO,Portsarin portsari
+ACH_BOUNCER_KO_DESC,Tyrmää portsari.
+ACH_COP_STOP,Pakotie
+ACH_COP_STOP_DESC,Pysäytä takaa-ajava poliisi heittämällä pullo.
+ACH_THREE_TARGETS,Pallomies
+ACH_THREE_TARGETS_DESC,Osu heitetyllä esineellä kolmeen eri hahmoon saman päivän aikana.
+ACH_GULL_STEP,Lokkien vihollinen
+ACH_GULL_STEP_DESC,Astu lokin päälle.
+ACH_SPLATS3,Taivaan lahja
+ACH_SPLATS3_DESC,Kolme lokin paskaa näkökentässä yhtä aikaa.
+ACH_DOG_LEAD,Paras ystävä
+ACH_DOG_LEAD_DESC,Koira johdattaa sinut hukatun tavaran luo.
+ACH_FOOD_STOLEN,Kallis nakki
+ACH_FOOD_STOLEN_DESC,Koira tai lokki vie ruoan kädestä.
+ACH_DOG_CALM,Lauma rauhoittuu
+ACH_DOG_CALM_DESC,Rauhoita vihainen koira heittämällä makkara.
+ACH_DOCTOR,Lääkärin määräys
+ACH_DOCTOR_DESC,"Pysy minuutin ajan 1,0–2,5 promillessa."
+ACH_SOBER_30,Raitis hetki
+ACH_SOBER_30_DESC,"Ole 30 sekuntia alle 0,5 promillessa ja selviä."
+ACH_ELEPHANTS,Vaaleanpunaiset norsut
+ACH_ELEPHANTS_DESC,Näe kaikki neljä näkyä samoista pillereistä.
+ACH_MORNING_BEER,Aamukalja
+ACH_MORNING_BEER_DESC,Juo päivän ensimmäinen juoma ennen kello kahdeksaa.
+ACH_HOME_DRUNK,Kännissä kotiin
+ACH_HOME_DRUNK_DESC,"Mene kotiin nukkumaan yli 2,5 promillessa."
+ACH_PROMILLE_333,Kolmen kolmosen kännit
+ACH_PROMILLE_333_DESC,"Hanki yli 3,33333 promillen humala."
+ACH_CLEAN_DAY,Siisti päivä
+ACH_CLEAN_DAY_DESC,Löydä kaikki hukatut tavarat ja pääse kotiin.
+ACH_NO_MAP,Ilman karttaa
+ACH_NO_MAP_DESC,"Löydä kaikki tavarat niin, että puhelin löytyy viimeisenä."
+ACH_BEGGAR_PAY,Hyvä sydän
+ACH_BEGGAR_PAY_DESC,Maksa kerjäläiselle vihjeestä.
+ACH_GRAVITY5,Painovoiman ystävä
+ACH_GRAVITY5_DESC,Kaadu viisi kertaa saman päivän aikana.
+ACH_BONNET_SURVIVE,Konepellin kyydissä
+ACH_BONNET_SURVIVE_DESC,Selviä hengissä auton konepellin kyydistä.
+ACH_RUN_OVER_SURVIVE,Kova ihminen
+ACH_RUN_OVER_SURVIVE_DESC,Jää auton alle ja selviä hengissä.
+ACH_LAUNDRY,Pyykkipäivä
+ACH_LAUNDRY_DESC,Nuku kadulla kolme yötä peräkkäin.
+ACH_HEADLINES10,Lööppitähti
+ACH_HEADLINES10_DESC,Päädy lehteen kymmenellä eri otsikolla.
+ACH_UNLOCKED,Saavutus!
+ACH_LIST,Saavutukset %d / %d
+HL_BIKE_1,Pyöräilijä soitti kelloa – liian myöhään
+HL_BIKE_2,Sähköpotkulauta kaatoi miehen jalkakäytävällä
+HL_BIKE_3,"""Kling kling"" olivat viimeiset kuullut äänet"
+CAP_BIKE_1,"Pyöräilijä: ""Jalkakäytävä on minun kaistani."""
+CAP_BIKE_2,Potkulauta ajoi pois kuin mitään ei olisi tapahtunut.

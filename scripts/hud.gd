@@ -48,6 +48,8 @@ func show_card(m: String, title: String, sub: String) -> void:
 
 func hide_card() -> void:
 	mode = ""
+	_death_photo = null
+	_death_caption = ""
 
 
 ## Morning: the character pats their pockets; missing things are crossed out.
@@ -81,8 +83,10 @@ func splat() -> void:
 	var vs := get_viewport_rect().size
 	_splats.append({
 		"pos": Vector2(randf_range(vs.x * 0.15, vs.x * 0.85), randf_range(vs.y * 0.1, vs.y * 0.7)),
-		"size": randf_range(50.0, 95.0), "t": SPLAT_TIME, "seed": randi(),
+		"size": randf_range(75.0, 143.0), "t": SPLAT_TIME, "seed": randi(),
 	})
+	if _splats.size() >= 3:
+		GameState.unlock("SPLATS3")
 
 
 func _draw_splats() -> void:
@@ -113,6 +117,52 @@ func _draw_splats() -> void:
 			draw_circle(Vector2(x0, c.y + ln), s * 0.07, col)
 		# A greyish-green centre.
 		draw_circle(c + Vector2(s * 0.06, -s * 0.04), s * 0.12, Color(0.45, 0.5, 0.35, 0.7 * a))
+
+
+## Achievement unlocked: a banner slides in at the bottom left for a few
+## seconds (a trophy and the name). Several queue up.
+const ACH_TIME := 4.0
+var _ach_queue: Array = []
+var _ach_t := 0.0
+
+
+func show_achievement(id: String) -> void:
+	_ach_queue.append(id)
+
+
+func _draw_achievement(vs: Vector2, font: Font) -> void:
+	if _ach_queue.is_empty():
+		return
+	_ach_t += get_process_delta_time()
+	if _ach_t >= ACH_TIME:
+		_ach_t = 0.0
+		_ach_queue.pop_front()
+		return
+	var id: String = _ach_queue[0]
+	var slide := clampf(_ach_t / 0.3, 0.0, 1.0) * clampf((ACH_TIME - _ach_t) / 0.3, 0.0, 1.0)
+	var name_text := tr("ACH_" + id)
+	var w := maxf(font.get_string_size(name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x, 160.0) + 90.0
+	var r := Rect2(Vector2(lerpf(-w, 16.0, slide), vs.y - 250.0), Vector2(w, 64))
+	draw_rect(r, Color(0.08, 0.08, 0.1, 0.88))
+	draw_rect(r, Color(1, 0.8, 0.25), false, 2.0)
+	# Trophy.
+	var c := r.position + Vector2(34, 32)
+	var gold := Color(1, 0.8, 0.25)
+	draw_colored_polygon(PackedVector2Array([c + Vector2(-13, -16), c + Vector2(13, -16), c + Vector2(8, 2),
+		c + Vector2(-8, 2)]), gold)
+	draw_arc(c + Vector2(-13, -9), 6.0, PI * 0.5, PI * 1.5, 10, gold, 3.0)
+	draw_arc(c + Vector2(13, -9), 6.0, -PI * 0.5, PI * 0.5, 10, gold, 3.0)
+	draw_rect(Rect2(c + Vector2(-3, 2), Vector2(6, 8)), gold)
+	draw_rect(Rect2(c + Vector2(-10, 10), Vector2(20, 5)), gold)
+	draw_string(font, r.position + Vector2(66, 24), tr("ACH_UNLOCKED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15,
+		Color(1, 0.8, 0.35))
+	draw_string(font, r.position + Vector2(66, 50), name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
+
+
+## Something lost during the day joins the find list.
+func add_today(id: String) -> void:
+	if not _today.has(id):
+		_today.append(id)
 
 
 func think(items: Array) -> void:
@@ -241,6 +291,7 @@ func _draw() -> void:
 	_draw_bin_hint()
 	_draw_trade_hint()
 	_draw_found(vs)
+	_draw_achievement(vs, font)
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
 	_draw_lost_list(vs)
@@ -720,19 +771,43 @@ func _draw_charge() -> void:
 
 func _draw_headline(vs: Vector2, font: Font) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, clampf(card_time * 2.0, 0.0, 0.75)))
-	var w := minf(vs.x * 0.8, 820.0)
-	var h := minf(vs.y * 0.8, 480.0)
+	var w := minf(vs.x * 0.85, 900.0)
+	var h := minf(vs.y * 0.9, 620.0)
 	var r := Rect2((vs - Vector2(w, h)) * 0.5, Vector2(w, h))
 	draw_rect(r, Color(0.97, 0.95, 0.87))
 	# Masthead (fictional local paper).
 	draw_rect(Rect2(r.position, Vector2(w, 64)), Color(0.85, 0.1, 0.12))
 	draw_string(font, r.position + Vector2(0, 46), tr("PAPER_NAME"), HORIZONTAL_ALIGNMENT_CENTER, w, 38, Color.WHITE)
-	# Headline.
-	draw_multiline_string(font, r.position + Vector2(30, 130), card_title.to_upper(), HORIZONTAL_ALIGNMENT_CENTER,
-		w - 60, 44, 4, Color(0.08, 0.08, 0.08))
-	_draw_photo(Rect2(r.position + Vector2(w * 0.5 - 110, 200), Vector2(220, maxf(h - 330, 60))))
-	draw_line(r.position + Vector2(30, h - 110), r.position + Vector2(w - 30, h - 110), Color(0.2, 0.2, 0.2), 2.0)
-	draw_string(font, r.position + Vector2(0, h - 60), card_sub, HORIZONTAL_ALIGNMENT_CENTER, w, 34, Color(0.1, 0.1, 0.1))
+	# Headline: as big as fits on two lines.
+	var title := card_title.to_upper()
+	var tw := w - 60.0
+	var fs := 40
+	while fs > 20:
+		var th := font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_CENTER, tw, fs).y
+		if th <= font.get_height(fs) * 2.05:
+			break
+		fs -= 2
+	var head_top := r.position.y + 76.0
+	var head_h := font.get_multiline_string_size(title, HORIZONTAL_ALIGNMENT_CENTER, tw, fs).y
+	draw_multiline_string(font, Vector2(r.position.x + 30, head_top + font.get_ascent(fs)), title,
+		HORIZONTAL_ALIGNMENT_CENTER, tw, fs, -1, Color(0.08, 0.08, 0.08))
+	# Bottom: a rule and the score; the photo and caption fit in between.
+	var rule_y := r.end.y - 66.0
+	var ph_top := head_top + head_h + 14.0
+	var ph_h := maxf(rule_y - 30.0 - ph_top, 60.0)
+	var ph := Rect2(Vector2(r.position.x + 30, ph_top), Vector2(ph_h * 480.0 / 330.0, ph_h))
+	if ph.size.x > w * 0.6:
+		ph.size = Vector2(w * 0.6, w * 0.6 * 330.0 / 480.0)
+	_draw_photo(ph)
+	draw_string(font, Vector2(ph.position.x, ph.end.y + 18), tr("PHOTO_CREDIT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
+		Color(0.35, 0.35, 0.35))
+	if _death_caption != "":
+		var cx := ph.end.x + 22
+		draw_multiline_string(font, Vector2(cx, ph.position.y + font.get_ascent(20)), _death_caption,
+			HORIZONTAL_ALIGNMENT_LEFT, r.end.x - cx - 26, 20, -1, Color(0.15, 0.15, 0.15))
+	draw_line(Vector2(r.position.x + 30, rule_y), Vector2(r.end.x - 30, rule_y), Color(0.2, 0.2, 0.2), 2.0)
+	draw_string(font, Vector2(r.position.x, r.end.y - 22), card_sub, HORIZONTAL_ALIGNMENT_CENTER, w, 30,
+		Color(0.1, 0.1, 0.1))
 	# "Press to play again" as an icon: the action button with a play arrow.
 	if card_time > 1.0:
 		var bc := r.position + Vector2(w - 50, h - 50)
@@ -740,8 +815,22 @@ func _draw_headline(vs: Vector2, font: Font) -> void:
 		draw_colored_polygon(PackedVector2Array([bc + Vector2(-7, -11), bc + Vector2(12, 0), bc + Vector2(-7, 11)]), Color.WHITE)
 
 
+## The death photo and its caption (set before the card shows).
+var _death_photo: Texture2D = null
+var _death_caption := ""
+
+
+func set_death_photo(tex: Texture2D, caption: String) -> void:
+	_death_photo = tex
+	_death_caption = caption
+
+
 ## Placeholder "news photo": the character's silhouette in a grey frame.
 func _draw_photo(r: Rect2) -> void:
+	if _death_photo != null:
+		draw_texture_rect(_death_photo, r, false)
+		draw_rect(r, Color(0.15, 0.15, 0.15), false, 3.0)
+		return
 	draw_rect(r, Color(0.55, 0.55, 0.55))
 	draw_rect(r, Color(0.15, 0.15, 0.15), false, 3.0)
 	var c := r.get_center()
