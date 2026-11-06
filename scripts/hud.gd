@@ -2,6 +2,7 @@ extends Control
 
 const LostItems = preload("res://scripts/lost_items.gd")
 const BuildInfo = preload("res://scripts/build_info.gd")
+const Npc = preload("res://scripts/npc.gd")
 ## The version and build time show small at the bottom of the screen at
 ## start, until the player first moves (then they fade out quickly).
 var _version_a := 1.0
@@ -385,6 +386,7 @@ func _draw() -> void:
 	_draw_hangover_warning()
 	_draw_trip(vs)
 	_draw_splats()
+	_draw_police_vision()
 	_draw_offscreen_lost(vs)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
 	_draw_phone_icon(vs, font)
@@ -484,6 +486,40 @@ func _draw_coin(center: Vector2, amount: int, font: Font) -> void:
 	var text := str(amount)
 	draw_string_outline(font, center + Vector2(26, 9), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
 	draw_string(font, center + Vector2(26, 9), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color.WHITE)
+
+
+## Debug tools on: each police officer's vision cone on the ground (red
+## when the player is inside it). Players never see it.
+func _draw_police_vision() -> void:
+	if main == null or main.debug_tools == null or not main.debug_tools.debug_on or main.player == null:
+		return
+	var cam: Camera3D = main.camera
+	var sight: float = main.police_sight()
+	for n in main.npcs:
+		if n.role != "police" or n.is_down():
+			continue
+		var a: float = n.view_angle()
+		var pts := PackedVector2Array()
+		var origin := Vector3(n.position.x, 0.05, n.position.z)
+		if cam.is_position_behind(origin):
+			continue
+		pts.append(cam.unproject_position(origin))
+		var ok := true
+		var steps := 12
+		for i in steps + 1:
+			var b: float = a - Npc.VISION_HALF_ANGLE + 2.0 * Npc.VISION_HALF_ANGLE * i / steps
+			var w := origin + Vector3(cos(b), 0.0, -sin(b)) * sight
+			if cam.is_position_behind(w):
+				ok = false
+				break
+			pts.append(cam.unproject_position(w))
+		if not ok:
+			continue
+		var seen: bool = n.sees(main.player.position, sight)
+		var col := Color(1, 0.2, 0.2, 0.28) if seen else Color(0.3, 0.6, 1.0, 0.2)
+		draw_colored_polygon(pts, col)
+		pts.append(pts[0])
+		draw_polyline(pts, Color(col.r, col.g, col.b, 0.7), 1.5, true)
 
 
 ## Police holding on: a blue-red ring fills around the player.

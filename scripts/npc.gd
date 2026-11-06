@@ -50,6 +50,18 @@ const PICKPOCKET_CHANCE := 0.6
 const POLICE_SPEED := 3.4
 const GUARD_SPEED := 3.0
 const GUARD_DAMAGE := 12.0
+## Police see only in front of their face: a cone this wide (half angle)
+## and this long (main.gd shortens it when the player sneaks barefoot).
+## Right next to them they notice whatever way they look.
+const VISION_HALF_ANGLE := deg_to_rad(50.0)
+const VISION_RANGE := 16.0
+const VISION_NEAR := 1.5
+## Walking police now and then turn their head to look across the street.
+const GLANCE_EVERY_MIN := 3.0
+const GLANCE_EVERY_MAX := 7.0
+const GLANCE_TIME_MIN := 1.2
+const GLANCE_TIME_MAX := 2.5
+const GLANCE_TURN := deg_to_rad(70.0)
 ## Police give up when the player stays this far away this long.
 const GIVE_UP_DIST := 14.0
 const GIVE_UP_TIME := 4.0
@@ -91,6 +103,10 @@ var post := Vector3.ZERO
 const BOUNCER_SPEED := 3.3
 const BOUNCER_THROW_DAMAGE := 10.0
 var _sway_t := 0.0
+## Police glancing across the street: time to the next glance, time left
+## of the current one.
+var _glance_wait := 0.0
+var _glance_t := 0.0
 
 const SHIRTS := [Color(0.75, 0.2, 0.2), Color(0.2, 0.55, 0.3), Color(0.85, 0.7, 0.2),
 	Color(0.5, 0.3, 0.6), Color(0.9, 0.9, 0.88), Color(0.2, 0.2, 0.25), Color(0.85, 0.45, 0.2)]
@@ -116,6 +132,7 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			speed = 1.1
 			chase_speed = POLICE_SPEED
 			telegraphs = true
+			_glance_wait = rng.randf_range(GLANCE_EVERY_MIN, GLANCE_EVERY_MAX)
 		"guard":
 			model = PersonModel.new(Color(0.85, 0.9, 0.15), Color(0.08, 0.08, 0.1), skin, Color(0.1, 0.1, 0.1), 1.08)
 			hp = 5
@@ -362,6 +379,50 @@ func _cap(col: Color, band: Color) -> void:
 		model.add_child(mi)
 
 
+## Where the face points, as a ground-plane angle (atan2(-z, x), like the
+## body's rotation.y): the body's facing plus the head turn.
+func view_angle() -> float:
+	return model.rotation.y + model.head_yaw
+
+
+## Police: is `p` inside the vision cone (`reach` metres long)?
+func sees(p: Vector3, reach: float) -> bool:
+	if state == S.KO:
+		return false
+	var to := Vector2(p.x - position.x, p.z - position.z)
+	var d := to.length()
+	if d < VISION_NEAR:
+		return true
+	if d > reach:
+		return false
+	var a := view_angle()
+	var fwd := Vector2(cos(a), -sin(a))
+	return absf(fwd.angle_to(to)) <= VISION_HALF_ANGLE
+
+
+## Walking police look across the street now and then (turn the head
+## towards the other side for a moment). Otherwise the head turns back.
+func _glance(dt: float) -> void:
+	var target := 0.0
+	if state == S.WALK and not stationary:
+		if _glance_t > 0.0:
+			_glance_t -= dt
+			# The other side of the street from where they walk; the head
+			# turns towards it, a bit forward.
+			var side := 1.0 if position.z < -1.0 else -1.0
+			var want := atan2(-side, float(dir) * 0.36)
+			target = clampf(wrapf(want - model.rotation.y, -PI, PI), -GLANCE_TURN, GLANCE_TURN)
+			if _glance_t <= 0.0:
+				_glance_wait = randf_range(GLANCE_EVERY_MIN, GLANCE_EVERY_MAX)
+		else:
+			_glance_wait -= dt
+			if _glance_wait <= 0.0:
+				_glance_t = randf_range(GLANCE_TIME_MIN, GLANCE_TIME_MAX)
+	else:
+		_glance_t = 0.0
+	model.turn_head(lerp_angle(model.head_yaw, target, 1.0 - exp(-6.0 * dt)))
+
+
 ## Police and guards react to a crime they noticed.
 func notice() -> void:
 	if state == S.KO or not is_lawman():
@@ -474,6 +535,8 @@ func _process(_delta: float) -> void:
 		position = main.push_out_of_cars(position)
 	if state != S.KO:
 		_turn(position - start_pos - Vector3(_knock * dt, 0, 0), dt)
+	if role == "police" and state != S.KO:
+		_glance(dt)
 
 
 ## Turn smoothly towards where this person is going (any direction, like
@@ -790,6 +853,7 @@ func _end_ragdoll() -> void:
 
 
 func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
+	model.turn_head(0.0)  # the rag doll copies the head straight
 	state = S.KO
 	_timer = 0.0
 	_ko_count += 1

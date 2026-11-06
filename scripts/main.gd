@@ -69,6 +69,8 @@ var segment: Vector3i = CityMap.start()
 var npcs: Array = []
 ## Seagulls and dogs in the current block.
 var animals: Array = []
+## Debug tools (F1 + F12); the HUD draws police vision cones while on.
+var debug_tools
 ## Cyclists and e-scooters on the sidewalks (from day 4).
 var riders: Array = []
 var _rider_timer := 5.0
@@ -128,7 +130,8 @@ func _ready() -> void:
 	modal_ui.main = self
 	hud_layer.add_child(modal_ui)
 	add_child(TouchControls.new())
-	add_child(DebugTools.new())
+	debug_tools = DebugTools.new()
+	add_child(debug_tools)
 
 	GameState.day_ended.connect(_on_day_ended)
 	GameState.achievement_unlocked.connect(func(id): hud.show_achievement(id))
@@ -1584,19 +1587,28 @@ const SNEAK_NOTICE_DIST := 7.0
 var arrest := 0.0
 
 
-## A crime happened (the player hit someone, or a pickpocketing victim
-## shouted). Police and guards in this block react; a shout can also bring
-## a police officer running from the street end.
-func report_crime(pos: Vector3, alarm: bool) -> void:
+## A crime happened (the player hit someone or an animal, or a
+## pickpocketing victim shouted). Police see it only if the player is in
+## their vision cone (a shout they hear); guards in the block react to
+## crimes against people. A shout can also bring a police officer running
+## from the street end.
+func report_crime(pos: Vector3, alarm: bool, animal := false) -> void:
 	var noticed := false
 	var reach := SNEAK_NOTICE_DIST if GameState.is_lost("shoes") else INF
 	# Drunk and loud: noticed from further away even when sneaking.
 	if GameState.promille > GameState.PROMILLE_DRUNK:
 		reach *= 2.0
+	var sight := police_sight()
 	for n in npcs:
 		if not n.is_lawman() or n.is_down():
 			continue
-		if Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length() < reach:
+		var d := Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length()
+		var saw: bool
+		if n.role == "police":
+			saw = n.sees(player.position, sight) or (alarm and d < reach)
+		else:
+			saw = not animal and d < reach
+		if saw:
 			n.notice()
 			noticed = true
 	if alarm and not noticed and rng.randf() < 0.6:
@@ -1604,6 +1616,17 @@ func report_crime(pos: Vector3, alarm: bool) -> void:
 		cop.position.x = Npc.EDGE_X * (-1.0 if pos.x < 0.0 else 1.0)
 		cop.position.z = clampf(pos.z, Z_MIN, Z_MAX)
 		cop.notice()
+
+
+## How far the police see (the length of the vision cone): short when the
+## player sneaks barefoot, longer when drunk and loud.
+func police_sight() -> float:
+	var r: float = Npc.VISION_RANGE
+	if GameState.is_lost("shoes"):
+		r = SNEAK_NOTICE_DIST
+	if GameState.promille > GameState.PROMILLE_DRUNK:
+		r *= 2.0 if GameState.is_lost("shoes") else 1.25
+	return r
 
 
 ## Police next to the player fill the arrest meter; once full, it's the
