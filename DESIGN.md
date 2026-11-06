@@ -115,6 +115,33 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 | 3 | koirat (voivat auttaa tai olla vihollisia) |
 | myöhemmin | lisää ideoita alla (Tulevat haasteet) |
 
+#### Tulevat haasteet (ideoita, ei vielä pelissä)
+
+Uudet hahmot päivä kerrallaan:
+
+- **Päivä 4:** **pyöräilijät ja sähköpotkulaudat** (kaahaavat jalkakäytävällä, väistettävä; törmäys kaataa) ja **tölkinkerääjä** (kilpailija: penkoo roskikset ennen pelaajaa ja vie pullot).
+- **Päivä 5:** **taskuvaras** (törmää ohimennen ja vie tavaran, joka muuttuu kesken päivän hukatuksi; saa takaisin kiinni ottamalla) ja **mummo** (hidas, mutta käsilaukku osuu kovaa).
+- **Päivä 6:** **some-vaikuttaja** (kuvaa pelaajaa; video leviää ja poliisit tunnistavat loppupäivän helpommin) ja **pappi** (auttaja: antaa pullaa tai kahvia kylmissään tai nälkäiselle).
+- **Päivä 7:** **lokkiparvet** (useampi lokki hyökkää ruoan perään yhtä aikaa) ja **poliisiparit**.
+- **Päivä 8 ja myöhemmin:** **turisti** (kysyy tietä; oikea neuvo tuo rahaa), **ääripuolueen edustaja** (tunkee lentolehtistä, ei pääse eroon) ja **poliitikko** (vaalikoju: ilmaista kahvia ja karkkia).
+
+Vaikeammat hukatut tavarat myöhempinä päivinä:
+
+- tavara on **jonkun hallussa** (ostettava, vaihdettava tai napattava)
+- tavara on **koiran suussa** (koira juoksee karkuun; makkaralla vaihtoon)
+- tavara on **puussa tai katoksen päällä** (pudotettava heittämällä)
+
+Erikoispäivät (satunnaisesti, tuovat vaihtelua):
+
+- **Kärppien voittopäivä:** kaduilla juhlijoita, halaajia ja ilmaisia juomia, mutta myös enemmän tappeluita ja poliiseja.
+- **Katujen siivouspäivä:** lakaisukone kulkee kadulla ja imaisee maassa olevat tavarat; hukatut tavarat pitää ehtiä hakea ennen sitä.
+- **Myrsky:** tuuli työntää hahmoa, roskat ja lehdet lentävät, heitot kaartuvat.
+- **Kova pakkanen:** kylmä kasvaa nopeasti, kadut liukkaita.
+- **Tietyöt:** jokin katu on suljettu, ja pitää kiertää.
+- **Poliisin puhallusratsia:** poliisi pysäyttää ja puhalluttaa; liian humalainen viedään putkaan.
+
+Päivän pikkutehtävät (vapaaehtoisia, palkintona rahaa tai pisteitä): esimerkiksi vie kaverille makkara, palauta löydetty lompakko omistajalleen, hae juoppo-tutulle pullo.
+
 Päivät vaikeutuvat lisäksi vähitellen kolmella tavalla:
 
 - **Etsintäsäde kasvaa:** koti ja hukatut tavarat ovat kauempana toisistaan.
