@@ -206,14 +206,13 @@ func _check_transitions() -> void:
 ## 1 / -1 when the player is completely out of view on the right / left,
 ## otherwise 0.
 func _offscreen_side() -> int:
-	var w := get_viewport().get_visible_rect().size.x
 	var side := 0
 	for k in 4:
 		var q: Vector3 = player.global_position + Vector3(0.45 if k % 2 == 0 else -0.45, 0.0 if k < 2 else 1.9, 0)
 		if camera.is_position_behind(q):
 			return 0
 		var sx := camera.unproject_position(q).x
-		var sd := 1 if sx > w else (-1 if sx < 0.0 else 0)
+		var sd := 1 if sx > play_right else (-1 if sx < play_left else 0)
 		if sd == 0 or (side != 0 and sd != side):
 			return 0
 		side = sd
@@ -223,10 +222,10 @@ func _offscreen_side() -> int:
 ## World x of the left (-1) or right (1) edge of the view at depth z and
 ## about waist height.
 func _view_edge_x(side: int, z: float) -> float:
-	var vs := get_viewport().get_visible_rect().size
 	var sy := camera.unproject_position(Vector3(camera.position.x, 0.9, z)).y
-	var o := camera.project_ray_origin(Vector2(0.0 if side < 0 else vs.x, sy))
-	var d := camera.project_ray_normal(Vector2(0.0 if side < 0 else vs.x, sy))
+	var ex := play_left if side < 0 else play_right
+	var o := camera.project_ray_origin(Vector2(ex, sy))
+	var d := camera.project_ray_normal(Vector2(ex, sy))
 	if absf(d.z) < 0.0001:
 		return camera.position.x + side * 15.0
 	var t := (z - o.z) / d.z
@@ -1866,6 +1865,14 @@ func _build_clouds() -> void:
 ## (21:9) more shows at the sides.
 const CAMERA_FOV := 36.0
 const DESIGN_ASPECT := 16.0 / 9.0
+## Wider screens zoom in (so the character doesn't shrink), but never so
+## far that the sidewalks drop out of view; past MAX_ASPECT black bars
+## close in the sides.
+const MIN_FOV := 26.0
+const MAX_ASPECT := 2.6
+## Left and right edge of the playing area on screen (inside the bars).
+var play_left := 0.0
+var play_right := 1280.0
 
 
 func _build_camera() -> void:
@@ -1883,9 +1890,16 @@ func _fit_camera() -> void:
 	var vs := get_viewport().get_visible_rect().size
 	if vs.y <= 0.0:
 		return
-	if vs.x / vs.y >= DESIGN_ASPECT:
+	var aspect := vs.x / vs.y
+	play_left = 0.0
+	play_right = vs.x
+	if aspect >= DESIGN_ASPECT:
 		camera.keep_aspect = Camera3D.KEEP_HEIGHT
-		camera.fov = CAMERA_FOV
+		camera.fov = clampf(CAMERA_FOV * pow(DESIGN_ASPECT / aspect, 0.6), MIN_FOV, CAMERA_FOV)
+		if aspect > MAX_ASPECT:
+			var bar := (vs.x - vs.y * MAX_ASPECT) * 0.5
+			play_left = bar
+			play_right = vs.x - bar
 	else:
 		# Same horizontal view as 16:9 at 36 degrees high.
 		camera.keep_aspect = Camera3D.KEEP_WIDTH

@@ -361,6 +361,11 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var font := get_theme_default_font()
 	var vs := get_viewport_rect().size
+	# Very wide screens: black bars at the sides (the playing area is
+	# limited to about 2.6:1); the HUD stays on top.
+	if main != null and main.play_left > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, Vector2(main.play_left, vs.y)), Color.BLACK)
+		draw_rect(Rect2(Vector2(main.play_right, 0), Vector2(vs.x - main.play_right, vs.y)), Color.BLACK)
 	if _fade > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, _fade))
 	if _hurt > 0.0:
@@ -505,11 +510,13 @@ func _draw_offscreen_lost(vs: Vector2) -> void:
 		if main.camera.is_position_behind(p):
 			continue
 		var sp: Vector2 = main.camera.unproject_position(p)
-		if sp.x >= 0.0 and sp.x <= vs.x:
+		var pl_l: float = main.play_left
+		var pl_r: float = main.play_right
+		if sp.x >= pl_l and sp.x <= pl_r:
 			continue
-		var side := 1.0 if sp.x > vs.x else -1.0
+		var side := 1.0 if sp.x > pl_r else -1.0
 		var y := clampf(sp.y, 120.0, vs.y - 60.0)
-		var tip := Vector2(vs.x - 14.0 if side > 0.0 else 14.0, y)
+		var tip := Vector2(pl_r - 14.0 if side > 0.0 else pl_l + 14.0, y)
 		var bob := sin(Time.get_ticks_msec() / 180.0) * 4.0 * side
 		tip.x += bob
 		var back := tip - Vector2(side * 22.0, 0)
