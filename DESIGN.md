@@ -477,7 +477,7 @@ Hahmoideat:
 
 - **Saavutukset (F2):** 26 saavutusta, jotka tallentuvat laitteelle. Avautuessa vasempaan alakulmaan liukuu pokaali ja nimi. Listassa suorittamattomista näkyy vain nimi; joka kerta listan avatessa yhdestä satunnaisesta suorittamattomasta näkyy myös selitys valkoisella. Lista: Makkaramestari (tainnuta makkaroilla, kolme osumaa), Kunnon kättely, Punk's Not Dead, Ulos ja heti, Portsarin portsari, Pakotie, Pallomies, Lokkien vihollinen, Taivaan lahja, Paras ystävä, Kallis nakki, Lauma rauhoittuu, Lääkärin määräys, Raitis hetki, Vaaleanpunaiset norsut, Aamukalja, Kännissä kotiin, Kolmen kolmosen kännit (yli 3,33333 ‰), Siisti päivä, Ilman karttaa, Hyvä sydän, Painovoiman ystävä, Konepellin kyydissä, Kova ihminen, Pyykkipäivä ja Lööppitähti.
 
-- **Ohje (F1, peliohjaimella Back):** lyhyt tavoite ja näppäimet näppäimistölle, ohjaimelle ja puhelimelle; peli odottaa ohjeen ajan. Debug-työkalut ovat piilossa: ne kytketään päälle painamalla ohjeessa F12, jonka jälkeen F5–F10 toimivat (F10 hyppää seuraavaan päivään).
+- **Ohje (F1, peliohjaimella Back):** lyhyt tavoite ja näppäimet näppäimistölle, ohjaimelle ja puhelimelle; peli odottaa ohjeen ajan. Debug-työkalut ovat piilossa: ne kytketään päälle painamalla ohjeessa F12, jonka jälkeen F5–F10 toimivat (F10 hyppää seuraavaan päivään, F11 aloittaa uuden pelin seuraavassa kaupungissa).
 
 - Erillistä opetusosiota ei ole.
 - **Poikkeus: käden esineen vihje.** Kun pelaaja poimii esineen käteen, pään yläpuolelle tulee viideksi sekunniksi ikonivihje ilman tekstiä: napin kuva (näppäimistöllä välilyönti, kosketusnäytöllä iso pyöreä nappi) → toiminnon kuva (juo: kallistettu pullo, syö: makkara, lyö: nyrkki), ja alla napin kuva kellon kanssa (pidä pohjassa) → heittokaari. Tämä näkyy joka kerta.

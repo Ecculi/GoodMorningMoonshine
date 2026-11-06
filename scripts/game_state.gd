@@ -543,7 +543,11 @@ func new_game() -> void:
 	bonus = 0
 	sleep_place = "home"
 	# Every game is in one city, picked at random, until death.
-	CityMap.set_city(rng.randi() % CityMap.CITIES.size())
+	if forced_city >= 0:
+		CityMap.set_city(forced_city)
+		forced_city = -1
+	else:
+		CityMap.set_city(rng.randi() % CityMap.CITIES.size())
 	home_seg = CityMap.random_segment(rng)
 	while CityMap.far_side_is_sea(home_seg) or home_seg == CityMap.police_station():
 		home_seg = CityMap.random_segment(rng)
@@ -767,6 +771,10 @@ func format_promille(p: float) -> String:
 func _die(cause: String) -> void:
 	over = true
 	player_died.emit(cause)
+
+
+## Debug (F11): the next new game is in this city instead of a random one.
+var forced_city := -1
 
 
 ## Debug: end the day at once as if slept at home.
