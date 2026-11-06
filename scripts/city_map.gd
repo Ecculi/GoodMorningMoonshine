@@ -1,55 +1,108 @@
 extends RefCounted
-## Oulu city centre street grid. Every view is one block: a piece of one
-## street between two crossing streets.
+## City street grids. Every view is one block: a piece of one street
+## between two crossing streets. A new game picks a city (set_city) and
+## the whole game, until death, is played in it.
 ##
 ## A segment is Vector3i(family, street, k):
-##   family 0 = A street, the block lies between B_STREETS[k] and B_STREETS[k + 1]
-##   family 1 = B street, the block lies between A_STREETS[k] and A_STREETS[k + 1]
+##   family 0 = A street, the block lies between B[k] and B[k + 1]
+##   family 1 = B street, the block lies between A[k] and A[k + 1]
 ##
-## Edit the lists below to fix the street order. Street names stay in
-## Finnish in every language.
+## For every city:
+## - A streets are listed from the shore side (index 0, the far side of
+##   it is the sea) away from it. On an A street the camera looks towards
+##   the shore and +x on screen points towards higher B indexes.
+## - B streets are listed so that on a B street the camera looks towards
+##   higher B indexes and +x on screen points towards higher A indexes.
+## - view_azimuth: compass direction the camera looks at on [A, B] streets.
+## - map_u / map_v: screen directions (north up) of "along A" (B index)
+##   and "across A" (A index) on the phone map.
+## Street names stay in Finnish in every language.
 
-## Streets running SW–NE, listed from the shore (NW) towards the railway (SE)
-## (checked against a map). The canal and its parks run between Uusikatu
-## and Mäkelininkatu; Vaarankatu is only a short street along the canal.
-const A_STREETS := ["Rantakatu", "Aleksanterinkatu", "Torikatu", "Kirkkokatu", "Isokatu",
-	"Uusikatu", "Mäkelininkatu", "Koulukatu", "Rautatienkatu"]
+const CITIES := [
+	{
+		"name": "Oulu",
+		# SW–NE streets from the shore (NW) towards the railway (SE). The
+		# canal and its parks run between Uusikatu and Mäkelininkatu.
+		"a": ["Rantakatu", "Aleksanterinkatu", "Torikatu", "Kirkkokatu", "Isokatu",
+			"Uusikatu", "Mäkelininkatu", "Koulukatu", "Rautatienkatu"],
+		# NW–SE streets from SW to NE. Kauppurienkatu is Rotuaari.
+		"b": ["Sepänkatu", "Albertinkatu", "Saaristonkatu", "Kauppurienkatu",
+			"Pakkahuoneenkatu", "Hallituskatu", "Asemakatu"],
+		"view_azimuth": [315.0, 45.0],
+		"map_u": Vector2(0.7071, -0.7071),
+		"map_v": Vector2(0.7071, 0.7071),
+		"start": Vector3i(0, 3, 4),            # Kirkkokatu, Pakkahuoneenkatu–Hallituskatu
+		"police": Vector3i(0, 4, 4),           # Isokatu, Pakkahuoneenkatu–Hallituskatu
+		"police_door_x": 8.0,
+		"pedestrian": "Kauppurienkatu",        # Rotuaari: no cars
+	},
+	{
+		"name": "Raahe",
+		# West–east streets from the shore (Kirkkolahti, north) southwards.
+		# (Ämmänkatu and Nahkurinkuja are only partial streets.)
+		"a": ["Kirkkolahdenkatu", "Pitkänkarinkatu", "Saaristokatu", "Cortenkatu",
+			"Brahenkatu", "Koulukatu", "Sovionkatu"],
+		# North–south streets from west to east.
+		"b": ["Rantakatu", "Kauppakatu", "Kirkkokatu", "Reiponkatu", "Palokunnankatu"],
+		"view_azimuth": [0.0, 90.0],
+		"map_u": Vector2(1, 0),
+		"map_v": Vector2(0, 1),
+		"start": Vector3i(1, 2, 2),            # Kirkkokatu by the church, Saaristokatu–Cortenkatu
+		"police": Vector3i(0, 4, 2),           # Brahenkatu, Kirkkokatu–Reiponkatu
+		"police_door_x": 8.0,
+		"pedestrian": "",
+	},
+]
 
-## Streets running NW–SE, listed from SW to NE (checked against a map).
-## Kauppurienkatu (Rotuaari) lies between Saaristonkatu and Pakkahuoneenkatu.
-## Nummikatu and Heinätorinkatu continue south-west of Sepänkatu (outside the area).
-## Partial streets the full grid can't show yet: Ojakatu (between Hallituskatu
-## and the canal, only Aleksanterinkatu–Torikatu), Asemakatu really starts at
-## Torikatu (the canal and Madetojan puisto are west of it), and Kajaaninkatu,
-## Linnankatu and Heikinkatu exist only east of Uusikatu.
-const B_STREETS := ["Sepänkatu", "Albertinkatu", "Saaristonkatu", "Kauppurienkatu",
-	"Pakkahuoneenkatu", "Hallituskatu", "Asemakatu"]
+static var city := 0
 
-## Compass direction the camera looks at on each street family.
-## A streets: camera looks NW, +x on screen points NE.
-## B streets: camera looks NE, +x on screen points SE.
-const VIEW_AZIMUTH := [315.0, 45.0]
 
-const START := Vector3i(0, 3, 4)  # Kirkkokatu, Pakkahuoneenkatu–Hallituskatu
-## Police station (roughly where the real one is: the block between
-## Kirkkokatu and Isokatu, Pakkahuoneenkatu–Hallituskatu), seen from Isokatu.
-const POLICE_STATION := Vector3i(0, 4, 4)
-const POLICE_DOOR_X := 8.0
+static func set_city(i: int) -> void:
+	city = clampi(i, 0, CITIES.size() - 1)
+
+
+static func city_name() -> String:
+	return CITIES[city]["name"]
+
+
+static func data() -> Dictionary:
+	return CITIES[city]
+
+
+static func start() -> Vector3i:
+	return data()["start"]
+
+
+static func police_station() -> Vector3i:
+	return data()["police"]
+
+
+static func police_door_x() -> float:
+	return data()["police_door_x"]
+
+
+static func view_azimuth(family: int) -> float:
+	return data()["view_azimuth"][family]
+
+
+static func is_pedestrian(seg: Vector3i) -> bool:
+	return data()["pedestrian"] != "" and street_name(seg) == data()["pedestrian"]
 
 
 static func streets(family: int) -> Array:
-	return A_STREETS if family == 0 else B_STREETS
+	return data()["a"] if family == 0 else data()["b"]
 
 
 static func cross_streets(family: int) -> Array:
-	return B_STREETS if family == 0 else A_STREETS
+	return data()["b"] if family == 0 else data()["a"]
 
 
 static func is_valid(seg: Vector3i) -> bool:
+	if seg.x < 0 or seg.x > 1:
+		return false
 	var own := streets(seg.x)
 	var cross := cross_streets(seg.x)
-	return seg.x >= 0 and seg.x <= 1 and seg.y >= 0 and seg.y < own.size() \
-		and seg.z >= 0 and seg.z < cross.size() - 1
+	return seg.y >= 0 and seg.y < own.size() and seg.z >= 0 and seg.z < cross.size() - 1
 
 
 static func street_name(seg: Vector3i) -> String:
@@ -72,11 +125,11 @@ static func next_along(seg: Vector3i, dir: int) -> Vector3i:
 static func turn(seg: Vector3i, at_right: bool, up: bool) -> Dictionary:
 	var node := seg.z + (1 if at_right else 0)
 	if seg.x == 0:
-		# On an A street: up = NW, down = SE along the B street.
+		# On an A street: up = towards the shore along the B street.
 		if up:
 			return {"seg": Vector3i(1, node, seg.y - 1), "enter_right": true}
 		return {"seg": Vector3i(1, node, seg.y), "enter_right": false}
-	# On a B street: up = NE, down = SW along the A street.
+	# On a B street: up = towards higher B indexes along the A street.
 	if up:
 		return {"seg": Vector3i(0, node, seg.y), "enter_right": false}
 	return {"seg": Vector3i(0, node, seg.y - 1), "enter_right": true}
@@ -86,13 +139,13 @@ static func can_turn(seg: Vector3i, at_right: bool, up: bool) -> bool:
 	return is_valid(turn(seg, at_right, up)["seg"])
 
 
-## The far side of Rantakatu (looking NW) is the sea.
+## The far side of the shore street (A street 0) is the sea.
 static func far_side_is_sea(seg: Vector3i) -> bool:
 	return seg.x == 0 and seg.y == 0
 
 
 static func seed_of(seg: Vector3i) -> int:
-	return seg.x * 10007 + seg.y * 101 + seg.z * 7 + 12345
+	return city * 1000003 + seg.x * 10007 + seg.y * 101 + seg.z * 7 + 12345
 
 
 static func random_segment(rng: RandomNumberGenerator) -> Vector3i:
@@ -101,4 +154,4 @@ static func random_segment(rng: RandomNumberGenerator) -> Vector3i:
 		var seg := Vector3i(f, rng.randi() % streets(f).size(), rng.randi() % (cross_streets(f).size() - 1))
 		if is_valid(seg):
 			return seg
-	return START
+	return start()

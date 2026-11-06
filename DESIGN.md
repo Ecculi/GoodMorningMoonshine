@@ -49,6 +49,12 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - **Asiat eivät ole joka päivä samassa paikassa.** Kartta pysyy samana, mutta tavarat, ruoka, juomat, hahmot ja palvelut (esim. mistä saa kahvia) arvotaan joka päivä uudelleen. Eilen toimiva paikka ei välttämättä toimi tänään.
   - **Rakennukset ovat aina samoilla paikoilla**, koska ne ovat osa Oulun karttaa. Joka päivä arvotaan, **mitkä ovat auki ja mitä niissä on tarjolla** (esim. kioski voi olla kiinni tai baarissa eri portsari).
 
+### Kaupungit
+
+- Pelissä on useita kaupunkeja. **Uusi peli arpoo kaupungin**, ja yksi peli pelataan **samassa kaupungissa kuolemaan asti**. Pelin alussa ruudun keskelle tulee kaupungin nimi isolla ("RAAHE") ja alle "Selviä tässä kaupungissa niin pitkään kuin pystyt"; teksti häipyy, kun hahmo lähtee liikkeelle.
+- Kaupungit ovat `scripts/city_map.gd`-tiedoston `CITIES`-listassa: kadut kahtena suuntana, kameran ilmansuunnat, meri, aloituspaikka, poliisiasema ja mahdollinen kävelykatu. Uuden kaupungin lisääminen on yksi uusi tietue.
+- **Raahe:** pohjois–eteläsuuntaiset kadut lännestä itään Rantakatu, Kauppakatu, Kirkkokatu, Reiponkatu ja Palokunnankatu; länsi–itäsuuntaiset pohjoisesta etelään Kirkkolahdenkatu, Pitkänkarinkatu, Saaristokatu, Cortenkatu, Brahenkatu, Koulukatu ja Sovionkatu. Meri (Kirkkolahti) on pohjoisessa. Poliisiasema on Brahenkadulla Kirkkokadun ja Reiponkadun välissä. Osittaiset kadut (Ämmänkatu, Nahkurinkuja) puuttuvat vielä (issue #39).
+
 ### Oulu
 
 - Alue on **Oulun keskustan ruutukaava**: noin kauppatorin ja rannan (luoteessa) sekä rautatieaseman (idässä) välinen alue, etelässä suunnilleen Sepänkadulle asti.

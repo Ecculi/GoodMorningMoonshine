@@ -32,7 +32,7 @@ static func build(seg: Vector3i, home_x := INF, home_type := "flat") -> Node3D:
 		_sea(root)
 	else:
 		_buildings(root, rng, home_x)
-		if seg == CityMap.POLICE_STATION:
+		if seg == CityMap.police_station():
 			_police_station(root)
 		if home_x != INF:
 			_home_door(root, home_x, home_type)
@@ -43,8 +43,8 @@ static func build(seg: Vector3i, home_x := INF, home_type := "flat") -> Node3D:
 		doors.append(sh["x"])
 	if home_x != INF:
 		doors.append(home_x)
-	if seg == CityMap.POLICE_STATION:
-		doors.append(CityMap.POLICE_DOOR_X)
+	if seg == CityMap.police_station():
+		doors.append(CityMap.police_door_x())
 	root.set_meta("doors", doors)
 	_props(root, rng, sea)
 	_signs(root, seg)
@@ -196,7 +196,7 @@ static func _home_door(root: Node3D, x: float, home_type: String) -> void:
 ## Police station front: grey-blue facade, blue POLIISI sign, glass door.
 static func _police_station(root: Node3D) -> void:
 	root.set_meta("shops", [])  # no shop doors hidden behind the station front
-	var x := CityMap.POLICE_DOOR_X
+	var x := CityMap.police_door_x()
 	_box(root, Vector3(x, 4.0, -7.93), Vector3(9.0, 8.0, 0.08), Color(0.62, 0.66, 0.72))
 	_box(root, Vector3(x, 1.2, -7.86), Vector3(1.6, 2.4, 0.1), Color(0.55, 0.7, 0.8))
 	_box(root, Vector3(x, 3.0, -7.84), Vector3(3.6, 0.7, 0.1), Color(0.1, 0.25, 0.65))

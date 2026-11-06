@@ -127,7 +127,7 @@ var world_dt := 0.0
 var over := false
 
 ## Home for this game: block and the door's x position in it.
-var home_seg := CityMap.START
+var home_seg := CityMap.start()
 var home_x := 0.0
 ## "flat" (apartment), "basement" (storage room, padlock) or "friend" (sofa).
 var home_type := "flat"
@@ -147,7 +147,7 @@ var bonus := 0
 ## station with an ID card.
 var confiscated := -1
 ## Where the character wakes up (from day 2 on: never at home).
-var wake_seg := CityMap.START
+var wake_seg := CityMap.start()
 var wake_pos := Vector3.ZERO
 ## Today's weather: "sunny", "cloudy", "rain" or "snow".
 var weather := "sunny"
@@ -542,8 +542,10 @@ func new_game() -> void:
 	busy_time = 0.0
 	bonus = 0
 	sleep_place = "home"
+	# Every game is in one city, picked at random, until death.
+	CityMap.set_city(rng.randi() % CityMap.CITIES.size())
 	home_seg = CityMap.random_segment(rng)
-	while CityMap.far_side_is_sea(home_seg) or home_seg == CityMap.POLICE_STATION:
+	while CityMap.far_side_is_sea(home_seg) or home_seg == CityMap.police_station():
 		home_seg = CityMap.random_segment(rng)
 	home_x = rng.randf_range(-11.0, 11.0)
 	home_type = ["flat", "basement", "friend"][rng.randi() % 3]
@@ -616,8 +618,8 @@ func new_day() -> void:
 	if sleep_place == "jail":
 		# Released at the police station door; without an ID card they keep
 		# you longer, so the day starts later.
-		wake_seg = CityMap.POLICE_STATION
-		wake_pos = Vector3(CityMap.POLICE_DOOR_X, 0.0, -6.2)
+		wake_seg = CityMap.police_station()
+		wake_pos = Vector3(CityMap.police_door_x(), 0.0, -6.2)
 		if is_lost("idcard"):
 			clock_min += 120.0
 	_lose_items()

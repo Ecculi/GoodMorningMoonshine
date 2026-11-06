@@ -180,18 +180,19 @@ func _draw_photo(r: Rect2) -> void:
 func _draw_map(r: Rect2) -> void:
 	var font := get_theme_default_font()
 	draw_rect(r, Color(0.93, 0.92, 0.88))
-	var na := CityMap.A_STREETS.size()
-	var nb := CityMap.B_STREETS.size()
-	# Grid coords: u along A streets (towards NE), v across them (towards SE).
-	var ne := Vector2(1, -1).normalized()
-	var se := Vector2(1, 1).normalized()
+	var na := CityMap.streets(0).size()
+	var nb := CityMap.streets(1).size()
+	# Grid coords: u along A streets, v across them (screen directions from
+	# the city's data; north up).
+	var ne: Vector2 = CityMap.data()["map_u"]
+	var se: Vector2 = CityMap.data()["map_v"]
 	var span := float(maxi(na, nb))
 	var scale := minf(r.size.x, r.size.y - 30) / (span * 1.45)
 	var center := r.get_center() + Vector2(0, 14)
 	var mid := Vector2((nb - 1) * 0.5, (na - 1) * 0.5)
 	var to_screen := func(u: float, v: float) -> Vector2:
 		return center + (ne * (u - mid.x) + se * (v - mid.y)) * scale
-	# Sea on the NW side (beyond Rantakatu).
+	# The sea beyond the shore street.
 	var sea := PackedVector2Array([to_screen.call(-1.0, -0.4), to_screen.call(float(nb), -0.4),
 		to_screen.call(float(nb), -2.0), to_screen.call(-1.0, -2.0)])
 	draw_colored_polygon(sea, Color(0.6, 0.78, 0.92))
