@@ -112,6 +112,27 @@ func _draw_city(vs: Vector2, font: Font) -> void:
 	var sub := tr("CITY_SUB")
 	draw_string_outline(font, Vector2(0, y + 40), sub, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 22, 6, Color(0, 0, 0, 0.8 * a))
 	draw_string(font, Vector2(0, y + 40), sub, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 22, Color(1, 1, 1, 0.9 * a))
+	# What to do, in three short lines with pictures.
+	var lines := [["SEARCH", tr("INTRO_1")], ["THERMO", tr("INTRO_2")], ["ACT_DRINK", tr("INTRO_3")], ["HOME", tr("INTRO_4")]]
+	var bw := 0.0
+	for ln in lines:
+		bw = maxf(bw, font.get_string_size(ln[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x)
+	var box := Rect2(Vector2((vs.x - bw - 70) * 0.5, y + 62), Vector2(bw + 70, lines.size() * 32 + 14))
+	draw_rect(box, Color(0, 0, 0, 0.5 * a))
+	for i in lines.size():
+		var ic := box.position + Vector2(28, 24 + i * 32)
+		var kind: String = lines[i][0]
+		if kind == "THERMO":
+			draw_rect(Rect2(ic + Vector2(-14, -4), Vector2(28, 8)), Color(0.1, 0.1, 0.15, a))
+			draw_rect(Rect2(ic + Vector2(-14, -4), Vector2(20, 8)), Color(1, 0.4, 0.15, a))
+			draw_rect(Rect2(ic + Vector2(-14, -4), Vector2(28, 8)), Color(1, 1, 1, 0.6 * a), false, 1.0)
+		elif kind == "HOME":
+			var hcol := Color(0.25, 0.8, 0.4, a)
+			draw_rect(Rect2(ic + Vector2(-9, -3), Vector2(18, 12)), hcol)
+			draw_colored_polygon(PackedVector2Array([ic + Vector2(-12, -2), ic + Vector2(0, -13), ic + Vector2(12, -2)]), hcol)
+		else:
+			_hint_action(ic, kind, a)
+		draw_string(font, ic + Vector2(26, 7), lines[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(1, 1, 1, a))
 
 
 ## A lost thing was just found: shown big in the middle of the screen.
@@ -938,21 +959,33 @@ func _draw_lost_list(vs: Vector2) -> void:
 	var label := tr("FIND")
 	var label_w := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
 	var icons_w := _today.size() * size + (_today.size() - 1) * gap
-	var w := label_w + 16.0 + icons_w + 36.0
-	var r := Rect2(Vector2((vs.x - w) * 0.5, 10), Vector2(w, size + 16))
+	# The warmest thing still missing gives the word (Cold ... Burning!).
+	var hottest := 0.0
+	for id in _today:
+		if GameState.is_lost(id):
+			hottest = maxf(hottest, warmth(id))
+	var word := tr(_warm_key(hottest))
+	var word_w := font.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
+	var w := label_w + 16.0 + icons_w + 26.0 + word_w + 26.0
+	var r := Rect2(Vector2((vs.x - w) * 0.5, 10), Vector2(w, size + 30))
 	draw_rect(r, Color(0, 0, 0, 0.45))
-	var ty := r.get_center().y + 9
+	var ty := r.position.y + 8 + size * 0.5 + 9
 	draw_string_outline(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, 6, Color.BLACK)
 	draw_string(font, Vector2(r.position.x + 18, ty), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(1, 0.9, 0.4))
 	var x := r.position.x + 18 + label_w + 16 + size * 0.5
 	for id in _today:
-		var c := Vector2(x, r.get_center().y)
+		var c := Vector2(x, r.position.y + 8 + size * 0.5)
 		draw_circle(c, size * 0.55, Color(1, 1, 1, 0.15))
-		# Hot or cold: the nearer the thing (within about 2 blocks), the
-		# warmer and faster the glow behind its icon.
+		# Hot or cold: the nearer the thing, the warmer and faster the glow
+		# behind its icon, and the fuller and redder the thermometer under it.
 		if GameState.is_lost(id) and GameState.placements.has(id):
-			var bd: float = GameState.seg_distance(main.segment, GameState.placements[id][0])
-			var warm := clampf(1.0 - bd / 2.0, 0.0, 1.0)
+			var warm := warmth(id)
+			var bar := Rect2(c + Vector2(-size * 0.45, size * 0.5 + 6), Vector2(size * 0.9, 7))
+			draw_rect(bar, Color(0.1, 0.1, 0.15, 0.85))
+			var fill := maxf(warm, 0.08)
+			draw_rect(Rect2(bar.position, Vector2(bar.size.x * fill, bar.size.y)),
+				Color(0.3, 0.55, 1.0).lerp(Color(1.0, 0.2, 0.1), warm))
+			draw_rect(bar, Color(1, 1, 1, 0.5), false, 1.0)
 			if warm > 0.0:
 				var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 1000.0 * lerpf(2.0, 12.0, warm))
 				var wc := Color(1.0, lerpf(0.7, 0.2, warm), 0.1, (0.25 + 0.5 * pulse) * warm)
@@ -966,6 +999,37 @@ func _draw_lost_list(vs: Vector2) -> void:
 			draw_polyline(PackedVector2Array([c + Vector2(6, 10), c + Vector2(12, 16), c + Vector2(22, 2)]),
 				Color(0.3, 0.95, 0.3), 4.0, true)
 		x += size + gap
+	# The word for the warmest missing thing.
+	var word_col := Color(0.55, 0.75, 1.0).lerp(Color(1.0, 0.35, 0.2), hottest)
+	var wp := Vector2(r.end.x - word_w - 22, ty)
+	draw_string_outline(font, wp, word, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, 6, Color.BLACK)
+	draw_string(font, wp, word, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, word_col)
+
+
+## How near a missing thing is, 0 (cold: over 2 blocks away) .. 1 (right
+## here). Within the same block by metres, otherwise by blocks.
+func warmth(id: String) -> float:
+	if main == null or not GameState.placements.has(id):
+		return 0.0
+	var pl: Array = GameState.placements[id]
+	if pl[0] == main.segment:
+		var pos: Vector3 = pl[1]
+		var d := Vector2(pos.x - main.player.position.x, pos.z - main.player.position.z).length()
+		return lerpf(0.75, 1.0, 1.0 - clampf(d / 20.0, 0.0, 1.0))
+	var bd: float = GameState.seg_distance(main.segment, pl[0])
+	return clampf(0.75 - (bd - 0.5) * 0.3, 0.0, 0.6)
+
+
+func _warm_key(w: float) -> String:
+	if w >= 0.9:
+		return "WARM_5"
+	if w >= 0.72:
+		return "WARM_4"
+	if w >= 0.4:
+		return "WARM_3"
+	if w > 0.1:
+		return "WARM_2"
+	return "WARM_1"
 
 
 ## Morning: a thought bubble above the character's head with the things
