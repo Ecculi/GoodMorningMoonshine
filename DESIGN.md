@@ -53,7 +53,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 ### Kaupungit
 
-- Pelissä on useita kaupunkeja. **Uusi peli arpoo kaupungin**, ja yksi peli pelataan **samassa kaupungissa kuolemaan asti**. Pelin alussa ruudun keskelle tulee kaupungin nimi isolla ("RAAHE") ja alle "Selviä tässä kaupungissa niin pitkään kuin pystyt"; teksti häipyy, kun hahmo lähtee liikkeelle.
+- Pelissä on useita kaupunkeja. **Uusi peli arpoo kaupungin**, ja yksi peli pelataan **samassa kaupungissa kuolemaan asti**. Pelin alussa ruudun keskelle tulee kaupungin nimi isolla ("RAAHE") ja alle "Selviä tässä kaupungissa niin pitkään kuin pystyt"; teksti häipyy, kun hahmo lähtee liikkeelle. Versionumero näkyy samaan aikaan pienellä ruudun alareunassa.
 - Kaupungit ovat `scripts/city_map.gd`-tiedoston `CITIES`-listassa: kadut kahtena suuntana, kameran ilmansuunnat, meri, aloituspaikka, poliisiasema ja mahdollinen kävelykatu. Uuden kaupungin lisääminen on yksi uusi tietue.
 - **Raahe:** pohjois–eteläsuuntaiset kadut lännestä itään Rantakatu, Kauppakatu, Kirkkokatu, Reiponkatu ja Palokunnankatu; länsi–itäsuuntaiset pohjoisesta etelään Kirkkolahdenkatu, Pitkänkarinkatu, Saaristokatu, Cortenkatu, Brahenkatu, Koulukatu ja Sovionkatu. Meri (Kirkkolahti) on pohjoisessa. Poliisiasema on Brahenkadulla Kirkkokadun ja Reiponkadun välissä. Osittaiset kadut (Ämmänkatu, Nahkurinkuja) puuttuvat vielä (issue #39).
 
@@ -542,7 +542,7 @@ Lisätty prototyyppiin:
   - Puhelin itse hukkuu aina lähelle päivän aloituspaikkaa (noin korttelin päähän), joten sen löytäminen on helppo alku.
   - "Etsi:"-listan tavaroiden takana hehkuu aina (puhelimen kanssa tai ilman) "kuuma–kylmä"-valo, kun tavara on enintään noin kahden korttelin päässä: mitä lähempänä, sitä lämpimämpi väri ja nopeampi syke.
   - Kerjäläisiä on silloin kaksi kertaa useammin.
-- **Koti:** kodin korttelissa oven yllä kelluu sykkivä vihreä talo ja teksti "Koti". Kun pelaaja tulee lähelle ensimmäisen kerran päivässä, ruudun keskelle ponnahtaa "Löysit kotiin!". Kadun puolelta nuoli osoittaa ovelle, ja aivan oven vieressä näkyy napin kuva → sänky.
+- **Koti:** kodin korttelissa oven yllä kelluu sykkivä vihreä talo ja teksti "Koti". Kun pelaaja tulee lähelle ensimmäisen kerran päivässä, ruudun keskelle ponnahtaa "Löysit kotiin!" (ei silloin, kun päivä alkaa kotiovelta, vaan vasta kun on ensin käynyt kauempana). Kadun puolelta nuoli osoittaa ovelle, ja aivan oven vieressä näkyy napin kuva → sänky.
 - **Selitys pelin alussa:** kaupungin nimen alla neljä lyhyttä riviä kuvakkeineen: tavarat hukkuivat yöllä – etsi ne; lämpömittari kertoo, kuinka lähellä tavara on; juo sopivasti (selvänä kuolet, liikaa juotuasi sammut); lopuksi kotiin nukkumaan. Häipyvät, kun hahmo liikkuu.
 - **Lämpömittari:** "Etsi:"-listan jokaisen puuttuvan tavaran alla on mittari (sininen = kaukana, punainen = lähellä), ja listan lopussa sana lähimmän puuttuvan mukaan: Kylmä (yli 2 korttelia), Haalea, Lämmin, Kuuma (samassa korttelissa) ja Polttaa! (aivan vieressä). Samassa korttelissa lämpö kasvaa metrien mukaan.
 - **Hukattu tavara maassa:** lähellä (noin 4 m, ilman silmälaseja 1,6 m) tavara saa värinsä, pyörii ja hyppii, sen ympärillä sykkii hehkuva keltainen rengas, ja yllä pomppii nuoli.

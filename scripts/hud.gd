@@ -2,8 +2,8 @@ extends Control
 
 const LostItems = preload("res://scripts/lost_items.gd")
 const BuildInfo = preload("res://scripts/build_info.gd")
-## The version and build time show in the middle of the screen at start,
-## until the player first moves (then they fade out quickly).
+## The version and build time show small at the bottom of the screen at
+## start, until the player first moves (then they fade out quickly).
 var _version_a := 1.0
 var _version_fading := false
 ## The morning thought bubble stays until the player has walked this far.
@@ -93,8 +93,9 @@ func _draw_rotate_prompt(vs: Vector2, font: Font) -> void:
 	draw_multiline_string(font, Vector2(20, c.y + 140), text, HORIZONTAL_ALIGNMENT_CENTER, vs.x - 40, 34, -1, Color.WHITE)
 
 
-## Version and build time in the middle of the screen when the game
-## starts; gone as soon as the player moves (it stays in the F1 help).
+## Version and build time small at the bottom of the screen when the game
+## starts (out of the way of the city intro); gone as soon as the player
+## moves (it stays in the F1 help).
 func _draw_version(vs: Vector2, font: Font) -> void:
 	if _version_a <= 0.0:
 		return
@@ -104,9 +105,9 @@ func _draw_version(vs: Vector2, font: Font) -> void:
 		_version_a = maxf(0.0, _version_a - get_process_delta_time() * 3.0)
 	var a := _version_a
 	var text := BuildInfo.text()
-	var p := Vector2(0, vs.y * 0.5)
-	draw_string_outline(font, p, text, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 30, 8, Color(0, 0, 0, 0.8 * a))
-	draw_string(font, p, text, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 30, Color(1, 1, 1, a))
+	var p := Vector2(0, vs.y - 18)
+	draw_string_outline(font, p, text, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 16, 5, Color(0, 0, 0, 0.7 * a))
+	draw_string(font, p, text, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 16, Color(1, 1, 1, 0.75 * a))
 
 
 ## New game: the city's name big in the middle of the screen (with the
@@ -731,18 +732,24 @@ func _draw_trade_hint() -> void:
 ## kotiin!" pops up in the middle; right at the door: [button] -> bed.
 var _home_seen_day := -1
 var _home_flash_t := 0.0
+## The day the player was last away from the door. The welcome only pops
+## up after leaving, so it does not show when the day starts at home.
+var _home_left_day := -1
 
 
 func _draw_home_hint(vs: Vector2, font: Font) -> void:
 	if main == null or main.player == null or mode != "" or GameState.modal != "":
 		return
 	if main.segment != GameState.home_seg:
+		_home_left_day = GameState.day
 		return
 	var pl = main.player
 	var dx: float = absf(pl.position.x - GameState.home_x)
 	var t := Time.get_ticks_msec() / 1000.0
-	# Arrived: a big welcome once a day.
-	if dx < 4.0 and _home_seen_day != GameState.day:
+	if dx >= 4.0:
+		_home_left_day = GameState.day
+	# Arrived: a big welcome once a day (not when the day starts at home).
+	if dx < 4.0 and _home_seen_day != GameState.day and _home_left_day == GameState.day:
 		_home_seen_day = GameState.day
 		_home_flash_t = 2.5
 	if _home_flash_t > 0.0:
