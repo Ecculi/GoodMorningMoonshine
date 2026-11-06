@@ -8,10 +8,12 @@ extends CanvasLayer
 ## on the screen:
 ##   F5 = health full, F6 = alcohol +0.1 per mille, F7 = money +100 EUR,
 ##   F8 = phone battery +25 %, F9 = no hunger, cold or tiredness,
-##   F10 = skip to the next day (as if slept at home).
+##   F10 = skip to the next day (as if slept at home),
+##   F11 = new game in the next city (Oulu -> Raahe -> ...).
 
 const DEBUG_PROMILLE_STEP := 0.1
 const BuildInfo = preload("res://scripts/build_info.gd")
+const CityMap = preload("res://scripts/city_map.gd")
 ## Lines of controls in the help (HELP_KEY_1 ... in the translations).
 const HELP_KEY_LINES := 3
 
@@ -39,6 +41,7 @@ func _ready() -> void:
 	_button("F8 akku", _charge_phone)
 	_button("F9 virkeä", _refresh)
 	_button("F10 päivä+", _next_day)
+	_button("F11 kaupunki", _next_city)
 
 
 func _build_help() -> void:
@@ -205,6 +208,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_refresh()
 		KEY_F10:
 			_next_day()
+		KEY_F11:
+			_next_city()
 
 
 func _fill_health() -> void:
@@ -221,6 +226,18 @@ func _add_money() -> void:
 
 func _charge_phone() -> void:
 	GameState.battery = minf(100.0, GameState.battery + 25.0)
+
+
+## New game in the next city (main.gd is this node's parent).
+func _next_city() -> void:
+	var main = get_parent()
+	if main == null or not main.has_method("_new_game"):
+		return
+	GameState.forced_city = (CityMap.city + 1) % CityMap.CITIES.size()
+	if GameState.modal == "help":
+		GameState.modal = ""
+	main.hud.hide_card()
+	main._new_game()
 
 
 func _next_day() -> void:
