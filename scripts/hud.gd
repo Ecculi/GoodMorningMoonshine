@@ -68,6 +68,31 @@ func show_pocket_check() -> void:
 
 
 ## A short thought bubble, e.g. "my phone is missing" (gone after ~2 m).
+## Phone held upright: the game is made for a wide screen, so ask to turn
+## the phone (the game keeps running underneath).
+func _draw_rotate_prompt(vs: Vector2, font: Font) -> void:
+	if vs.x >= vs.y:
+		return
+	draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, 0.75))
+	var c := vs * 0.5 + Vector2(0, -60)
+	var t := Time.get_ticks_msec() / 1000.0
+	# A phone turning from upright to sideways.
+	var ang := -PI * 0.5 * smoothstep(0.2, 0.8, fmod(t, 2.0) / 2.0)
+	var hw := 34.0
+	var hh := 60.0
+	var pts := PackedVector2Array()
+	for p in [Vector2(-hw, -hh), Vector2(hw, -hh), Vector2(hw, hh), Vector2(-hw, hh)]:
+		pts.append(c + p.rotated(ang))
+	draw_colored_polygon(pts, Color(0.9, 0.9, 0.95))
+	var inner := PackedVector2Array()
+	for p in [Vector2(-hw + 6, -hh + 10), Vector2(hw - 6, -hh + 10), Vector2(hw - 6, hh - 14), Vector2(-hw + 6, hh - 14)]:
+		inner.append(c + p.rotated(ang))
+	draw_colored_polygon(inner, Color(0.3, 0.55, 0.9))
+	draw_arc(c, 95.0, -PI * 0.5, -PI * 0.15, 20, Color(1, 0.85, 0.3), 5.0, true)
+	var text := tr("ROTATE_PHONE")
+	draw_multiline_string(font, Vector2(20, c.y + 140), text, HORIZONTAL_ALIGNMENT_CENTER, vs.x - 40, 34, -1, Color.WHITE)
+
+
 ## Version and build time in the middle of the screen when the game
 ## starts; gone as soon as the player moves (it stays in the F1 help).
 func _draw_version(vs: Vector2, font: Font) -> void:
@@ -336,6 +361,11 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var font := get_theme_default_font()
 	var vs := get_viewport_rect().size
+	# Very wide screens: black bars at the sides (the playing area is
+	# limited to about 2.6:1); the HUD stays on top.
+	if main != null and main.play_left > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, Vector2(main.play_left, vs.y)), Color.BLACK)
+		draw_rect(Rect2(Vector2(main.play_right, 0), Vector2(vs.x - main.play_right, vs.y)), Color.BLACK)
 	if _fade > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, _fade))
 	if _hurt > 0.0:
@@ -366,6 +396,7 @@ func _draw() -> void:
 	_draw_found(vs)
 	_draw_version(vs, font)
 	_draw_city(vs, font)
+	_draw_rotate_prompt(vs, font)
 	_draw_achievement(vs, font)
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
@@ -479,11 +510,13 @@ func _draw_offscreen_lost(vs: Vector2) -> void:
 		if main.camera.is_position_behind(p):
 			continue
 		var sp: Vector2 = main.camera.unproject_position(p)
-		if sp.x >= 0.0 and sp.x <= vs.x:
+		var pl_l: float = main.play_left
+		var pl_r: float = main.play_right
+		if sp.x >= pl_l and sp.x <= pl_r:
 			continue
-		var side := 1.0 if sp.x > vs.x else -1.0
+		var side := 1.0 if sp.x > pl_r else -1.0
 		var y := clampf(sp.y, 120.0, vs.y - 60.0)
-		var tip := Vector2(vs.x - 14.0 if side > 0.0 else 14.0, y)
+		var tip := Vector2(pl_r - 14.0 if side > 0.0 else pl_l + 14.0, y)
 		var bob := sin(Time.get_ticks_msec() / 180.0) * 4.0 * side
 		tip.x += bob
 		var back := tip - Vector2(side * 22.0, 0)

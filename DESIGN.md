@@ -14,6 +14,8 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 ## Kuvakulma ja grafiikka
 
+- **Näytön koko ja kuvasuhde:** peli on suunniteltu 16:9-näytölle (1280×720), eikä kuva veny koskaan. Kapeammalla näytöllä (4:3, puhelin vaakasuunnassa) kadun leveys säilyy, ja näkymä laajenee ylös ja alas; leveämmällä näkyy sivuille enemmän, mutta kamera zoomaa samalla sisään, jottei hahmo kutistu (rajana se, että molemmat jalkakäytävät näkyvät); yli noin 2,6:1 leveällä näytöllä sivuille tulee mustat reunat. Käyttöliittymä on ankkuroitu reunoihin ja keskelle. Puhelin pystyasennossa: ruudulle tulee kääntyvän puhelimen kuva ja "Käännä puhelin vaakaan".
+
 - **Grafiikka toteutetaan tilt-shift-tekniikalla**, jolloin kaupunki näyttää pienoismallilta.
 - Peli tehdään **3D:nä**, koska tilt-shift syntyy siinä luontevimmin kameran syväterävyydellä (ylä- ja alareuna sumenevat).
 - **Terävä alue seuraa pelaajaa pystysuunnassa.** Kun hahmo liikkuu kadun syvyyssuunnassa ylös tai alas, tarkennuskaista siirtyy hänen mukanaan, joten hahmo on aina terävänä.
