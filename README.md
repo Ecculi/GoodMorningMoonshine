@@ -3,7 +3,7 @@ Modern version of Spurgux
 
 Suunnitelma ja päätökset: [DESIGN.md](DESIGN.md)
 
-**Pelaa selaimessa:** https://ecculi.github.io/GoodMorningMoonshine/ (päivittyy automaattisesti, kun main-haaraan tulee muutoksia)
+**Pelaa selaimessa:** https://ecculi.github.io/GoodMorningMoonshine/ (päivittyy automaattisesti, kun main-haaraan tulee muutoksia). Versionumero ja buildin aika näkyvät oikeassa alakulmassa pelin käynnistyessä ja F1-ohjeessa; versio on `project.godot`-tiedoston `config/version` + buildin juokseva numero.
 
 ## Prototyypin ajaminen
 

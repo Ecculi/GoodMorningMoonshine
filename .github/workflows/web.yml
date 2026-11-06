@@ -48,6 +48,27 @@ jobs:
           unzip -q -j templates.tpz "templates/web_nothreads_*" "templates/version.txt" -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
           rm templates.tpz
 
+      # Version = config/version in project.godot + the run number, and the
+      # build time (Finnish time), into the game (shown at start).
+      - name: Write version and build time
+        run: |
+          BASE=$(grep '^config/version=' project.godot | cut -d'"' -f2)
+          VERSION="${BASE:-0.1}.${{ github.run_number }}"
+          DATE=$(TZ=Europe/Helsinki date '+%-d.%-m.%Y %H:%M')
+          {
+            echo 'extends RefCounted'
+            echo '## Written by the web build workflow.'
+            echo "const VERSION := \"$VERSION\""
+            echo "const BUILD_DATE := \"$DATE\""
+            echo "const COMMIT := \"${GITHUB_SHA::7}\""
+            echo ''
+            echo 'static func text() -> String:'
+            echo '	if BUILD_DATE == "":'
+            echo '		return VERSION'
+            echo '	return "v%s · %s" % [VERSION, BUILD_DATE]'
+          } > scripts/build_info.gd
+          cat scripts/build_info.gd
+
       # The export succeeds even with broken scripts, so run the game
       # headless for a moment and fail on any script error in the log.
       - name: Check scripts

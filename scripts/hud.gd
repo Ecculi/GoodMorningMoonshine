@@ -1,6 +1,10 @@
 extends Control
 
 const LostItems = preload("res://scripts/lost_items.gd")
+const BuildInfo = preload("res://scripts/build_info.gd")
+## The version and build time show in the corner this long after start.
+const VERSION_SHOW_TIME := 10.0
+var _since_start := 0.0
 ## The morning thought bubble stays until the player has walked this far.
 const BUBBLE_WALK := 5.0
 ## Health heart (colour drains away, no number), alcohol in per mille
@@ -63,6 +67,20 @@ func show_pocket_check() -> void:
 
 
 ## A short thought bubble, e.g. "my phone is missing" (gone after ~2 m).
+## Version and build time in the bottom right corner for a while after
+## the game starts (then it fades out; it stays in the F1 help).
+func _draw_version(vs: Vector2, font: Font) -> void:
+	_since_start += get_process_delta_time()
+	if _since_start > VERSION_SHOW_TIME:
+		return
+	var a := clampf(VERSION_SHOW_TIME - _since_start, 0.0, 1.0)
+	var text := BuildInfo.text()
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+	var p := Vector2(vs.x - w - 14, vs.y - 12)
+	draw_string_outline(font, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, 4, Color(0, 0, 0, a))
+	draw_string(font, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 1, 1, 0.85 * a))
+
+
 ## A lost thing was just found: shown big in the middle of the screen.
 const FOUND_TIME := 2.4
 var _found_id := ""
@@ -291,6 +309,7 @@ func _draw() -> void:
 	_draw_bin_hint()
 	_draw_trade_hint()
 	_draw_found(vs)
+	_draw_version(vs, font)
 	_draw_achievement(vs, font)
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
