@@ -2,9 +2,10 @@ extends Control
 
 const LostItems = preload("res://scripts/lost_items.gd")
 const BuildInfo = preload("res://scripts/build_info.gd")
-## The version and build time show in the corner this long after start.
-const VERSION_SHOW_TIME := 10.0
-var _since_start := 0.0
+## The version and build time show in the middle of the screen at start,
+## until the player first moves (then they fade out quickly).
+var _version_a := 1.0
+var _version_fading := false
 ## The morning thought bubble stays until the player has walked this far.
 const BUBBLE_WALK := 5.0
 ## Health heart (colour drains away, no number), alcohol in per mille
@@ -67,18 +68,20 @@ func show_pocket_check() -> void:
 
 
 ## A short thought bubble, e.g. "my phone is missing" (gone after ~2 m).
-## Version and build time in the bottom right corner for a while after
-## the game starts (then it fades out; it stays in the F1 help).
+## Version and build time in the middle of the screen when the game
+## starts; gone as soon as the player moves (it stays in the F1 help).
 func _draw_version(vs: Vector2, font: Font) -> void:
-	_since_start += get_process_delta_time()
-	if _since_start > VERSION_SHOW_TIME:
+	if _version_a <= 0.0:
 		return
-	var a := clampf(VERSION_SHOW_TIME - _since_start, 0.0, 1.0)
+	if GameState.moving:
+		_version_fading = true
+	if _version_fading:
+		_version_a = maxf(0.0, _version_a - get_process_delta_time() * 3.0)
+	var a := _version_a
 	var text := BuildInfo.text()
-	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
-	var p := Vector2(vs.x - w - 14, vs.y - 12)
-	draw_string_outline(font, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, 4, Color(0, 0, 0, a))
-	draw_string(font, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 1, 1, 0.85 * a))
+	var p := Vector2(0, vs.y * 0.5)
+	draw_string_outline(font, p, text, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 30, 8, Color(0, 0, 0, 0.8 * a))
+	draw_string(font, p, text, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 30, Color(1, 1, 1, a))
 
 
 ## A lost thing was just found: shown big in the middle of the screen.
