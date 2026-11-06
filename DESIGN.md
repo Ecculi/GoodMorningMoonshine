@@ -106,7 +106,16 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 ### Vaikeutuminen
 
-Päivät vaikeutuvat vähitellen kolmella tavalla:
+**Periaate: joka päivä jotain uutta.** Pelin edetessä pitää koko ajan tulla uusia asioita ja haasteita, jotta pelaaja kokee jatkuvasti jotain uutta ja haluaa pelata uudestaan nähdäkseen, mitä myöhemmin tulee vastaan. Uudet hahmot ja mekaniikat tuodaan peliin vähitellen päivä kerrallaan, ei kaikkea heti ensimmäisenä päivänä:
+
+| Päivä | Uutta |
+|---|---|
+| 1 | perusasiat: ohikulkijat, poliisit, vartijat, portsari, kerjäläinen, kadun juoppo, autot |
+| 2 | lokit ja punkkariporukat |
+| 3 | koirat (voivat auttaa tai olla vihollisia) |
+| myöhemmin | lisää ideoita alla (Tulevat haasteet) |
+
+Päivät vaikeutuvat lisäksi vähitellen kolmella tavalla:
 
 - **Etsintäsäde kasvaa:** koti ja hukatut tavarat ovat kauempana toisistaan.
 - **Enemmän hukattua:** joka päivä hukkuu useampi tavara.

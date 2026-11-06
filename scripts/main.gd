@@ -1200,10 +1200,13 @@ func _spawn_street_folk() -> void:
 		d.position.z = rng.randf_range(-7.0, -5.8) if rng.randf() < 0.5 else rng.randf_range(3.3, 4.8)
 	if GameState.day >= 2 and rng.randf() < 0.2:
 		_spawn_punks()
-	for i in (rng.randi_range(1, 3) if rng.randf() < 0.55 else 0):
+	# New things keep turning up as the days go by: gulls from day 2,
+	# dogs (helpers or enemies) from day 3.
+	var gulls := rng.randi_range(1, 3) if GameState.day >= 2 and rng.randf() < 0.55 else 0
+	for i in gulls:
 		var z := rng.randf_range(-7.4, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.0, 5.2)
 		_spawn_animal("gull", Vector3(rng.randf_range(-14.0, 14.0), 0, z))
-	if rng.randf() < 0.3:
+	if GameState.day >= 3 and rng.randf() < 0.3:
 		var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
 		_spawn_animal("dog", Vector3(rng.randf_range(-14.0, 14.0), 0, z))
 
