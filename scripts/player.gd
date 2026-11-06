@@ -400,6 +400,17 @@ func hit_by_car_front(car_dir: int, car_speed: float) -> void:
 	_knock_out(40.0, push)
 
 
+## Knocked over by a cyclist or an e-scooter on the sidewalk.
+func hit_by_rider(dir: int, spd: float) -> void:
+	running = false
+	_press_time = -1.0
+	GameState.fell_down()
+	_go_ragdoll(Vector3(dir * spd * 0.45, 1.6, randf_range(-0.6, 0.6)), 1.6)
+	GameState.damage(6.0, "bike")
+	main.hud.flash_hurt()
+	_maybe_fall_asleep()
+
+
 func run_over(car_dir: int) -> void:
 	_car_flings(car_dir)
 	_car_survive = "RUN_OVER_SURVIVE"

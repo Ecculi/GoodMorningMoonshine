@@ -113,13 +113,13 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 | 1 | perusasiat: ohikulkijat, poliisit, vartijat, portsari, kerjäläinen, kadun juoppo, autot |
 | 2 | lokit ja punkkariporukat |
 | 3 | koirat (voivat auttaa tai olla vihollisia) |
+| 4 | pyöräilijät ja sähköpotkulaudat (kaahaavat jalkakäytävillä, myös kävelykadulla; soittavat kelloa tai tööttäävät, kun pelaaja on edessä, väistävät vähän, mutta kaatavat, jos ei väistä: 6 healthia) ja tölkinkerääjä (sininen kassi; ehtii roskiksiin ennen pelaajaa ja poimii kadulla lojuvat pullot ja tölkit) |
 | myöhemmin | lisää ideoita alla (Tulevat haasteet) |
 
 #### Tulevat haasteet (ideoita, ei vielä pelissä)
 
 Uudet hahmot päivä kerrallaan:
 
-- **Päivä 4:** **pyöräilijät ja sähköpotkulaudat** (kaahaavat jalkakäytävällä, väistettävä; törmäys kaataa) ja **tölkinkerääjä** (kilpailija: penkoo roskikset ennen pelaajaa ja vie pullot).
 - **Päivä 5:** **taskuvaras** (törmää ohimennen ja vie tavaran, joka muuttuu kesken päivän hukatuksi; saa takaisin kiinni ottamalla) ja **mummo** (hidas, mutta käsilaukku osuu kovaa).
 - **Päivä 6:** **some-vaikuttaja** (kuvaa pelaajaa; video leviää ja poliisit tunnistavat loppupäivän helpommin) ja **pappi** (auttaja: antaa pullaa tai kahvia kylmissään tai nälkäiselle).
 - **Päivä 7:** **lokkiparvet** (useampi lokki hyökkää ruoan perään yhtä aikaa) ja **poliisiparit**.
@@ -469,7 +469,7 @@ Hahmoideat:
 
 - **Saavutukset (F2):** 26 saavutusta, jotka tallentuvat laitteelle. Avautuessa vasempaan alakulmaan liukuu pokaali ja nimi. Listassa suorittamattomista näkyy vain nimi; joka kerta listan avatessa yhdestä satunnaisesta suorittamattomasta näkyy myös selitys valkoisella. Lista: Makkaramestari (tainnuta makkaroilla, kolme osumaa), Kunnon kättely, Punk's Not Dead, Ulos ja heti, Portsarin portsari, Pakotie, Pallomies, Lokkien vihollinen, Taivaan lahja, Paras ystävä, Kallis nakki, Lauma rauhoittuu, Lääkärin määräys, Raitis hetki, Vaaleanpunaiset norsut, Aamukalja, Kännissä kotiin, Kolmen kolmosen kännit (yli 3,33333 ‰), Siisti päivä, Ilman karttaa, Hyvä sydän, Painovoiman ystävä, Konepellin kyydissä, Kova ihminen, Pyykkipäivä ja Lööppitähti.
 
-- **Ohje (F1, peliohjaimella Back):** lyhyt tavoite ja näppäimet näppäimistölle, ohjaimelle ja puhelimelle; peli odottaa ohjeen ajan. Debug-työkalut ovat piilossa: ne kytketään päälle painamalla ohjeessa F12, jonka jälkeen F5–F9 toimivat.
+- **Ohje (F1, peliohjaimella Back):** lyhyt tavoite ja näppäimet näppäimistölle, ohjaimelle ja puhelimelle; peli odottaa ohjeen ajan. Debug-työkalut ovat piilossa: ne kytketään päälle painamalla ohjeessa F12, jonka jälkeen F5–F10 toimivat (F10 hyppää seuraavaan päivään).
 
 - Erillistä opetusosiota ei ole.
 - **Poikkeus: käden esineen vihje.** Kun pelaaja poimii esineen käteen, pään yläpuolelle tulee viideksi sekunniksi ikonivihje ilman tekstiä: napin kuva (näppäimistöllä välilyönti, kosketusnäytöllä iso pyöreä nappi) → toiminnon kuva (juo: kallistettu pullo, syö: makkara, lyö: nyrkki), ja alla napin kuva kellon kanssa (pidä pohjassa) → heittokaari. Tämä näkyy joka kerta.

@@ -8,6 +8,7 @@ const Player = preload("res://scripts/player.gd")
 const Npc = preload("res://scripts/npc.gd")
 const Animal = preload("res://scripts/animal.gd")
 const Vision = preload("res://scripts/vision.gd")
+const Rider = preload("res://scripts/rider.gd")
 const Item = preload("res://scripts/item.gd")
 const Hud = preload("res://scripts/hud.gd")
 const TouchControls = preload("res://scripts/touch_controls.gd")
@@ -68,6 +69,9 @@ var segment: Vector3i = CityMap.START
 var npcs: Array = []
 ## Seagulls and dogs in the current block.
 var animals: Array = []
+## Cyclists and e-scooters on the sidewalks (from day 4).
+var riders: Array = []
+var _rider_timer := 5.0
 ## Punk gangs that already met the player (each offers a beer at most once).
 var _punk_met := {}
 var _next_gang := 0
@@ -320,6 +324,9 @@ func _clear_block_content() -> void:
 	for a in animals:
 		a.queue_free()
 	animals.clear()
+	for rd in riders:
+		rd.queue_free()
+	riders.clear()
 	var keep = player.hand_item
 	for it in items:
 		if is_instance_valid(it) and it != keep:
@@ -860,7 +867,8 @@ func _on_day_ended(cause: String) -> void:
 ## How many headlines and captions there are per cause (keys HL_<CAUSE>_n
 ## and CAP_<CAUSE>_n in the translations).
 const HEADLINES := {"SOBER": [8, 3], "FIGHT": [9, 3], "CAR": [9, 6], "DOG": [6, 3], "BOUNCER": [5, 2],
-	"FALL": [6, 2], "COLD": [6, 2], "HUNGER": [4, 2], "HANGOVER": [6, 2], "EXHAUST": [4, 2]}
+	"FALL": [6, 2], "COLD": [6, 2], "HUNGER": [4, 2], "HANGOVER": [6, 2], "EXHAUST": [4, 2],
+	"BIKE": [3, 2]}
 
 
 ## Captions that fit any death (CAP_ANY_n), used now and then.
@@ -1200,6 +1208,9 @@ func _spawn_street_folk() -> void:
 		d.position.z = rng.randf_range(-7.0, -5.8) if rng.randf() < 0.5 else rng.randf_range(3.3, 4.8)
 	if GameState.day >= 2 and rng.randf() < 0.2:
 		_spawn_punks()
+	# From day 4 a can collector beats you to the bins.
+	if GameState.day >= 4 and rng.randf() < 0.4:
+		_spawn_npc(false, "collector")
 	# New things keep turning up as the days go by: gulls from day 2,
 	# dogs (helpers or enemies) from day 3.
 	var gulls := rng.randi_range(1, 3) if GameState.day >= 2 and rng.randf() < 0.55 else 0
@@ -1338,6 +1349,50 @@ func _fling_shoes(from: Vector3, land: Vector3, spare: bool) -> void:
 	tw.tween_callback(landed)
 
 
+## Can collector's next target: the nearest unsearched bin or bottle/can
+## lying in the street within 14 m ({} if none).
+func collector_target(pos: Vector3) -> Dictionary:
+	var best := {}
+	var best_d := 14.0
+	if level != null:
+		var bins: Array = level.get_meta("bins", [])
+		for i in bins.size():
+			if _searched_bins.has("%s:%d" % [_key(segment), i]):
+				continue
+			var bp := Vector3(bins[i], 0, -7.0)
+			var d := Vector2(bp.x - pos.x, bp.z - pos.z).length()
+			if d < best_d:
+				best_d = d
+				best = {"type": "bin", "i": i, "pos": bp}
+	for it in items:
+		if not is_instance_valid(it) or it == player.hand_item or not it.can_pickup():
+			continue
+		if it.kind != Item.Kind.CAN and it.kind != Item.Kind.BOTTLE:
+			continue
+		var ip: Vector3 = it.global_position
+		var d := Vector2(ip.x - pos.x, ip.z - pos.z).length()
+		if d < best_d:
+			best_d = d
+			best = {"type": "item", "item": it, "pos": Vector3(ip.x, 0, ip.z)}
+	return best
+
+
+## The collector got to a bin first: it's empty for the player now.
+func collector_take_bin(i: int) -> void:
+	var key := "%s:%d" % [_key(segment), i]
+	if _searched_bins.has(key):
+		return
+	_searched_bins[key] = true
+	var bins: Array = level.get_meta("bins", [])
+	if i < bins.size():
+		popup("kolin", Vector3(bins[i], 1.4, -7.5), Color(0.85, 0.85, 0.9))
+
+
+func remove_rider(rd) -> void:
+	riders.erase(rd)
+	rd.queue_free()
+
+
 func remove_animal(a) -> void:
 	animals.erase(a)
 	a.queue_free()
@@ -1436,7 +1491,20 @@ func _spawn_npc(at_edge: bool, role := "civ"):
 ## pedestrian street (Rotuaari).
 func _update_traffic() -> void:
 	var dt := GameState.world_dt
-	if dt <= 0.0 or GameState.over or _is_pedestrian_street():
+	if dt <= 0.0 or GameState.over:
+		return
+	# From day 4: cyclists and e-scooters tear along the sidewalks (also on
+	# the pedestrian street).
+	if GameState.day >= 4:
+		_rider_timer -= dt
+		if _rider_timer <= 0.0:
+			_rider_timer = rng.randf_range(7.0, 16.0)
+			var rd = Rider.new()
+			rd.main = self
+			rd.setup(rng, 1 if rng.randf() < 0.5 else -1)
+			add_child(rd)
+			riders.append(rd)
+	if _is_pedestrian_street():
 		return
 	_car_timer -= dt
 	if _car_timer <= 0.0:

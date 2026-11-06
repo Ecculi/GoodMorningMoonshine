@@ -8,6 +8,8 @@ extends Node3D
 ## - "bouncer": stands by the bar door; hit him and he runs after you like
 ##   the police, throws you out onto the street by the scruff of the neck,
 ##   then walks back to the door
+## - "collector": can collector (from day 4); gets to the bins before the
+##   player and picks up bottles and cans lying in the street
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -127,6 +129,20 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			stationary = true
 			chase_speed = BOUNCER_SPEED
 			telegraphs = true
+		"collector":
+			model = PersonModel.new(Color(0.35, 0.4, 0.3), Color(0.3, 0.28, 0.25), skin,
+				Color(0.45, 0.42, 0.38), 0.97)
+			speed = 1.3
+			# A big bag of cans in the hand.
+			var bag := MeshInstance3D.new()
+			var bgm := BoxMesh.new()
+			bgm.size = Vector3(0.3, 0.42, 0.3)
+			bag.mesh = bgm
+			var bgmat := StandardMaterial3D.new()
+			bgmat.albedo_color = Color(0.15, 0.35, 0.75)
+			bag.material_override = bgmat
+			bag.position = Vector3(0, -0.25, 0)
+			model.hand.add_child(bag)
 		"punk":
 			# Black leather jacket, ripped jeans, a bright mohawk.
 			model = PersonModel.new(Color(0.08, 0.08, 0.09), Color(0.25, 0.3, 0.45), skin,
@@ -288,6 +304,41 @@ func offer_trade(p: Node3D) -> bool:
 			GameState.drink(0.3)
 			main.popup("glug", p.position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
 	GameState.busy_time = maxf(GameState.busy_time, 0.6)
+	return true
+
+
+## Can collector: heads for the nearest unsearched bin or bottle/can in
+## the street, empties it into the bag, and goes on to the next.
+## Returns true while busy with that (instead of just walking).
+var _goal := {}
+var _rummage_t := 0.0
+
+
+func _collect(dt: float) -> bool:
+	if _rummage_t > 0.0:
+		_rummage_t -= dt
+		model.animate(0.0, dt)
+		return true
+	if _goal.is_empty() or (_goal["type"] == "item" and not is_instance_valid(_goal["item"])):
+		_goal = main.collector_target(position)
+		if _goal.is_empty():
+			return false
+	var to := Vector2(_goal["pos"].x - position.x, _goal["pos"].z - position.z)
+	if to.length() < 0.35:
+		if _goal["type"] == "bin":
+			main.collector_take_bin(_goal["i"])
+		elif is_instance_valid(_goal["item"]) and _goal["item"].can_pickup():
+			main.popup("kolin", position + Vector3(0, 1.8, 0), Color(0.85, 0.85, 0.9))
+			main.remove_item(_goal["item"])
+		model.punch()
+		_rummage_t = 1.0
+		_goal = {}
+		return true
+	var stp := to.normalized() * minf(speed * dt, to.length())
+	position.x += stp.x
+	position.z += stp.y
+	dir = 1 if stp.x >= 0.0 else -1
+	model.animate(1.0, dt, speed / 1.3)
 	return true
 
 
@@ -458,6 +509,8 @@ func _walk(dt: float) -> void:
 		return
 	if role == "punk":
 		main.punk_meet(self)
+	if role == "collector" and _collect(dt):
+		return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
 	if position.x > EDGE_X:

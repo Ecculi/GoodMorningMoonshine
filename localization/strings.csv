@@ -87,7 +87,7 @@ HELP_KEY_1,Nuolet / WASD: liiku  ·  Shift: juokse
 HELP_KEY_2,"Välilyönti: lyö, juo, syö, penko, ovi  ·  pohjassa: heitä"
 HELP_KEY_3,P: puhelin  ·  F1: ohje  ·  F2: saavutukset
 HELP_CLOSE,Esc sulkee
-HELP_DEBUG,"Debug päällä: F5 health täyteen, F6 +0,1 ‰, F7 +100 €, F8 akku +25 %, F9 ei nälkää, kylmää eikä väsymystä. F12 pois."
+HELP_DEBUG,"Debug päällä: F5 health täyteen, F6 +0,1 ‰, F7 +100 €, F8 akku +25 %, F9 ei nälkää, kylmää eikä väsymystä, F10 seuraava päivä. F12 pois."
 HL_SOBER_5,Raitis päivä osoittautui liian raskaaksi
 HL_SOBER_6,Tutkimus: selvä olotila voi olla hengenvaarallinen
 HL_SOBER_7,Mies kokeili tipattomuutta – tulokset murskaavia
@@ -172,3 +172,8 @@ ACH_HEADLINES10,Lööppitähti
 ACH_HEADLINES10_DESC,Päädy lehteen kymmenellä eri otsikolla.
 ACH_UNLOCKED,Saavutus!
 ACH_LIST,Saavutukset %d / %d
+HL_BIKE_1,Pyöräilijä soitti kelloa – liian myöhään
+HL_BIKE_2,Sähköpotkulauta kaatoi miehen jalkakäytävällä
+HL_BIKE_3,"""Kling kling"" olivat viimeiset kuullut äänet"
+CAP_BIKE_1,"Pyöräilijä: ""Jalkakäytävä on minun kaistani."""
+CAP_BIKE_2,Potkulauta ajoi pois kuin mitään ei olisi tapahtunut.

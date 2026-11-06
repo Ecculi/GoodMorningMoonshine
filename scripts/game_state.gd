@@ -403,7 +403,7 @@ func eat() -> void:
 
 
 ## What last hurt the character (for the death headline): "fight", "car",
-## "dog", "bouncer", "fall", "cold", "hunger", "hangover", "exhaust".
+## "dog", "bouncer", "fall", "cold", "hunger", "hangover", "exhaust", "bike".
 var last_hurt := "fight"
 
 
@@ -765,6 +765,14 @@ func format_promille(p: float) -> String:
 func _die(cause: String) -> void:
 	over = true
 	player_died.emit(cause)
+
+
+## Debug: end the day at once as if slept at home.
+func debug_next_day() -> void:
+	if over or modal != "" or doze_t >= 0.0:
+		return
+	sleep_place = "home"
+	_end_day("SLEEP_HOME")
 
 
 ## Falls asleep on the spot (e.g. after a fall when drowsy).
