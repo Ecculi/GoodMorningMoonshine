@@ -11,6 +11,7 @@ extends CanvasLayer
 ##   F10 = skip to the next day (as if slept at home).
 
 const DEBUG_PROMILLE_STEP := 0.1
+const BuildInfo = preload("res://scripts/build_info.gd")
 ## Lines of controls in the help (HELP_KEY_1 ... in the translations).
 const HELP_KEY_LINES := 3
 
@@ -52,6 +53,7 @@ func _build_help() -> void:
 		keys.append(tr("HELP_KEY_%d" % i))
 	_label(box, "\n".join(keys), 17, Color(0.85, 0.88, 0.95), 480)
 	_label(box, tr("HELP_CLOSE"), 15, Color(0.6, 0.6, 0.65))
+	_label(box, BuildInfo.text(), 13, Color(0.5, 0.5, 0.55))
 	_debug_line = _label(box, tr("HELP_DEBUG"), 15, Color(1, 0.5, 0.4), 560)
 	_debug_line.visible = false
 
