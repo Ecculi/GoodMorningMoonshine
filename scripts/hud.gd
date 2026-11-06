@@ -361,6 +361,7 @@ func _draw() -> void:
 	_draw_shading_hand(vs)
 	_draw_hand_hint(font)
 	_draw_bin_hint()
+	_draw_home_hint(vs, font)
 	_draw_trade_hint()
 	_draw_found(vs)
 	_draw_version(vs, font)
@@ -690,6 +691,66 @@ func _draw_trade_hint() -> void:
 		draw_string(font, sp + Vector2(28, 8), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)
 	else:
 		_hint_action(sp + Vector2(40, 0), "ACT_DRINK", 1.0)
+
+
+## Home: in the home block a pulsing green house and "Koti" float above
+## the door; the first time each day the player gets close, "Löysit
+## kotiin!" pops up in the middle; right at the door: [button] -> bed.
+var _home_seen_day := -1
+var _home_flash_t := 0.0
+
+
+func _draw_home_hint(vs: Vector2, font: Font) -> void:
+	if main == null or main.player == null or mode != "" or GameState.modal != "":
+		return
+	if main.segment != GameState.home_seg:
+		return
+	var pl = main.player
+	var dx: float = absf(pl.position.x - GameState.home_x)
+	var t := Time.get_ticks_msec() / 1000.0
+	# Arrived: a big welcome once a day.
+	if dx < 4.0 and _home_seen_day != GameState.day:
+		_home_seen_day = GameState.day
+		_home_flash_t = 2.5
+	if _home_flash_t > 0.0:
+		_home_flash_t -= get_process_delta_time()
+		var a := clampf(_home_flash_t / 0.6, 0.0, 1.0)
+		var msg := tr("HOME_FOUND")
+		draw_string_outline(font, Vector2(0, vs.y * 0.3), msg, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 54, 12,
+			Color(0, 0, 0, 0.8 * a))
+		draw_string(font, Vector2(0, vs.y * 0.3), msg, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 54, Color(0.5, 1.0, 0.55, a))
+	# The house above the door.
+	var p := Vector3(GameState.home_x, 3.0, -7.4)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	var k := 1.0 + 0.1 * sin(t * 4.0)
+	var house := Color(0.3, 0.9, 0.45)
+	draw_circle(sp, 30.0 * k, Color(0.2, 0.9, 0.4, 0.25))
+	draw_rect(Rect2(sp + Vector2(-13, -4) * k, Vector2(26, 20) * k), house)
+	draw_colored_polygon(PackedVector2Array([sp + Vector2(-18, -3) * k, sp + Vector2(0, -21) * k,
+		sp + Vector2(18, -3) * k]), house)
+	draw_rect(Rect2(sp + Vector2(-4, 5) * k, Vector2(8, 11) * k), Color(0.1, 0.1, 0.1, 0.8))
+	var lbl := tr("HOME_LABEL")
+	draw_string_outline(font, sp + Vector2(-60, 38), lbl, HORIZONTAL_ALIGNMENT_CENTER, 120, 22, 6, Color.BLACK)
+	draw_string(font, sp + Vector2(-60, 38), lbl, HORIZONTAL_ALIGNMENT_CENTER, 120, 22, Color(0.6, 1.0, 0.65))
+	# Right at the door: the button goes to bed.
+	if dx <= 0.9 and pl.position.z <= -6.0:
+		var c := sp + Vector2(0, 68)
+		draw_rect(Rect2(c - Vector2(46, 15), Vector2(92, 30)), Color(0, 0, 0, 0.45))
+		_hint_button(c + Vector2(-24, 0), false, 1.0)
+		_hint_arrow(c + Vector2(6, 0), 1.0)
+		# A little bed.
+		var b := c + Vector2(28, 2)
+		draw_rect(Rect2(b + Vector2(-11, -2), Vector2(22, 7)), Color(0.85, 0.85, 0.95))
+		draw_rect(Rect2(b + Vector2(-11, -6), Vector2(7, 5)), Color(1, 1, 1))
+		draw_rect(Rect2(b + Vector2(-12, 5), Vector2(3, 5)), Color(0.5, 0.35, 0.2))
+		draw_rect(Rect2(b + Vector2(9, 5), Vector2(3, 5)), Color(0.5, 0.35, 0.2))
+	elif dx < 4.0 and pl.position.z > -6.0:
+		# Close but out on the street: an arrow towards the door.
+		var ac := sp + Vector2(0, 62 + sin(t * 6.0) * 4.0)
+		draw_colored_polygon(PackedVector2Array([ac + Vector2(0, -10), ac + Vector2(-9, 4), ac + Vector2(9, 4)]),
+			Color(0.6, 1.0, 0.65))
 
 
 ## Near an unsearched bin: a magnifier above it; next to it (where the
