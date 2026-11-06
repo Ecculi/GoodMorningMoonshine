@@ -1860,13 +1860,36 @@ func _build_clouds() -> void:
 	clouds.add_child(wall)
 
 
+## The view is designed for 16:9: 36 degrees high. On narrower screens
+## (4:3, phones) the width of the street seen is kept instead, so nothing
+## is cut off at the sides (more shows above and below); on wider screens
+## (21:9) more shows at the sides.
+const CAMERA_FOV := 36.0
+const DESIGN_ASPECT := 16.0 / 9.0
+
+
 func _build_camera() -> void:
 	camera = Camera3D.new()
-	camera.fov = 36.0
+	camera.fov = CAMERA_FOV
 	camera.position = Vector3(0, 10.5, 17.0)
 	add_child(camera)
 	camera.look_at(Vector3(0, 0.6, -1.5))
 	camera.current = true
+	get_viewport().size_changed.connect(_fit_camera)
+	_fit_camera()
+
+
+func _fit_camera() -> void:
+	var vs := get_viewport().get_visible_rect().size
+	if vs.y <= 0.0:
+		return
+	if vs.x / vs.y >= DESIGN_ASPECT:
+		camera.keep_aspect = Camera3D.KEEP_HEIGHT
+		camera.fov = CAMERA_FOV
+	else:
+		# Same horizontal view as 16:9 at 36 degrees high.
+		camera.keep_aspect = Camera3D.KEEP_WIDTH
+		camera.fov = rad_to_deg(2.0 * atan(tan(deg_to_rad(CAMERA_FOV * 0.5)) * DESIGN_ASPECT))
 
 
 func _build_post_process() -> void:
