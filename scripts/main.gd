@@ -65,7 +65,7 @@ var _cloud_offset := Vector2.ZERO
 ## block so the shadows only drift with the wind.
 var _cloud_sun_set := false
 var level: Node3D
-var segment: Vector3i = CityMap.START
+var segment: Vector3i = CityMap.start()
 var npcs: Array = []
 ## Seagulls and dogs in the current block.
 var animals: Array = []
@@ -754,7 +754,7 @@ func try_enter_door(pos: Vector3) -> bool:
 	var sh = _shop_at(pos)
 	if sh != null:
 		return _try_shop(sh)
-	if segment == CityMap.POLICE_STATION and absf(pos.x - CityMap.POLICE_DOOR_X) < 0.9 and pos.z < -6.0:
+	if segment == CityMap.police_station() and absf(pos.x - CityMap.police_door_x()) < 0.9 and pos.z < -6.0:
 		_police_desk()
 		return true
 	if segment != GameState.home_seg:
@@ -825,6 +825,7 @@ func _new_game() -> void:
 	player.reset(Vector3.ZERO)
 	_enter_block(GameState.home_seg, _home_door_pos(), 1)
 	hud.show_pocket_check()
+	hud.show_city(CityMap.city_name())
 
 
 ## From day 2 on the character wakes up somewhere other than home (they
@@ -844,7 +845,7 @@ func _new_day() -> void:
 
 ## Police station desk: confiscated things are handed back with an ID card.
 func _police_desk() -> void:
-	var door := Vector3(CityMap.POLICE_DOOR_X, 2.2, -7.4)
+	var door := Vector3(CityMap.police_door_x(), 2.2, -7.4)
 	if GameState.confiscated < 0:
 		popup("?", door, Color(0.8, 0.9, 1.0))
 		return
@@ -1518,7 +1519,7 @@ func _update_traffic() -> void:
 
 
 func _is_pedestrian_street() -> bool:
-	return CityMap.street_name(segment) == "Kauppurienkatu"
+	return CityMap.is_pedestrian(segment)
 
 
 ## A driver gets out of `car` angry and starts a fight.
@@ -1691,7 +1692,7 @@ func _update_sun() -> void:
 	var day_light := sin(f * PI)
 	var elev := deg_to_rad(maxf(day_light * 45.0, 4.0))
 	var sun_az := lerpf(60.0, 300.0, f)  # east in the morning, south at noon, west in the evening
-	var rel := deg_to_rad(sun_az - CityMap.VIEW_AZIMUTH[segment.x])
+	var rel := deg_to_rad(sun_az - CityMap.view_azimuth(segment.x))
 	# Screen: forward (camera look) = -Z, right = +X.
 	var to_sun := Vector3(cos(elev) * sin(rel), sin(elev), -cos(elev) * cos(rel))
 	sun.basis = Basis.looking_at(-to_sun, Vector3.UP)
@@ -1720,7 +1721,7 @@ func _update_sun() -> void:
 	# Cloud shadows only on sunny days; they drift while time moves.
 	clouds.visible = not cloudy and day_light > 0.15
 	if clouds.visible:
-		var a := deg_to_rad(CityMap.VIEW_AZIMUTH[segment.x])
+		var a := deg_to_rad(CityMap.view_azimuth(segment.x))
 		# Map wind (east, north) to screen axes (right = +x, forward = -z).
 		var right := Vector2(cos(a), -sin(a))
 		var fwd := Vector2(sin(a), cos(a))

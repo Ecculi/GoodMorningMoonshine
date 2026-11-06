@@ -667,8 +667,11 @@ func _trip() -> void:
 ## Very drunk: every now and then the character heads off in a wrong
 ## direction whatever arrow is pressed. Pressing the direction they are
 ## actually going puts them back on track, until it happens again.
-const WRONG_WAY_PROMILLE := 1.8
-const WRONG_WAY_RUN_MULT := 2.5
+## Starts later and gently: under 3 per mille rarely and only a slight
+## veer (45 degrees); towards passing out often and wildly.
+const WRONG_WAY_PROMILLE := 2.3
+const WRONG_WAY_WILD := 3.0
+const WRONG_WAY_RUN_MULT := 1.8
 ## Eight directions (arrows can steer diagonally).
 const WRONG_WAY_DIRS := [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1),
 	Vector2(0.7071, 0.7071), Vector2(-0.7071, 0.7071), Vector2(0.7071, -0.7071), Vector2(-0.7071, -0.7071)]
@@ -677,6 +680,13 @@ var _wrong_cd := 3.0
 ## How long the current wrong way still lasts if the player does not
 ## correct it (it wears off by itself).
 var _wrong_left := 0.0
+
+
+## Seconds until the next wrong way: about 14 s at 2.3 per mille, 3 s
+## near 3.5.
+func _wrong_wait(p: float) -> float:
+	var heavy := clampf((p - WRONG_WAY_PROMILLE) / 1.2, 0.0, 1.0)
+	return lerpf(14.0, 3.0, heavy) * randf_range(0.7, 1.3)
 
 
 func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
@@ -688,15 +698,13 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 		if d.dot(wrong_way) > 0.65:
 			# Corrected: the player steers the way the character was going.
 			wrong_way = Vector2.ZERO
-			var heavy := clampf((p - WRONG_WAY_PROMILLE) / 1.0, 0.0, 1.0)
-			_wrong_cd = lerpf(6.0, 2.0, heavy) * randf_range(0.7, 1.3)
+			_wrong_cd = _wrong_wait(p)
 			return d
 		# Keep pressing the arrow and it wears off by itself after a while.
 		_wrong_left -= delta
 		if _wrong_left <= 0.0:
 			wrong_way = Vector2.ZERO
-			var heavy2 := clampf((p - WRONG_WAY_PROMILLE) / 1.0, 0.0, 1.0)
-			_wrong_cd = lerpf(6.0, 2.0, heavy2) * randf_range(0.7, 1.3)
+			_wrong_cd = _wrong_wait(p)
 			return d
 		return wrong_way
 	# Running drunk makes it happen much more often.
@@ -704,13 +712,19 @@ func _apply_wrong_way(d: Vector2, delta: float) -> Vector2:
 	if _wrong_cd <= 0.0:
 		# Any of the eight directions except the arrow's own and the exact
 		# opposite.
+		# Under 3 per mille only a slight veer (45 degrees off), later also
+		# sideways or more.
+		var wild := p >= WRONG_WAY_WILD
 		var options: Array = []
 		for w in WRONG_WAY_DIRS:
 			var dd: float = d.dot(w)
-			if dd < 0.9 and dd > -0.9:
+			if dd < 0.9 and dd > (-0.9 if wild else 0.5):
 				options.append(w)
+		if options.is_empty():
+			_wrong_cd = _wrong_wait(p)
+			return d
 		wrong_way = options[randi() % options.size()]
-		_wrong_left = randf_range(1.5, 3.0)
+		_wrong_left = randf_range(1.5, 3.0) if wild else randf_range(0.6, 1.3)
 		return wrong_way
 	return d
 

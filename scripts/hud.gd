@@ -84,6 +84,36 @@ func _draw_version(vs: Vector2, font: Font) -> void:
 	draw_string(font, p, text, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 30, Color(1, 1, 1, a))
 
 
+## New game: the city's name big in the middle of the screen (with the
+## version under it) until the player starts moving.
+var _city_name := ""
+var _city_a := 0.0
+var _city_fading := false
+
+
+func show_city(n: String) -> void:
+	_city_name = n
+	_city_a = 1.0
+	_city_fading = false
+
+
+func _draw_city(vs: Vector2, font: Font) -> void:
+	if _city_a <= 0.0 or _city_name == "":
+		return
+	if GameState.moving:
+		_city_fading = true
+	if _city_fading:
+		_city_a = maxf(0.0, _city_a - get_process_delta_time() * 1.5)
+	var a := _city_a
+	var y := vs.y * 0.34
+	draw_string_outline(font, Vector2(0, y), _city_name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, vs.x, 72, 14,
+		Color(0, 0, 0, 0.8 * a))
+	draw_string(font, Vector2(0, y), _city_name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, vs.x, 72, Color(1, 0.9, 0.5, a))
+	var sub := tr("CITY_SUB")
+	draw_string_outline(font, Vector2(0, y + 40), sub, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 22, 6, Color(0, 0, 0, 0.8 * a))
+	draw_string(font, Vector2(0, y + 40), sub, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 22, Color(1, 1, 1, 0.9 * a))
+
+
 ## A lost thing was just found: shown big in the middle of the screen.
 const FOUND_TIME := 2.4
 var _found_id := ""
@@ -313,6 +343,7 @@ func _draw() -> void:
 	_draw_trade_hint()
 	_draw_found(vs)
 	_draw_version(vs, font)
+	_draw_city(vs, font)
 	_draw_achievement(vs, font)
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
