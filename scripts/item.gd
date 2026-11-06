@@ -68,6 +68,14 @@ func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:
 	_root.scale = Vector3.ONE * 2.0
 
 
+## Height of the ground: the sidewalks are a kerb (12 cm) higher than the
+## street, so low things there don't sink into them.
+static func ground_y(p: Vector3) -> float:
+	if p.z < -5.0 or (p.z > 2.5 and p.z < 5.8):
+		return 0.12
+	return 0.0
+
+
 ## Food lying on the street (dogs go for it).
 func can_be_eaten() -> bool:
 	return kind == Kind.FOOD and state == St.GROUND
@@ -271,7 +279,7 @@ func drop_at(pos: Vector3) -> void:
 	if kind == Kind.FOOD:
 		_flop_ground()
 	wait_far = true
-	global_position = Vector3(pos.x, 0.0, pos.z)
+	global_position = Vector3(pos.x, ground_y(pos), pos.z)
 
 
 ## Thrown: a physics body with a start velocity aimed to come down about

@@ -999,7 +999,8 @@ func spawn_item(kind: int, pos: Vector3, value := 1, drink := 0):
 	it.main = self
 	it.setup(kind, value, drink)
 	add_child(it)
-	it.global_position = pos
+	# On the ground: on top of the sidewalk where there is one.
+	it.global_position = Vector3(pos.x, Item.ground_y(pos) if pos.y <= 0.01 else pos.y, pos.z)
 	items.append(it)
 	return it
 
