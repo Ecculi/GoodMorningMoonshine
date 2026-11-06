@@ -307,6 +307,7 @@ func hit_by_item(_kind: int) -> void:
 	if state == A.FLEE:
 		return
 	GameState.item_hit(self)
+	main.report_crime(position, false, true)  # police may see it
 	if kind == "gull":
 		dir = 1 if position.x >= main.player.position.x else -1
 		state = A.FLEE
@@ -318,6 +319,7 @@ func hit_by_item(_kind: int) -> void:
 
 ## A punch at the gull: it flies off without the food.
 func swat() -> void:
+	main.report_crime(position, false, true)  # police may see it
 	if kind == "gull":
 		if state != A.FLEE:
 			dir = 1 if position.x >= main.player.position.x else -1

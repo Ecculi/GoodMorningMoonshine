@@ -10,6 +10,7 @@ extends CanvasLayer
 ##   F8 = phone battery +25 %, F9 = no hunger, cold or tiredness,
 ##   F10 = skip to the next day (as if slept at home),
 ##   F11 = new game in the next city (Oulu -> Raahe -> ...).
+## While they are on, the police vision cones are drawn on the street.
 
 const DEBUG_PROMILLE_STEP := 0.1
 const BuildInfo = preload("res://scripts/build_info.gd")

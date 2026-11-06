@@ -41,11 +41,13 @@ func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) ->
 		_shoes.append(_patch(leg, Vector3(0.17, -0.885, 0), Vector3(0.05, 0.03, 0.15), Color(0.85, 0.85, 0.82)))
 	_box(Vector3(0, 1.22, 0), Vector3(0.28, 0.64, 0.46), shirt)
 	_head = _sphere(Vector3(0, 1.69, 0), 0.16, skin)
-	_box(Vector3(-0.03, 1.81, 0), Vector3(0.28, 0.08, 0.32), hair)
+	_head_parts.append(_head)
+	_head_parts.append(_box(Vector3(-0.03, 1.81, 0), Vector3(0.28, 0.08, 0.32), hair))
 	# Eyes (the face looks towards +X) and eyelids that close when tired.
 	for ez in [-0.065, 0.065]:
-		_box(Vector3(0.152, 1.72, ez), Vector3(0.02, 0.045, 0.045), Color(0.08, 0.08, 0.1))
+		_head_parts.append(_box(Vector3(0.152, 1.72, ez), Vector3(0.02, 0.045, 0.045), Color(0.08, 0.08, 0.1)))
 		_eyelids.append(_box(Vector3(0.162, 1.74, ez), Vector3(0.02, 0.006, 0.055), skin))
+		_head_parts.append(_eyelids[-1])
 	arm_l = _limb(Vector3(0, 1.5, -0.29), Vector3(0.12, 0.32, 0.12), shirt)
 	forearm_l = _limb(Vector3(0, -0.31, 0), Vector3(0.115, 0.31, 0.115), shirt, arm_l)
 	# Right arm in two parts so it can bend at the elbow for a charged punch.
@@ -61,6 +63,10 @@ func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) ->
 ## so the owner can apply them to the whole body.
 var _eyelids: Array = []
 var _head: MeshInstance3D
+## Everything on the head (turned together by turn_head()).
+var _head_parts: Array = []
+## Head turn to the left (+) or right (-) of the body, radians.
+var head_yaw := 0.0
 ## 0..1: arms wrapped round the body against the cold.
 var cold_hug := 0.0
 ## 0..1: left hand raised to the forehead against the sun.
@@ -181,6 +187,22 @@ func set_face_tint(target: Color, amount: float) -> void:
 		return
 	var m: StandardMaterial3D = _head.material_override
 	m.albedo_color = skin_color.lerp(target, clampf(amount, 0.0, 1.0))
+
+
+## Turns the head (and what is on it: hair, eyes, a cap...) by `yaw`
+## radians around the neck, relative to the body.
+func turn_head(yaw: float) -> void:
+	if is_equal_approx(yaw, head_yaw):
+		return
+	var d := yaw - head_yaw
+	head_yaw = yaw
+	var parts: Array = _head_parts.duplicate()
+	for c in get_children():
+		if c.has_meta("head_extra") and not parts.has(c):
+			parts.append(c)
+	for c in parts:
+		c.position = c.position.rotated(Vector3.UP, d)
+		c.rotation.y += d
 
 
 ## 0 = eyes open, 1 = closed.
