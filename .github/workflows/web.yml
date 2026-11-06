@@ -48,6 +48,18 @@ jobs:
           unzip -q -j templates.tpz "templates/web_nothreads_*" "templates/version.txt" -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/
           rm templates.tpz
 
+      # The export succeeds even with broken scripts, so run the game
+      # headless for a moment and fail on any script error in the log.
+      - name: Check scripts
+        run: |
+          ~/godot/godot --headless --path . --import > import.log 2>&1 || true
+          timeout 60 ~/godot/godot --headless --path . --quit-after 600 > run.log 2>&1 || true
+          cat run.log
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Compile Error|ERROR: .*\.gd" import.log run.log; then
+            echo "::error::GDScript errors found (see above)"
+            exit 1
+          fi
+
       # Release build: the debug tools are still there behind F1 -> F12.
       - name: Export
         run: |
