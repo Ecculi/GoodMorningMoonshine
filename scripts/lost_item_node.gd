@@ -50,6 +50,15 @@ func setup(item_id: String) -> void:
 	_set_revealed(false)
 
 
+## Height of the ground under the item: the sidewalks are a kerb (12 cm)
+## higher than the street; flat things (phone, wallet, keys) sank out of
+## sight into the sidewalk otherwise.
+func _ground_y() -> float:
+	if position.z < -5.0 or (position.z > 2.5 and position.z < 5.8):
+		return 0.13
+	return 0.01
+
+
 func _process(_delta: float) -> void:
 	var p: Vector3 = main.player.position
 	var d := Vector2(p.x - position.x, p.z - position.z).length()
@@ -60,9 +69,10 @@ func _process(_delta: float) -> void:
 	if _revealed:
 		_t += _delta
 		_model.rotation.y += _delta * 1.5
-		_model.position.y = 0.1 + absf(sin(_t * 3.0)) * 0.12
+		_model.position.y = _ground_y() + 0.1 + absf(sin(_t * 3.0)) * 0.12
 		var k := 1.0 + 0.15 * sin(_t * 5.0)
 		_ring.scale = Vector3(k, 1.0, k)
+		_ring.position.y = _ground_y() + 0.02
 		_arrow.position = Vector3(0, 1.25 + absf(sin(_t * 4.0)) * 0.2, 0)
 
 
@@ -71,7 +81,7 @@ func _set_revealed(on: bool) -> void:
 	_ring.visible = on
 	_arrow.visible = on
 	if not on:
-		_model.position.y = 0.0
+		_model.position.y = _ground_y()
 	for c in _model.get_children():
 		if c is MeshInstance3D:
 			c.material_overlay = null
