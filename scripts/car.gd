@@ -45,6 +45,12 @@ var flat := false
 var wrecked := false
 var _drift := 0.0
 var _drift_t := 0.0
+## The street ahead is shut (end of the map or roadworks): at x = turn_at
+## the car turns into the side street, up (away from the camera, -1) or
+## down (+1); turn_z = 0 means it just drives on.
+var turn_at := INF
+var turn_z := 0
+var _turning := false
 
 
 func setup(rng: RandomNumberGenerator, d: int, x: float) -> void:
@@ -83,6 +89,13 @@ func _process(_delta: float) -> void:
 	_hit_cool = maxf(0.0, _hit_cool - dt)
 	if wrecked:
 		speed = 0.0
+		return
+	if _turning:
+		_drive_turn(dt)
+		return
+	if turn_z != 0 and not flat and (position.x - turn_at) * dir >= 0.0:
+		_turning = true
+		_drive_turn(dt)
 		return
 	if flat:
 		_drive_flat(dt)
@@ -154,6 +167,19 @@ func _process(_delta: float) -> void:
 	if speed > 2.0 and _hit_cool <= 0.0 and not parked:
 		_check_hits()
 	if absf(position.x) > EDGE_X:
+		main.remove_car(self)
+
+
+## Round the corner into the side street and away along it.
+func _drive_turn(dt: float) -> void:
+	speed = move_toward(speed, 4.5, ACCEL * dt)
+	var want_rot := float(dir) * float(-turn_z) * PI * 0.5
+	rotation.y = lerp_angle(rotation.y, want_rot, 1.0 - exp(-5.0 * dt))
+	# Along the car's nose.
+	var a := rotation.y
+	var fwd := Vector3(cos(a) * dir, 0.0, -sin(a) * dir)
+	position += fwd * speed * dt
+	if position.z < -30.0 or position.z > 24.0:
 		main.remove_car(self)
 
 

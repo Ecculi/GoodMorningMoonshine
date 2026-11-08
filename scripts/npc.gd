@@ -646,6 +646,9 @@ func _walk(dt: float) -> void:
 		return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
+	# The way on is fenced off: turn back.
+	if absf(position.x) > 20.5 and position.x * dir > 0.0 and not main.end_open(dir):
+		dir = -dir
 	if position.x > EDGE_X:
 		position.x = -EDGE_X
 	elif position.x < -EDGE_X:

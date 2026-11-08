@@ -48,7 +48,145 @@ static func build(seg: Vector3i, home_x := INF, home_type := "flat") -> Node3D:
 	root.set_meta("doors", doors)
 	_props(root, rng, sea)
 	_signs(root, seg)
+	_roadworks(root, seg, rng)
 	return root
+
+
+## Where the way on is shut: at the end of the map a row of site fences
+## with roadworks signs; a block closed for roadworks also gets cones, a
+## dug-up hole and an excavator behind the fence. Also across a side
+## street that is closed.
+const FENCE_X := 21.8
+const FENCE_UP_Z := -8.3
+const FENCE_DOWN_Z := 6.3
+
+
+static func _roadworks(root: Node3D, seg: Vector3i, rng: RandomNumberGenerator) -> void:
+	for s in [-1, 1]:
+		var nxt := CityMap.next_along(seg, s)
+		if not CityMap.is_open(nxt):
+			_fence_line(root, Vector3(s * FENCE_X, 0, -7.6), Vector3(s * FENCE_X, 0, 5.6))
+			_roadwork_sign(root, Vector3(s * (FENCE_X - 0.5), 0, 2.2))
+			if CityMap.is_valid(nxt):
+				_site(root, Vector3(s * (FENCE_X + 6.0), 0, STREET_Z), rng, s)
+				for i in 5:
+					_cone(root, Vector3(s * (FENCE_X - 1.2), 0, -4.4 + i * 1.6))
+		var cx: float = s * (BLOCK_HALF + CROSS_HALF) * 0.5
+		for up in [true, false]:
+			if CityMap.has_turn(seg, s > 0, up) and not CityMap.can_turn(seg, s > 0, up):
+				var z: float = FENCE_UP_Z if up else FENCE_DOWN_Z
+				_fence_line(root, Vector3(cx - 3.6, 0, z), Vector3(cx + 3.6, 0, z))
+				_roadwork_sign(root, Vector3(cx + 2.4, 0, z + (0.5 if up else -0.5)))
+				for i in 3:
+					_cone(root, Vector3(cx - 2.0 + i * 2.0, 0, z + (1.0 if up else -1.0)))
+				if up:
+					_site(root, Vector3(cx, 0, z - 5.0), rng, s)
+
+
+## Temporary site fence panels (mesh fence on concrete feet) from a to b.
+static func _fence_line(root: Node3D, a: Vector3, b: Vector3) -> void:
+	var length := a.distance_to(b)
+	var n := maxi(1, int(ceil(length / 2.2)))
+	var along := (b - a) / float(n)
+	var ang := atan2(-along.z, along.x)
+	for i in n:
+		var c := a + along * (i + 0.5)
+		var holder := Node3D.new()
+		holder.position = c
+		holder.rotation.y = ang
+		root.add_child(holder)
+		var w := along.length()
+		var mesh := _box(holder, Vector3(0, 1.0, 0), Vector3(w - 0.05, 1.7, 0.03), Color(0.75, 0.78, 0.8, 0.55))
+		var mm: StandardMaterial3D = mesh.material_override
+		mm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		for e in [-0.5, 0.5]:
+			_box(holder, Vector3(e * w, 1.0, 0), Vector3(0.05, 1.8, 0.05), Color(0.6, 0.62, 0.65))
+			_box(holder, Vector3(e * w, 0.08, 0), Vector3(0.22, 0.16, 0.6), Color(0.55, 0.55, 0.52))
+		# Red and white striped board along the fence.
+		var stripes := 4
+		for k in stripes:
+			var sx := -w * 0.5 + (k + 0.5) * w / stripes
+			_box(holder, Vector3(sx, 0.75, 0.04), Vector3(w / stripes, 0.2, 0.03),
+				Color(0.85, 0.12, 0.1) if k % 2 == 0 else Color(0.95, 0.95, 0.95))
+
+
+static func _cone(root: Node3D, pos: Vector3) -> void:
+	var mi := MeshInstance3D.new()
+	var cm := CylinderMesh.new()
+	cm.top_radius = 0.03
+	cm.bottom_radius = 0.17
+	cm.height = 0.55
+	mi.mesh = cm
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(1.0, 0.45, 0.05)
+	mi.material_override = m
+	mi.position = pos + Vector3(0, 0.3, 0)
+	root.add_child(mi)
+	_box(root, pos + Vector3(0, 0.36, 0), Vector3(0.24, 0.07, 0.24), Color(0.95, 0.95, 0.95))
+	_box(root, pos + Vector3(0, 0.02, 0), Vector3(0.38, 0.04, 0.38), Color(0.1, 0.1, 0.1))
+
+
+## Triangular roadworks warning sign on a post (red edge, white inside,
+## a little black digger figure).
+static func _roadwork_sign(root: Node3D, pos: Vector3) -> void:
+	_box(root, pos + Vector3(0, 0.75, 0), Vector3(0.06, 1.5, 0.06), Color(0.55, 0.56, 0.58))
+	var outer := MeshInstance3D.new()
+	var pm := PrismMesh.new()
+	pm.size = Vector3(0.8, 0.7, 0.04)
+	outer.mesh = pm
+	var om := StandardMaterial3D.new()
+	om.albedo_color = Color(0.85, 0.1, 0.1)
+	outer.material_override = om
+	outer.position = pos + Vector3(0, 1.75, 0.04)
+	root.add_child(outer)
+	var inner := MeshInstance3D.new()
+	var pm2 := PrismMesh.new()
+	pm2.size = Vector3(0.56, 0.48, 0.04)
+	inner.mesh = pm2
+	var im := StandardMaterial3D.new()
+	im.albedo_color = Color(1.0, 0.85, 0.2)
+	inner.material_override = im
+	inner.position = pos + Vector3(0, 1.69, 0.07)
+	root.add_child(inner)
+	_box(root, pos + Vector3(0, 1.62, 0.1), Vector3(0.05, 0.16, 0.02), Color(0.05, 0.05, 0.05))
+	_box(root, pos + Vector3(0.06, 1.58, 0.1), Vector3(0.12, 0.03, 0.02), Color(0.05, 0.05, 0.05))
+
+
+## A dug-up patch of street with a pile of earth and an excavator.
+static func _site(root: Node3D, pos: Vector3, rng: RandomNumberGenerator, s: int) -> void:
+	_box(root, pos + Vector3(0, 0.0, 0), Vector3(5.0, 0.04, 3.4), Color(0.32, 0.24, 0.17))
+	var pile := MeshInstance3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = 1.3
+	sm.height = 1.4
+	pile.mesh = sm
+	var pmat := StandardMaterial3D.new()
+	pmat.albedo_color = Color(0.4, 0.3, 0.2)
+	pmat.roughness = 1.0
+	pile.material_override = pmat
+	pile.position = pos + Vector3(rng.randf_range(-1.5, 1.5), 0.0, -2.2)
+	root.add_child(pile)
+	# Excavator: tracks, body, cab, boom and dipper with a bucket in the hole.
+	var ex := Node3D.new()
+	ex.position = pos + Vector3(s * 1.0, 0, 1.6)
+	ex.rotation.y = 0.0 if s < 0 else PI
+	root.add_child(ex)
+	var yellow := Color(0.95, 0.72, 0.1)
+	for tz in [-0.75, 0.75]:
+		_box(ex, Vector3(0, 0.35, tz), Vector3(3.0, 0.7, 0.55), Color(0.12, 0.12, 0.12))
+	_box(ex, Vector3(0.2, 1.05, 0), Vector3(2.4, 0.7, 1.9), yellow)
+	_box(ex, Vector3(-0.35, 1.85, -0.45), Vector3(1.1, 1.0, 0.95), yellow)
+	var glass := _box(ex, Vector3(0.22, 1.95, -0.45), Vector3(0.04, 0.6, 0.8), Color(0.3, 0.4, 0.5))
+	glass.position.x = 0.22
+	var boom := _box(ex, Vector3(1.75, 2.05, 0.35), Vector3(2.4, 0.3, 0.3), yellow)
+	boom.rotation.z = 0.55
+	var dipper := _box(ex, Vector3(3.05, 1.35, 0.35), Vector3(0.25, 1.9, 0.25), yellow)
+	dipper.rotation.z = -0.25
+	_box(ex, Vector3(3.3, 0.35, 0.35), Vector3(0.6, 0.45, 0.7), Color(0.3, 0.3, 0.32))
+	# Striped barrier on legs in front of the hole.
+	_box(root, pos + Vector3(0, 0.9, 1.9), Vector3(3.0, 0.22, 0.05), Color(0.85, 0.12, 0.1))
+	for lx in [-1.3, 1.3]:
+		_box(root, pos + Vector3(lx, 0.45, 1.9), Vector3(0.06, 0.9, 0.06), Color(0.9, 0.9, 0.9))
 
 
 static func _street(root: Node3D, seg: Vector3i) -> void:
@@ -59,8 +197,8 @@ static func _street(root: Node3D, seg: Vector3i) -> void:
 	for s in [-1, 1]:
 		_box(root, Vector3(s * 41.5, -0.05, STREET_Z), Vector3(37, 0.1, 7.5), asphalt)
 		# Crossing street: it only continues where there is a street on the map.
-		var up := CityMap.can_turn(seg, s > 0, true)
-		var down := CityMap.can_turn(seg, s > 0, false)
+		var up := CityMap.has_turn(seg, s > 0, true)
+		var down := CityMap.has_turn(seg, s > 0, false)
 		var z_far := -40.0 if up else -5.0
 		var z_near := 25.0 if down else 2.5
 		var cx: float = s * (BLOCK_HALF + CROSS_HALF) * 0.5

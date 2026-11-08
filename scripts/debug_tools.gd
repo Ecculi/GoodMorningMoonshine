@@ -9,7 +9,8 @@ extends CanvasLayer
 ##   F5 = health full, F6 = alcohol +0.1 per mille, F7 = money +100 EUR,
 ##   F8 = phone battery +25 %, F9 = no hunger, cold or tiredness,
 ##   F10 = skip to the next day (as if slept at home),
-##   F11 = new game in the next city (Oulu -> Raahe -> ...).
+##   F11 = new game in the next city (Oulu -> Raahe -> ...),
+##   F4 = roadworks: close the next block ahead (and the street is rebuilt).
 ## While they are on, the police vision cones are drawn on the street.
 
 const DEBUG_PROMILLE_STEP := 0.1
@@ -43,6 +44,7 @@ func _ready() -> void:
 	_button("F9 virkeä", _refresh)
 	_button("F10 päivä+", _next_day)
 	_button("F11 kaupunki", _next_city)
+	_button("F4 tietyö", _roadworks)
 
 
 func _build_help() -> void:
@@ -211,6 +213,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_next_day()
 		KEY_F11:
 			_next_city()
+		KEY_F4:
+			_roadworks()
 
 
 func _fill_health() -> void:
@@ -239,6 +243,22 @@ func _next_city() -> void:
 		GameState.modal = ""
 	main.hud.hide_card()
 	main._new_game()
+
+
+## Close the block ahead (or behind, at the end of the map) for roadworks.
+func _roadworks() -> void:
+	var main = get_parent()
+	if main == null or not main.has_method("_enter_block"):
+		return
+	var f: int = main.player.facing
+	var seg: Vector3i = main.segment
+	var target := CityMap.next_along(seg, f)
+	if not CityMap.is_open(target):
+		target = CityMap.next_along(seg, -f)
+	if not CityMap.is_open(target):
+		return
+	CityMap.closed.append(target)
+	main._enter_block(seg, main.player.position, f)
 
 
 func _next_day() -> void:

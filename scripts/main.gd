@@ -170,8 +170,8 @@ func _process(delta: float) -> void:
 ## Keeps the player on walkable ground: the street band, plus the crossing
 ## streets at both ends where the map continues.
 func clamp_walkable(p: Vector3) -> Vector3:
-	var max_x := NEXT_BLOCK_X + 0.5 if CityMap.is_valid(CityMap.next_along(segment, 1)) else EDGE_LIMIT_X
-	var min_x := -NEXT_BLOCK_X - 0.5 if CityMap.is_valid(CityMap.next_along(segment, -1)) else -EDGE_LIMIT_X
+	var max_x := NEXT_BLOCK_X + 0.5 if CityMap.is_open(CityMap.next_along(segment, 1)) else EDGE_LIMIT_X
+	var min_x := -NEXT_BLOCK_X - 0.5 if CityMap.is_open(CityMap.next_along(segment, -1)) else -EDGE_LIMIT_X
 	p.x = clampf(p.x, min_x, max_x)
 	var right := p.x > 0.0
 	var ax := absf(p.x)
@@ -195,7 +195,7 @@ func _check_transitions() -> void:
 	# as soon as the character has fully disappeared from view.
 	var off := _offscreen_side()
 	if off != 0 and off == player.facing and p.z >= Z_MIN - 0.05 and p.z <= Z_MAX + 0.05 \
-			and CityMap.is_valid(CityMap.next_along(segment, off)):
+			and CityMap.is_open(CityMap.next_along(segment, off)):
 		_go_to(CityMap.next_along(segment, off), Vector3(-off * (NEXT_BLOCK_X - 0.5), 0, p.z), off)
 		# Start just outside the view on the other side, walking in.
 		var edge := _view_edge_x(-off, p.z)
@@ -254,7 +254,7 @@ const FOLLOW_HEAD_START := 4.0
 
 
 func _go_to(seg: Vector3i, pos: Vector3, facing: int) -> void:
-	if not CityMap.is_valid(seg):
+	if not CityMap.is_open(seg):
 		return
 	# Pursuers (fighting passers-by, chasing police, guards) follow to the
 	# next street, a little further behind than they were.
@@ -1558,7 +1558,10 @@ func _update_traffic() -> void:
 			_rider_timer = rng.randf_range(7.0, 16.0)
 			var rd = Rider.new()
 			rd.main = self
-			rd.setup(rng, 1 if rng.randf() < 0.5 else -1)
+			var rdir := 1 if rng.randf() < 0.5 else -1
+			if not end_open(-rdir):
+				rdir = -rdir
+			rd.setup(rng, rdir)
 			add_child(rd)
 			riders.append(rd)
 	if _is_pedestrian_street():
@@ -1567,11 +1570,38 @@ func _update_traffic() -> void:
 	if _car_timer <= 0.0:
 		_car_timer = rng.randf_range(6.0, 16.0)
 		var d := 1 if rng.randf() < 0.5 else -1
+		# Cars only come in from an open end, and turn off before a shut
+		# one (the end of the map or roadworks).
+		if not end_open(-d):
+			d = -d
+		var turn := shut_end_turn(d)
+		if not end_open(-d) or turn == 2:
+			return
 		var c = Car.new()
 		c.main = self
 		c.setup(rng, d, -Car.EDGE_X * d + d * 0.5)
+		if turn != 0:
+			c.turn_at = d * CROSS_CENTER
+			c.turn_z = turn
 		add_child(c)
 		cars.append(c)
+
+
+## Can you go on past the left (-1) / right (1) end of this block?
+func end_open(side: int) -> bool:
+	return CityMap.is_open(CityMap.next_along(segment, side))
+
+
+## Something heading towards `side`: 0 = the way on is open; -1 / 1 =
+## shut, turn up / down the side street there; 2 = no way out at all.
+func shut_end_turn(side: int) -> int:
+	if end_open(side):
+		return 0
+	if CityMap.can_turn(segment, side > 0, true):
+		return -1
+	if CityMap.can_turn(segment, side > 0, false):
+		return 1
+	return 2
 
 
 func _is_pedestrian_street() -> bool:

@@ -55,10 +55,14 @@ const CITIES := [
 ]
 
 static var city := 0
+## Blocks closed today for roadworks (Vector3i segments). No one gets
+## through them; the map shows them.
+static var closed: Array = []
 
 
 static func set_city(i: int) -> void:
 	city = clampi(i, 0, CITIES.size() - 1)
+	closed.clear()
 
 
 static func city_name() -> String:
@@ -105,6 +109,15 @@ static func is_valid(seg: Vector3i) -> bool:
 	return seg.y >= 0 and seg.y < own.size() and seg.z >= 0 and seg.z < cross.size() - 1
 
 
+static func is_closed(seg: Vector3i) -> bool:
+	return closed.has(seg)
+
+
+## On the map and not closed for roadworks: can be walked into.
+static func is_open(seg: Vector3i) -> bool:
+	return is_valid(seg) and not closed.has(seg)
+
+
 static func street_name(seg: Vector3i) -> String:
 	return streets(seg.x)[seg.y]
 
@@ -135,7 +148,13 @@ static func turn(seg: Vector3i, at_right: bool, up: bool) -> Dictionary:
 	return {"seg": Vector3i(0, node, seg.y - 1), "enter_right": true}
 
 
+## There is an open street to turn into.
 static func can_turn(seg: Vector3i, at_right: bool, up: bool) -> bool:
+	return is_open(turn(seg, at_right, up)["seg"])
+
+
+## There is a street there at all (maybe closed for roadworks).
+static func has_turn(seg: Vector3i, at_right: bool, up: bool) -> bool:
 	return is_valid(turn(seg, at_right, up)["seg"])
 
 
@@ -152,6 +171,6 @@ static func random_segment(rng: RandomNumberGenerator) -> Vector3i:
 	while true:
 		var f := rng.randi() % 2
 		var seg := Vector3i(f, rng.randi() % streets(f).size(), rng.randi() % (cross_streets(f).size() - 1))
-		if is_valid(seg):
+		if is_open(seg):
 			return seg
 	return start()
