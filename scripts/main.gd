@@ -1283,6 +1283,9 @@ func _spawn_street_folk() -> void:
 		d.position.z = rng.randf_range(-7.0, -5.8) if rng.randf() < 0.5 else rng.randf_range(3.3, 4.8)
 	if GameState.day >= 2 and rng.randf() < 0.2:
 		_spawn_punks()
+	# From day 5 a pickpocket prowls the streets.
+	if GameState.day >= 5 and rng.randf() < 0.3:
+		_spawn_npc(false, "thief")
 	# From day 4 a can collector beats you to the bins.
 	if GameState.day >= 4 and rng.randf() < 0.4:
 		_spawn_npc(false, "collector")
@@ -1534,6 +1537,12 @@ func food_on_ground_near(pos: Vector3, r: float):
 ## A dog let go of a lost thing: it lies on the ground there now.
 func dog_dropped(id: String, pos: Vector3) -> void:
 	GameState.dog_items.erase(id)
+	drop_lost(id, pos)
+
+
+## A lost thing lands on the ground at `pos` in this block (dropped by a
+## dog or a thief).
+func drop_lost(id: String, pos: Vector3) -> void:
 	if not GameState.placements.has(id):
 		return
 	var at := clamp_walkable(pos)
@@ -1773,6 +1782,21 @@ const CHOKE_TIME := 2.2
 ## How far a bouncer notices someone starting a fight (every direction).
 const BOUNCER_SIGHT := 10.0
 var choke := 0.0
+
+
+## A thief got away round the corner with the loot: money is gone; a
+## thing is dumped somewhere in the next block that way.
+func thief_escaped(n) -> void:
+	if n.loot_id != "":
+		var side := 1 if n.position.x > 0.0 else -1
+		var seg := CityMap.next_along(segment, side)
+		if not CityMap.is_open(seg):
+			seg = CityMap.random_segment(rng)
+		var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
+		GameState.lose_here(n.loot_id, seg, Vector3(rng.randf_range(-14.0, 14.0), 0.0, z))
+		n.loot_id = ""
+	n.loot_money = 0
+	respawn_npc(n)
 
 
 ## The player started a fight at `pos`: bouncers within sight come for

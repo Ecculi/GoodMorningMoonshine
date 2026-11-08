@@ -10,6 +10,9 @@ extends Node3D
 ##   then walks back to the door
 ## - "collector": can collector (from day 4); gets to the bins before the
 ##   player and picks up bottles and cans lying in the street
+## - "thief": pickpocket (from day 5) in a dark hoodie; sidles up, bumps
+##   into the player and takes money or a pocket thing, then runs. Catch
+##   him or knock him out to get it back.
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -165,6 +168,12 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			stationary = true
 			chase_speed = BOUNCER_SPEED
 			telegraphs = true
+		"thief":
+			model = PersonModel.new(Color(0.16, 0.17, 0.2), Color(0.12, 0.14, 0.22), skin,
+				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.95, 1.02))
+			_head_box(Vector3(-0.04, 1.8, 0), Vector3(0.3, 0.14, 0.36), Color(0.16, 0.17, 0.2))  # hood up
+			speed = 1.35
+			telegraphs = false
 		"collector":
 			model = PersonModel.new(Color(0.35, 0.4, 0.3), Color(0.3, 0.28, 0.25), skin,
 				Color(0.45, 0.42, 0.38), 0.97)
@@ -383,6 +392,123 @@ func offer_trade(p: Node3D) -> bool:
 ## Returns true while busy with that (instead of just walking).
 var _goal := {}
 var _rummage_t := 0.0
+
+
+## Pickpocket: "prowl" (walks about, tails a passer-by, sidles up to the
+## player), "flee" (got something: runs for the end of the block) or
+## "done" (finished; just walks on).
+var thief_mode := "prowl"
+var loot_id := ""
+var loot_money := 0
+var _tail_target = null
+const THIEF_NOTICE := 7.0
+const THIEF_RUN := 4.6
+
+
+func _thieve(dt: float) -> bool:
+	var p = main.player
+	var to := Vector2(p.position.x - position.x, p.position.z - position.z)
+	match thief_mode:
+		"flee":
+			if loot_id != "" and GameState.placements.has(loot_id):
+				GameState.placements[loot_id][1] = position
+			if to.length() < 0.7 and not p.is_helpless():
+				# Caught by the collar.
+				main.popup("!", position + Vector3(0, 2.2, 0), Color(1, 0.85, 0.3))
+				_give_back()
+				GameState.unlock("THIEF_CAUGHT")
+				thief_mode = "done"
+				dir = 1 if position.x >= p.position.x else -1
+				return false
+			dir = 1 if position.x >= p.position.x else -1
+			position.x += dir * THIEF_RUN * dt
+			position.z = move_toward(position.z, -6.4 if position.z < -1.25 else 4.0, dt * 1.5)
+			model.animate(1.0, dt, 2.2)
+			if absf(position.x) > EDGE_X:
+				main.thief_escaped(self)
+			return true
+		"prowl":
+			if to.length() < THIEF_NOTICE and not p.is_helpless() and GameState.modal == "":
+				# Sidle up and bump into the player in passing.
+				var step := to.normalized() * minf(2.0 * dt, to.length())
+				position.x += step.x
+				position.z += step.y
+				dir = 1 if step.x >= 0.0 else -1
+				model.animate(1.0, dt, 1.3)
+				if to.length() < 0.6:
+					_steal_from_player()
+				return true
+			# Otherwise tail a passer-by (and maybe meet a colleague).
+			if _tail_target == null or not is_instance_valid(_tail_target) or _tail_target.state != S.WALK:
+				_tail_target = null
+				for n in main.npcs:
+					if n.role == "civ" and n.state == S.WALK and not n.pickpocketed \
+							and absf(n.position.x - position.x) < 10.0:
+						_tail_target = n
+						break
+			if _tail_target != null:
+				var behind := Vector3(_tail_target.position.x - _tail_target.dir * 0.8, 0, _tail_target.position.z)
+				var d2 := Vector2(behind.x - position.x, behind.z - position.z)
+				if d2.length() > 0.1:
+					var st := d2.normalized() * minf(1.8 * dt, d2.length())
+					position.x += st.x
+					position.z += st.y
+				dir = _tail_target.dir
+				model.animate(1.0, dt, 1.2)
+				return true
+	return false
+
+
+## Bumps into the player: lifts some money or something from a pocket.
+func _steal_from_player() -> void:
+	var p = main.player
+	thief_mode = "flee"
+	attacked_player = true  # hitting him back is fair game
+	p.bumped(position.x)
+	var pocket: Array = []
+	for id in ["wallet", "phone", "keys", "idcard", "glasses", "sunglasses"]:
+		if not GameState.is_lost(id):
+			pocket.append(id)
+	var take_money: bool = GameState.money > 0 and (pocket.is_empty() or main.rng.randf() < 0.5)
+	if take_money:
+		loot_money = maxi(1, GameState.money / 2)
+		GameState.money -= loot_money
+		main.popup("-%d €" % loot_money, p.position + Vector3(0, 2.4, 0), Color(1, 0.5, 0.4))
+	elif not pocket.is_empty():
+		loot_id = pocket[main.rng.randi() % pocket.size()]
+		GameState.lose_here(loot_id, main.segment, position)
+		main.hud.add_today(loot_id)
+		main.hud.think([loot_id])
+	else:
+		main.popup("?", position + Vector3(0, 2.2, 0), Color(1, 1, 1))
+		thief_mode = "done"
+		return
+	main.popup("hehe", position + Vector3(0, 2.2, 0), Color(0.85, 0.85, 0.9))
+
+
+## Caught or knocked out: the loot comes back.
+func _give_back() -> void:
+	if loot_money > 0:
+		GameState.money += loot_money
+		main.popup("+%d €" % loot_money, main.player.position + Vector3(0, 2.4, 0), Color(1, 0.85, 0.3))
+		loot_money = 0
+	if loot_id != "":
+		var id := loot_id
+		loot_id = ""
+		main.drop_lost(id, position)
+
+
+## The player tried the same victim this thief was tailing: two
+## professionals, caught in the act together.
+func meet_colleague() -> void:
+	if thief_mode != "prowl":
+		return
+	thief_mode = "done"
+	_tail_target = null
+	main.popup("!?", position + Vector3(0, 2.2, 0), Color(1, 0.9, 0.5))
+	main.popup("!?", main.player.position + Vector3(0, 2.4, 0), Color(1, 0.9, 0.5))
+	main.popup("Kollega!", position + Vector3(0, 2.8, 0), Color(0.85, 0.85, 0.9), 0.8)
+	GameState.unlock("COLLEAGUE")
 
 
 func _collect(dt: float) -> bool:
@@ -650,6 +776,8 @@ func _walk(dt: float) -> void:
 	if role == "punk":
 		main.punk_meet(self)
 	if role == "collector" and _collect(dt):
+		return
+	if role == "thief" and _thieve(dt):
 		return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
@@ -997,6 +1125,10 @@ func check_pickpocket(p: Node3D) -> void:
 	pickpocketed = true
 	GameState.busy_time = maxf(GameState.busy_time, 0.3)
 	p.model.punch()
+	for n in main.npcs:
+		if n.role == "thief" and n.thief_mode == "prowl" and (n._tail_target == self \
+				or Vector2(n.position.x - position.x, n.position.z - position.z).length() < 2.5):
+			n.meet_colleague()
 	# Barefoot the player sneaks quietly, so pickpocketing works better.
 	var chance := 0.85 if GameState.is_lost("shoes") else PICKPOCKET_CHANCE
 	# A hiccup right now gives the player away.
@@ -1046,6 +1178,11 @@ func _end_ragdoll() -> void:
 ## face_down: a direction to topple the rag doll over forwards (fall on
 ## the face); zero = the usual random tumble.
 func _knock_out(push := Vector3(0, 1.5, 0), face_down := Vector3.ZERO) -> void:
+	if role == "thief" and (loot_id != "" or loot_money > 0):
+		_give_back()
+		GameState.unlock("THIEF_CAUGHT")
+	if role == "thief":
+		thief_mode = "done"
 	_flinch = 0.0
 	_open_t = 0.0
 	model.turn_head(0.0)  # the rag doll copies the head straight

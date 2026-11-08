@@ -461,6 +461,11 @@ func body_position() -> Vector3:
 	return position + Vector3(0, 0.8, 0)
 
 
+## Bumped into in passing (a pickpocket): a little stagger.
+func bumped(from_x: float) -> void:
+	_knock = Vector3(signf(position.x - from_x) * 1.5, 0.0, 0.0)
+
+
 ## Choked out by a bouncer: down and out cold in place for a long moment,
 ## an hour passes, and health is at most half after it.
 const CHOKE_OUT_TIME := 6.0
