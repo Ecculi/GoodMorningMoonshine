@@ -17,6 +17,8 @@ extends Node3D
 ## - "thief": pickpocket (from day 5) in a dark hoodie; sidles up, bumps
 ##   into the player and takes money or a pocket thing, then runs. Catch
 ##   him or knock him out to get it back.
+## - "granny": (from day 5) slow little old lady with a handbag; annoy her
+##   (hit, throw, pickpocket) and she swings the bag surprisingly hard.
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -57,6 +59,9 @@ const PICKPOCKET_CHANCE := 0.6
 const POLICE_SPEED := 3.4
 const GUARD_SPEED := 3.0
 const GUARD_DAMAGE := 12.0
+## Granny: slow on her feet, but the handbag hits hard.
+const GRANNY_CHASE_SPEED := 2.1
+const GRANNY_DAMAGE := 16.0
 ## Police see only in front of their face: a cone this wide (half angle)
 ## and this long (main.gd shortens it when the player sneaks barefoot).
 ## Right next to them they notice whatever way they look.
@@ -194,6 +199,34 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			_head_box(Vector3(-0.04, 1.8, 0), Vector3(0.3, 0.14, 0.36), Color(0.16, 0.17, 0.2))  # hood up
 			speed = 1.35
 			telegraphs = false
+		"granny":
+			var coat: Color = [Color(0.55, 0.42, 0.6), Color(0.45, 0.5, 0.62), Color(0.62, 0.45, 0.38),
+				Color(0.4, 0.48, 0.38)][rng.randi() % 4]
+			model = PersonModel.new(coat, Color(0.3, 0.28, 0.32), skin, Color(0.85, 0.85, 0.87), 0.88)
+			var scarf: Color = [Color(0.85, 0.3, 0.35), Color(0.3, 0.5, 0.8), Color(0.9, 0.75, 0.3)][rng.randi() % 3]
+			_head_box(Vector3(-0.02, 1.8, 0), Vector3(0.32, 0.12, 0.36), scarf)  # headscarf
+			hp = 2
+			speed = 0.65
+			chase_speed = GRANNY_CHASE_SPEED
+			hit_damage = GRANNY_DAMAGE
+			telegraphs = true
+			# Handbag on the arm.
+			var bag := MeshInstance3D.new()
+			var gbm := BoxMesh.new()
+			gbm.size = Vector3(0.26, 0.2, 0.1)
+			bag.mesh = gbm
+			var gmat := StandardMaterial3D.new()
+			gmat.albedo_color = Color(0.35, 0.18, 0.12)
+			bag.material_override = gmat
+			bag.position = Vector3(0, -0.16, 0)
+			model.hand.add_child(bag)
+			var strap := MeshInstance3D.new()
+			var sbm := BoxMesh.new()
+			sbm.size = Vector3(0.18, 0.02, 0.02)
+			strap.mesh = sbm
+			strap.material_override = gmat
+			strap.position = Vector3(0, -0.03, 0)
+			model.hand.add_child(strap)
 		"collector":
 			model = PersonModel.new(Color(0.35, 0.4, 0.3), Color(0.3, 0.28, 0.25), skin,
 				Color(0.45, 0.42, 0.38), 0.97)
@@ -290,6 +323,8 @@ func _pick_style(rng: RandomNumberGenerator) -> void:
 			style = "heavy"
 		"police":
 			style = "normal"
+		"granny":
+			style = "granny"
 		"punk":
 			style = ["quick", "circler", "normal"][rng.randi() % 3]
 		_:
@@ -309,6 +344,10 @@ func _pick_style(rng: RandomNumberGenerator) -> void:
 		"circler":
 			_windup_time = 0.4
 			_cooldown_time = 1.2
+		"granny":
+			# The bag goes up well before it comes down.
+			_windup_time = 0.6
+			_cooldown_time = 1.6
 
 
 ## Missed a swing and is off balance for a moment.
@@ -997,7 +1036,9 @@ func _fight(dt: float) -> void:
 			dx = p.position.x - position.x
 			dz = p.position.z - position.z
 			if dx * dir > -0.2 and absf(dx) < 1.5 and absf(dz) < 0.6:
-				p.take_hit(hit_damage, position.x)
+				p.take_hit(hit_damage, position.x, "granny" if role == "granny" else "fight")
+				if role == "granny":
+					main.popup("KOPS!", p.position + Vector3(0, 2.3, 0), Color(1, 0.8, 0.3), 1.3)
 				if not player_started:
 					attacked_player = true
 				main.shake(0.12 if style == "heavy" else 0.06)
@@ -1228,7 +1269,7 @@ func check_pickpocket(p: Node3D) -> void:
 		main.popup("+%d €" % amount, position + Vector3(0, 2.0, 0), Color(1, 0.85, 0.3))
 	elif is_lawman():
 		notice()
-	elif main.rng.randf() < 0.5:
+	elif role == "granny" or main.rng.randf() < 0.5:
 		_mark.visible = true
 		state = S.FIGHT
 	else:

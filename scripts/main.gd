@@ -907,7 +907,7 @@ func _on_day_ended(cause: String) -> void:
 ## and CAP_<CAUSE>_n in the translations).
 const HEADLINES := {"SOBER": [8, 3], "FIGHT": [9, 3], "CAR": [9, 6], "DOG": [6, 3], "BOUNCER": [5, 2],
 	"FALL": [6, 2], "COLD": [6, 2], "HUNGER": [4, 2], "HANGOVER": [6, 2], "EXHAUST": [4, 2],
-	"BIKE": [3, 2], "GLASS": [3, 2]}
+	"BIKE": [3, 2], "GLASS": [3, 2], "GRANNY": [4, 2]}
 
 
 ## Captions that fit any death (CAP_ANY_n), used now and then.
@@ -1284,6 +1284,9 @@ func _spawn_street_folk() -> void:
 		d.position.z = rng.randf_range(-7.0, -5.8) if rng.randf() < 0.5 else rng.randf_range(3.3, 4.8)
 	if GameState.day >= 2 and rng.randf() < 0.2:
 		_spawn_punks()
+	# From day 5 grannies are out with their handbags.
+	if GameState.day >= 5 and rng.randf() < 0.35:
+		_spawn_npc(false, "granny")
 	# From day 6 an influencer films anything silly the player does.
 	if GameState.day >= 6 and rng.randf() < 0.3:
 		_spawn_npc(false, "influencer")
