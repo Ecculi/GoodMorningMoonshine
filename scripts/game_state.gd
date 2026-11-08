@@ -158,6 +158,12 @@ var wake_seg := CityMap.start()
 var wake_pos := Vector3.ZERO
 ## Today's weather: "sunny", "cloudy", "rain" or "snow".
 var weather := "sunny"
+## Storm day: hard wind pushes the character, bends throws and blows
+## leaves and litter about (always cloudy or rainy).
+var storm := false
+## From this day on, a storm now and then.
+const STORM_FROM_DAY := 2
+const STORM_CHANCE := 0.15
 
 ## Phone: battery 0..100 (always low), today's hints.
 var battery := 20.0
@@ -703,6 +709,9 @@ func _roll_weather() -> void:
 		weather = "rain"
 	else:
 		weather = "snow"
+	storm = day >= STORM_FROM_DAY and rng.randf() < STORM_CHANCE
+	if storm:
+		weather = "rain" if rng.randf() < 0.6 else "cloudy"
 
 
 ## Every night new things get lost; earlier lost ones stay lost.

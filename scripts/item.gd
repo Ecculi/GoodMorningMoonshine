@@ -183,6 +183,14 @@ func _fly(delta: float) -> void:
 	if _frozen:
 		return
 	_air_t += delta
+	# Storm: the wind bends the throw; light things far more than heavy.
+	var wind: Vector3 = main.wind_at(_body.global_position)
+	if wind != Vector3.ZERO:
+		var k: float = WIND_DRAG / (MASS.get(kind, 0.3) + 0.2)
+		var lv := _body.linear_velocity
+		lv.x += (wind.x - lv.x) * k * delta
+		lv.z += (wind.z - lv.z) * k * 0.6 * delta
+		_body.linear_velocity = lv
 	var centre := _body.global_position + _body.global_transform.basis.y * 0.15
 	if not _hit_done:
 		var npc = main.npc_at(centre, 0.6)
@@ -234,6 +242,10 @@ func _on_body_hit(_other: Node) -> void:
 		else:
 			_body.angular_damp = maxf(_body.angular_damp, 1.6)
 			_body.linear_damp = maxf(_body.linear_damp, 0.6)
+
+
+## Storm: how strongly the wind drags a flying thing (divided by mass).
+const WIND_DRAG := 0.7
 
 
 ## Decided once per throw, on the first impact.
