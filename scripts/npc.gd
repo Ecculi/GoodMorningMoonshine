@@ -88,6 +88,13 @@ var _driver_far_t := 0.0
 
 var _windup := -1.0
 var _cooldown := 0.0
+## Who started it: this person landed a blow on the player before the
+## player hit them (then hitting back is self-defence), or the player hit
+## them first while they were minding their own business.
+var attacked_player := false
+var player_started := false
+## Bouncer: going to choke the player out (saw them start a fight).
+var choking := false
 ## Fighting style: "normal", "quick" (fast, weak punches, backs off after
 ## each one), "heavy" (slow, always visible wind-up, hits hard) or
 ## "circler" (comes at you from the side, along the depth of the street).
@@ -655,6 +662,42 @@ func _walk(dt: float) -> void:
 		position.x = EDGE_X
 
 
+## The player hit this person. Decides once who started it: if they were
+## already out to fight the player (or had hit them), it is self-defence;
+## otherwise the player started it, and any bouncer close by steps in.
+func _hit_by_player() -> void:
+	if role == "bouncer":
+		return  # hitting the bouncer himself: thrown out as before
+	if not player_started and not attacked_player:
+		var hostile := state == S.FIGHT or state == S.CHASE or state == S.STUNNED
+		player_started = not hostile
+		attacked_player = hostile
+	if player_started:
+		main.player_started_fight(position)
+
+
+## Bouncer: saw the player start a fight. Runs over and gets them in a
+## chokehold (the meter is counted in main.gd).
+func start_choke() -> void:
+	if role != "bouncer" or state == S.KO or choking:
+		return
+	choking = true
+	stationary = false
+	state = S.CHASE
+	_far_t = 0.0
+	_mark.modulate = Color(0.75, 0.3, 1.0)
+	_mark.visible = true
+
+
+## The player has passed out (or got away): back to the door.
+func end_choke() -> void:
+	choking = false
+	_mark.visible = false
+	model.raise_arm(false)
+	if state == S.CHASE:
+		state = S.RETURN
+
+
 ## Police: run after the player. Contact time is counted in main.gd.
 func _chase(dt: float) -> void:
 	var p = main.player
@@ -665,9 +708,21 @@ func _chase(dt: float) -> void:
 		if _far_t > GIVE_UP_TIME:
 			state = S.RETURN if role == "bouncer" else S.WALK
 			_mark.visible = false
+			choking = false
 			return
 	else:
 		_far_t = 0.0
+	if choking:
+		# Chokehold: stays right behind the player, arms up round the neck.
+		if to.length() > 0.45:
+			var cstep := to.normalized() * minf(chase_speed * dt, to.length() - 0.4)
+			position.x += cstep.x
+			position.z += cstep.y
+			model.animate(1.0, dt, 1.8)
+		else:
+			model.animate(0.0, dt)
+		model.raise_arm(to.length() < 1.0)
+		return
 	if role == "bouncer" and to.length() < 0.8:
 		# Caught: scruff of the neck and seat of the pants, out you go.
 		model.raise_arm(true)
@@ -731,6 +786,8 @@ func _fight(dt: float) -> void:
 			dz = p.position.z - position.z
 			if dx * dir > -0.2 and absf(dx) < 1.5 and absf(dz) < 0.6:
 				p.take_hit(hit_damage, position.x)
+				if not player_started:
+					attacked_player = true
 				main.shake(0.12 if style == "heavy" else 0.06)
 			elif absf(dx) < 2.6 and absf(dz) < 2.0 and not p.is_helpless():
 				# Dodged: the swing goes through air and they stumble
@@ -776,6 +833,8 @@ func _someone_else_swinging() -> bool:
 func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0, surprise := false, floor_them := false) -> void:
 	if state == S.KO:
 		return
+	if attacker == main.player:
+		_hit_by_player()
 	times_hit += 1
 	hp -= dmg
 	if surprise and floor_them and not is_lawman():
@@ -848,6 +907,7 @@ var _shoeless := false
 func hit_by_item(kind: int) -> void:
 	if state == S.KO:
 		return
+	_hit_by_player()
 	GameState.item_hit(self)
 	if kind == Item.Kind.FOOD:
 		_sausage_hits += 1

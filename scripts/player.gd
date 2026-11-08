@@ -461,6 +461,23 @@ func body_position() -> Vector3:
 	return position + Vector3(0, 0.8, 0)
 
 
+## Choked out by a bouncer: down and out cold in place for a long moment,
+## an hour passes, and health is at most half after it.
+const CHOKE_OUT_TIME := 6.0
+const CHOKE_OUT_MINUTES := 60.0
+
+
+func choked_out() -> void:
+	GameState.fell_down()
+	_go_ragdoll(Vector3(randf_range(-0.5, 0.5), 0.3, randf_range(-0.3, 0.3)), CHOKE_OUT_TIME)
+	main.hud.blackout(CHOKE_OUT_TIME * 0.7)
+	main.hud.flash_hurt()
+	GameState.last_hurt = "bouncer"
+	GameState.health = minf(GameState.health, 50.0)
+	GameState.clock_min += CHOKE_OUT_MINUTES
+	main.popup("Zzz", position + Vector3(0, 1.2, 0), Color(0.8, 0.8, 1.0))
+
+
 func _knock_out(dmg: float, push: Vector3) -> void:
 	_go_ragdoll(push, KNOCKOUT_TIME)
 	GameState.damage(dmg, "car")
