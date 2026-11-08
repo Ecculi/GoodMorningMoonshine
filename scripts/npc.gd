@@ -10,6 +10,10 @@ extends Node3D
 ##   then walks back to the door
 ## - "collector": can collector (from day 4); gets to the bins before the
 ##   player and picks up bottles and cans lying in the street
+## - "influencer": (from day 6) films the player doing anything silly
+##   (fighting, falling, drinking); if the clip gets finished it goes
+##   viral and the police recognise the player from further away for the
+##   rest of the day. A punch or a throw stops the filming.
 ## - "tourist": (from day 8) asks the way with a picture of a sight in a
 ##   thought bubble; walk a few steps the right way from beside them to
 ##   answer. Right: a tip; wrong: an angry tourist.
@@ -176,6 +180,22 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			stationary = true
 			chase_speed = BOUNCER_SPEED
 			telegraphs = true
+		"influencer":
+			model = PersonModel.new(Color(0.95, 0.45, 0.7), Color(0.95, 0.95, 0.95), skin,
+				[Color(0.95, 0.85, 0.55), Color(0.9, 0.5, 0.75), Color(0.2, 0.15, 0.1)][rng.randi() % 3], 1.0)
+			_head_box(Vector3(0.03, 1.83, 0), Vector3(0.3, 0.06, 0.34), Color(0.1, 0.1, 0.12))  # cap
+			speed = 1.2
+			_phone = MeshInstance3D.new()
+			var pbm := BoxMesh.new()
+			pbm.size = Vector3(0.03, 0.16, 0.09)
+			_phone.mesh = pbm
+			var pmat := StandardMaterial3D.new()
+			pmat.albedo_color = Color(0.1, 0.1, 0.12)
+			pmat.emission_enabled = true
+			pmat.emission = Color(0.4, 0.6, 1.0) * 0.4
+			_phone.material_override = pmat
+			_phone.position = Vector3(0.04, -0.06, 0)
+			model.hand.add_child(_phone)
 		"tourist":
 			var tshirt: Color = [Color(1.0, 0.55, 0.15), Color(0.15, 0.75, 0.7), Color(0.95, 0.85, 0.2),
 				Color(0.9, 0.35, 0.5)][rng.randi() % 4]
@@ -460,6 +480,68 @@ func offer_trade(p: Node3D) -> bool:
 ## Returns true while busy with that (instead of just walking).
 var _goal := {}
 var _rummage_t := 0.0
+
+
+## Influencer: filming the player (a couple of seconds, REC blinking).
+const FILM_TIME := 2.5
+var filming := false
+var _film_t := 0.0
+var _film_done := false
+var _phone: MeshInstance3D
+var _rec: Label3D
+
+
+func start_filming() -> void:
+	if role != "influencer" or _film_done or filming or state != S.WALK:
+		return
+	filming = true
+	_film_t = 0.0
+	model.raise_arm(true)
+	if _rec == null:
+		_rec = Label3D.new()
+		_rec.text = "● REC"
+		_rec.font_size = 64
+		_rec.pixel_size = 0.006
+		_rec.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		_rec.no_depth_test = true
+		_rec.modulate = Color(1, 0.2, 0.2)
+		_rec.outline_size = 12
+		_rec.position = Vector3(0, 2.25, 0)
+		add_child(_rec)
+	_rec.visible = true
+
+
+## Stops filming. `ruined`: knocked the phone, no clip (and no more).
+func _stop_filming(ruined: bool) -> void:
+	if not filming:
+		return
+	filming = false
+	_film_done = true
+	model.raise_arm(false)
+	if _rec != null:
+		_rec.visible = false
+	if ruined:
+		main.popup("Hei!", position + Vector3(0, 2.2, 0), Color(1, 0.6, 0.6))
+		if _phone != null:
+			_phone.visible = false
+
+
+## Stands still facing the player with the phone up until the clip is done;
+## then it goes viral.
+func _film(dt: float) -> bool:
+	if not filming:
+		return false
+	var p = main.player
+	dir = 1 if p.position.x >= position.x else -1
+	model.animate(0.0, dt)
+	_film_t += dt
+	_rec.modulate.a = 1.0 if int(_film_t * 3.0) % 2 == 0 else 0.35
+	if _film_t >= FILM_TIME:
+		_stop_filming(false)
+		GameState.viral = true
+		GameState.unlock("VIRAL")
+		main.popup("♥ 12k", position + Vector3(0, 2.4, 0), Color(1, 0.45, 0.6), 1.3)
+	return true
 
 
 ## Tourist: "wander", "ask" (bubble up, waiting for the player to show
@@ -1015,6 +1097,8 @@ func _walk(dt: float) -> void:
 		return
 	if role == "thief" and _thieve(dt):
 		return
+	if role == "influencer" and _film(dt):
+		return
 	if role == "tourist" and _tourist(dt):
 		return
 	position.x += dir * speed * dt
@@ -1206,6 +1290,8 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0, surprise := false, 
 		return
 	if attacker == main.player:
 		_hit_by_player()
+	if filming:
+		_stop_filming(true)
 	times_hit += 1
 	hp -= dmg
 	if surprise and floor_them and not is_lawman():
@@ -1279,6 +1365,8 @@ func hit_by_item(kind: int) -> void:
 	if state == S.KO:
 		return
 	_hit_by_player()
+	if filming:
+		_stop_filming(true)
 	GameState.item_hit(self)
 	if kind == Item.Kind.FOOD:
 		_sausage_hits += 1

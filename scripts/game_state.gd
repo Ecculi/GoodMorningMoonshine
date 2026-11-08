@@ -8,6 +8,14 @@ const LostItems = preload("res://scripts/lost_items.gd")
 signal day_ended(cause: String)
 signal player_died(cause: String)
 signal achievement_unlocked(id: String)
+## The player did something silly in public (fought, fell, drank): an
+## influencer nearby may start filming.
+signal silly_moment
+## A video of the player went viral today: the police recognise them more
+## easily (they notice from further away) for the rest of the day.
+var viral := false
+## How much further the police and guards notice a viral player.
+const VIRAL_SIGHT := 1.6
 
 const DAY_START_MIN := 7 * 60
 const DAY_END_MIN := 24 * 60
@@ -389,6 +397,7 @@ func drink(amount := DRINK_AMOUNT) -> float:
 	if drinks_today == 0 and clock_min < 8.0 * 60.0:
 		unlock("MORNING_BEER")
 	drinks_today += 1
+	silly_moment.emit()
 	return amount
 
 
@@ -905,7 +914,7 @@ const ACHIEVEMENTS := [
 	"DOCTOR", "SOBER_30", "ELEPHANTS", "MORNING_BEER", "HOME_DRUNK", "PROMILLE_333",
 	"CLEAN_DAY", "NO_MAP", "BEGGAR_PAY",
 	"GRAVITY5", "BONNET_SURVIVE", "RUN_OVER_SURVIVE", "LAUNDRY", "HEADLINES10", "BACKSTAB",
-	"DOG_TRADE", "THIEF_CAUGHT", "COLLEAGUE", "TOURIST_GUIDE",
+	"DOG_TRADE", "THIEF_CAUGHT", "COLLEAGUE", "VIRAL", "TOURIST_GUIDE",
 ]
 const ACH_FILE := "user://achievements.cfg"
 ## Seconds of game time in the mending zone / under the hangover limit.
@@ -974,6 +983,7 @@ func item_hit(who: Object) -> void:
 
 
 func fell_down() -> void:
+	silly_moment.emit()
 	falls_today += 1
 	if falls_today >= 5:
 		unlock("GRAVITY5")
@@ -1004,6 +1014,7 @@ func _check_achievements(dt: float) -> void:
 
 
 func _reset_day_counters() -> void:
+	viral = false
 	found_today.clear()
 	falls_today = 0
 	drinks_today = 0
