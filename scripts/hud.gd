@@ -140,7 +140,7 @@ func _draw_city(vs: Vector2, font: Font) -> void:
 	draw_string_outline(font, Vector2(0, y + 40), sub, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 22, 6, Color(0, 0, 0, 0.8 * a))
 	draw_string(font, Vector2(0, y + 40), sub, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 22, Color(1, 1, 1, 0.9 * a))
 	# What to do, in three short lines with pictures.
-	var lines := [["SEARCH", tr("INTRO_1")], ["THERMO", tr("INTRO_2")], ["ACT_DRINK", tr("INTRO_3")], ["HOME", tr("INTRO_4")]]
+	var lines := [["SEARCH", tr("INTRO_1")], ["THERMO", tr("INTRO_2")], ["ACT_DRINK", tr("INTRO_3")], ["HOME", tr(GameState.home_key("INTRO_4"))]]
 	var bw := 0.0
 	for ln in lines:
 		bw = maxf(bw, font.get_string_size(ln[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x)
@@ -805,7 +805,7 @@ func _draw_home_hint(vs: Vector2, font: Font) -> void:
 	if _home_flash_t > 0.0:
 		_home_flash_t -= get_process_delta_time()
 		var a := clampf(_home_flash_t / 0.6, 0.0, 1.0)
-		var msg := tr("HOME_FOUND")
+		var msg := tr(GameState.home_key("HOME_FOUND"))
 		draw_string_outline(font, Vector2(0, vs.y * 0.3), msg, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 54, 12,
 			Color(0, 0, 0, 0.8 * a))
 		draw_string(font, Vector2(0, vs.y * 0.3), msg, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 54, Color(0.5, 1.0, 0.55, a))
@@ -821,9 +821,9 @@ func _draw_home_hint(vs: Vector2, font: Font) -> void:
 	draw_colored_polygon(PackedVector2Array([sp + Vector2(-18, -3) * k, sp + Vector2(0, -21) * k,
 		sp + Vector2(18, -3) * k]), house)
 	draw_rect(Rect2(sp + Vector2(-4, 5) * k, Vector2(8, 11) * k), Color(0.1, 0.1, 0.1, 0.8))
-	var lbl := tr("HOME_LABEL")
-	draw_string_outline(font, sp + Vector2(-60, 38), lbl, HORIZONTAL_ALIGNMENT_CENTER, 120, 22, 6, Color.BLACK)
-	draw_string(font, sp + Vector2(-60, 38), lbl, HORIZONTAL_ALIGNMENT_CENTER, 120, 22, Color(0.6, 1.0, 0.65))
+	var lbl := tr(GameState.home_key("HOME_LABEL"))
+	draw_string_outline(font, sp + Vector2(-110, 38), lbl, HORIZONTAL_ALIGNMENT_CENTER, 220, 22, 6, Color.BLACK)
+	draw_string(font, sp + Vector2(-110, 38), lbl, HORIZONTAL_ALIGNMENT_CENTER, 220, 22, Color(0.6, 1.0, 0.65))
 	# Right at the door: the button goes to bed.
 	if dx <= 0.9 and pl.position.z <= -6.0:
 		var c := sp + Vector2(0, 68)
@@ -1089,7 +1089,7 @@ func _draw_lost_list(vs: Vector2) -> void:
 		if GameState.is_lost(id):
 			all_found = false
 	if all_found:
-		var text := tr("GO_HOME")
+		var text := tr(GameState.home_key("GO_HOME"))
 		var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
 		var bw := tw + 90.0
 		var br := Rect2(Vector2((vs.x - bw) * 0.5, 10), Vector2(bw, 60))

@@ -512,6 +512,12 @@ func find_item(id: String) -> void:
 ## Entering the home door ends the day. Without keys the character sleeps
 ## in the stairwell outside the door.
 ## `place`: "home", "stairs", "basement" or "friend".
+## Text key for "home": a friend's flat is never called home in the game
+## (KEY_FRIEND instead of KEY).
+func home_key(key: String) -> String:
+	return key + "_FRIEND" if home_type == "friend" else key
+
+
 func go_home(place: String) -> void:
 	if lost.is_empty():
 		bonus += 500
