@@ -55,7 +55,7 @@ const CITIES := [
 		"police_door_x": 8.0,
 		"pedestrian": "",
 		# Raahe by the open sea: it blows nearly every day, from the first.
-		"storm_chance": 0.9,
+		"storm_chance": 0.5,
 		"storm_from_day": 1,
 	},
 ]
