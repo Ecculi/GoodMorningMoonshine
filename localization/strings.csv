@@ -199,3 +199,7 @@ CAP_GLASS_1,Kengät olivat kadonneet jo edellisenä iltana.
 CAP_GLASS_2,Pyöräilijät kiertävät paikkaa yhä kaukaa.
 ACH_DOG_TRADE,Vaihtokauppa
 ACH_DOG_TRADE_DESC,Saa koira luopumaan hukatusta tavarastasi makkaraa vastaan.
+ACH_THIEF_CAUGHT,Varas kiikissä
+ACH_THIEF_CAUGHT_DESC,Saa taskuvarkaan saalis takaisin ottamalla hänet kiinni tai tyrmäämällä.
+ACH_COLLEAGUE,Ammattikunta
+ACH_COLLEAGUE_DESC,Yritä taskuvarkautta samalle ihmiselle kuin taskuvaras.
