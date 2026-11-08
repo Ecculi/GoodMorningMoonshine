@@ -96,21 +96,7 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 		arm_l.rotation.z = 0.5
 	silly_bounce = absf(sin(ph)) * 0.18 * k
 	silly_lean = (0.22 + 0.08 * sin(ph * 2.0)) * k
-	forearm_r.rotation.z = 0.0
-	if _punch_t > 0.0:
-		# Straight arm forward (quick jab or the released charged punch).
-		_punch_t -= dt
-		arm_r.rotation.z = PI * 0.5
-	elif _windup >= 0.0:
-		# Charging: elbow bends and the arm is drawn back, the fist cocked
-		# up by the shoulder; further the longer it charges.
-		arm_r.rotation.z = lerpf(-0.2, -0.9, _windup)
-		forearm_r.rotation.z = lerpf(1.6, 2.9, _windup)
-	elif _raised:
-		arm_r.rotation.z = 2.5
-	else:
-		arm_r.rotation.z = lerpf(s * 0.8, -1.2 * sin(ph) + 0.6, k)
-		forearm_r.rotation.z = 0.15  # a relaxed little bend
+	_animate_right_arm(dt, s, ph, k)
 	# Cold: arms pulled in front of the body, hugging it.
 	var hug := cold_hug * (1.0 - k)
 	arm_l.rotation.x = -0.45 * hug
@@ -123,12 +109,74 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 		arm_l.rotation.z = lerpf(arm_l.rotation.z, 2.0, e)
 		arm_l.rotation.x = lerpf(arm_l.rotation.x, -0.35, e)
 		forearm_l.rotation.z = lerpf(forearm_l.rotation.z, 1.78, e)
+	# Charging: the left hand comes up in front as a guard.
+	if _pull > 0.01:
+		arm_l.rotation.z = lerpf(arm_l.rotation.z, 1.0, _pull * 0.7)
+		forearm_l.rotation.z = lerpf(forearm_l.rotation.z, 1.5, _pull * 0.7)
 	if _punch_t <= 0.0 and _windup < 0.0 and not _raised:
-		arm_r.rotation.x = 0.45 * hug
+		arm_r.rotation.x = lerpf(arm_r.rotation.x, 0.45, hug)
 		arm_r.rotation.z = lerpf(arm_r.rotation.z, 0.35, hug)
 		forearm_r.rotation.z = lerpf(forearm_r.rotation.z, 1.2, hug)
+
+
+## Right arm angles as they are now; they ease towards each pose instead
+## of jumping (_animate_right_arm).
+var _arm_z := 0.0
+var _arm_x := 0.0
+var _fore_z := 0.15
+## 0..1 how far the right shoulder is drawn back (charging) or thrown
+## forward (negative, the punch).
+var _pull := 0.0
+## Seconds the arm takes to snap straight when a punch is released.
+const PUNCH_EXTEND := 0.07
+
+
+## Right arm: walking swing, the charged pull-back, the punch and the
+## raised fist. Poses blend smoothly; the punch itself snaps out fast,
+## holds, and then the arm comes back softly.
+func _animate_right_arm(dt: float, s: float, ph: float, k: float) -> void:
+	var tz: float
+	var tx := 0.0
+	var tf := 0.15  # a relaxed little bend
+	var tpull := 0.0
+	var rate := 30.0
+	if _punch_t > 0.0:
+		# Straight forward at shoulder height.
+		_punch_t -= dt
+		tz = PI * 0.5
+		tf = 0.0
+		tpull = -0.6
+		# Snap out within PUNCH_EXTEND, then hold.
+		rate = 3.0 / PUNCH_EXTEND
+	elif _windup >= 0.0:
+		# Charging: the elbow bends and goes back and out to the side, the
+		# fist comes up by the shoulder, and the shoulder is drawn back;
+		# further the longer it charges. Out to the side so that it also
+		# shows when walking towards or away from the camera.
+		var w := _windup
+		tz = lerpf(-0.45, -1.05, w)
+		tf = lerpf(2.2, 2.85, w)
+		tx = lerpf(-0.35, -0.75, w)
+		tpull = lerpf(0.5, 1.0, w)
+		rate = 16.0
+	elif _raised:
+		tz = 2.5
+		rate = 14.0
 	else:
-		arm_r.rotation.x = 0.0
+		tz = lerpf(s * 0.8, -1.2 * sin(ph) + 0.6, k)
+		# Coming back from a punch: soft, not a snap.
+		if absf(_arm_z - tz) > 0.5 or absf(_fore_z - tf) > 0.5:
+			rate = 9.0
+	var a := 1.0 - exp(-rate * dt)
+	_arm_z = lerpf(_arm_z, tz, a)
+	_arm_x = lerpf(_arm_x, tx, a)
+	_fore_z = lerpf(_fore_z, tf, a)
+	_pull = lerpf(_pull, tpull, a)
+	arm_r.rotation.z = _arm_z
+	arm_r.rotation.x = _arm_x
+	forearm_r.rotation.z = _fore_z
+	# Shoulder back while charging, forward with the punch.
+	arm_r.position.x = -0.08 * _pull
 
 
 var _shoes: Array = []
@@ -229,8 +277,6 @@ func rise_from(angle: float, time: float) -> void:
 func punch(charged := false) -> void:
 	_punch_t = 0.3 if charged else 0.18
 	_windup = -1.0
-	arm_r.rotation.z = PI * 0.5
-	forearm_r.rotation.z = 0.0
 
 
 ## 0..1 pulls the arm back for a charged punch, -1 releases it.
