@@ -167,9 +167,9 @@ var weather := "sunny"
 ## Storm day: hard wind pushes the character, bends throws and blows
 ## leaves and litter about (always cloudy or rainy).
 var storm := false
-## From this day on, a storm now and then.
-const STORM_FROM_DAY := 2
-const STORM_CHANCE := 0.15
+## How often and from which day storms come depends on the city
+## (CityMap.storm_chance / storm_from_day): Oulu now and then, Raahe
+## nearly every day.
 
 ## Phone: battery 0..100 (always low), today's hints.
 var battery := 20.0
@@ -716,7 +716,7 @@ func _roll_weather() -> void:
 		weather = "rain"
 	else:
 		weather = "snow"
-	storm = day >= STORM_FROM_DAY and rng.randf() < STORM_CHANCE
+	storm = day >= CityMap.storm_from_day() and rng.randf() < CityMap.storm_chance()
 	if storm:
 		weather = "rain" if rng.randf() < 0.6 else "cloudy"
 
