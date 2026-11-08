@@ -927,6 +927,10 @@ var headlines_seen := {}
 ## Per day.
 var found_today: Array = []
 var falls_today := 0
+## Cars crashed today after a flat tyre on broken glass (the player's
+## smashed bottles); from CRASHES_FOR_POLICE on, each one brings a cop.
+var crashes_today := 0
+const CRASHES_FOR_POLICE := 5
 var drinks_today := 0
 var item_hit_ids := {}
 var trip_kinds := {}
@@ -1017,6 +1021,7 @@ func _reset_day_counters() -> void:
 	viral = false
 	found_today.clear()
 	falls_today = 0
+	crashes_today = 0
 	drinks_today = 0
 	item_hit_ids.clear()
 	_mend_t = 0.0

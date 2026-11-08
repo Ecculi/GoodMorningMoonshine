@@ -761,6 +761,9 @@ func _process(_delta: float) -> void:
 		return
 	var start_pos := position
 	_open_t = maxf(0.0, _open_t - dt)
+	if _pointing and state != S.WALK:
+		_pointing = false
+		model.pointing = false
 	match state:
 		S.WALK:
 			_walk(dt)
@@ -870,7 +873,7 @@ func _turn(moved: Vector3, dt: float) -> void:
 	var target: float
 	if Vector2(moved.x, moved.z).length() > 0.2 * dt:
 		target = atan2(-moved.z, moved.x)
-	elif state == S.FIGHT or state == S.CHASE:
+	elif state == S.FIGHT or state == S.CHASE or _pointing:
 		var p = main.player
 		target = atan2(-(p.position.z - position.z), p.position.x - position.x)
 	elif model.sitting or (role == "bouncer" and stationary):
@@ -880,7 +883,30 @@ func _turn(moved: Vector3, dt: float) -> void:
 	model.rotation.y = lerp_angle(model.rotation.y, target, 1.0 - exp(-10.0 * dt))
 
 
+## Passers-by stop and point at the player while the police are after
+## them in view.
+var _pointing := false
+
+
+func _point_at_player(dt: float) -> bool:
+	var want: bool = (role == "civ" or role == "granny" or role == "tourist") and not stationary \
+		and main.police_hunting_in_view()
+	if want != _pointing:
+		_pointing = want
+		model.pointing = want
+		if want and main.rng.randf() < 0.5:
+			main.popup("!", position + Vector3(0, 2.1, 0), Color(1, 0.9, 0.5))
+	if not want:
+		return false
+	# Face the player (see _turn) and stand there pointing.
+	dir = 1 if main.player.position.x >= position.x else -1
+	model.animate(0.0, dt)
+	return true
+
+
 func _walk(dt: float) -> void:
+	if _point_at_player(dt):
+		return
 	if _hug_t > 0.0:
 		_hug_t -= dt
 		model.animate(0.0, dt)

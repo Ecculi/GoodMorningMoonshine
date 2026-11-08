@@ -242,15 +242,19 @@ func _crash() -> void:
 		main.shake(0.1 + speed * 0.02)
 	wrecked = true
 	speed = 0.0
+	main.car_crashed(self)
 
 
 ## A swerving car ran into this one: it stops dead too.
 func hit_by_wreck() -> void:
-	if not wrecked:
+	var fresh := not wrecked
+	if fresh:
 		main.popup("KRÄSH!", position + Vector3(0, 2.0, 0), Color(1, 0.55, 0.3), 1.4)
 	wrecked = true
 	speed = 0.0
 	parked = false
+	if fresh:
+		main.car_crashed(self)
 
 
 ## Someone walked into the side: sometimes the car stops and the driver
