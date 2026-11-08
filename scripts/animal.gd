@@ -15,8 +15,9 @@ extends Node3D
 ##   it goes to eat and calms down.
 
 const Item = preload("res://scripts/item.gd")
+const LostItems = preload("res://scripts/lost_items.gd")
 
-enum A { IDLE, WANDER, FLY_TO, FLEE, FOLLOW, LEAD, ATTACK, EAT, BOMB }
+enum A { IDLE, WANDER, FLY_TO, FLEE, FOLLOW, LEAD, ATTACK, EAT, BOMB, KEEP }
 
 ## Gull revenge: after the player treads on a gull, the others circle
 ## above and drop on them for a while.
@@ -66,6 +67,19 @@ var _last_pp := Vector3.INF
 var _rest_z := 0.0
 var _charge_k := 0.85
 var _rng := RandomNumberGenerator.new()
+## The player's lost thing in its mouth ("" = none). Playful: runs off
+## when the player comes near, drops it for a sausage.
+var carry_id := ""
+var _carry_model: Node3D
+var _carry_arrow: Label3D
+var _dart_t := 0.0
+var _dart := Vector3.ZERO
+var _pause_t := 0.0
+## How far the dog keeps from the player, and where it may run.
+const KEEP_AWAY := 4.5
+const KEEP_X := 18.5
+const KEEP_Z_MIN := -7.2
+const KEEP_Z_MAX := 5.0
 
 
 func setup(k: String, rng: RandomNumberGenerator, pos: Vector3) -> void:
@@ -161,6 +175,124 @@ func _build_dog() -> void:
 		_box(_model, Vector3(-0.05 * s, h + 0.25 * s, 0), Vector3(0.4 * s, 0.04 * s, 0.06 * s), spot.darkened(0.3))
 
 
+## Give this (calm) dog one of the player's lost things to carry.
+func carry(id: String) -> void:
+	carry_id = id
+	state = A.KEEP
+	if angry:
+		# A playful one, not a cross one: rebuilt without the raised hackles.
+		angry = false
+		for c in _model.get_children():
+			c.free()
+		_legs.clear()
+		_build_dog()
+	var s: float = breed["size"]
+	_carry_model = LostItems.build_mesh(id)
+	_carry_model.scale = Vector3.ONE * 1.6
+	_carry_model.position = Vector3(0.2 * s, -0.09 * s, 0)
+	_head.add_child(_carry_model)
+	_carry_arrow = Label3D.new()
+	_carry_arrow.text = "▼"
+	_carry_arrow.font_size = 96
+	_carry_arrow.pixel_size = 0.005
+	_carry_arrow.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_carry_arrow.no_depth_test = true
+	_carry_arrow.modulate = Color(1, 0.85, 0.2)
+	_carry_arrow.outline_size = 18
+	_carry_arrow.visible = false
+	add_child(_carry_arrow)
+
+
+## Lets go of the lost thing: it drops to the ground right here.
+func drop_carried() -> void:
+	if carry_id == "":
+		return
+	var id := carry_id
+	carry_id = ""
+	if _carry_model != null:
+		_carry_model.queue_free()
+		_carry_model = null
+	if _carry_arrow != null:
+		_carry_arrow.queue_free()
+		_carry_arrow = null
+	main.dog_dropped(id, Vector3(position.x + 0.4 * float(dir), 0.0, position.z))
+	if state == A.KEEP:
+		state = A.WANDER
+
+
+## Carrying a lost thing: trots about the block, keeps away from the
+## player, darts past when cornered, and stops now and then to look back
+## with the thing in its mouth, tail wagging. A sausage held out brings it
+## over: it swaps the thing for the sausage. Caught by a runner: drops it.
+func _keep(dt: float) -> void:
+	if not GameState.placements.has(carry_id):
+		carry_id = ""
+		state = A.WANDER
+		return
+	var speed: float = breed["speed"]
+	var p: Vector3 = main.player.position
+	var dist := _player_dist()
+	GameState.placements[carry_id][1] = position
+	var reach := LostItems.REVEAL_DIST_NO_GLASSES if GameState.is_lost("glasses") else LostItems.REVEAL_DIST
+	_carry_arrow.visible = dist < reach + 3.0
+	_carry_arrow.position = Vector3(0, 1.0 + breed["size"] * 0.4 + absf(sin(_t * 4.0)) * 0.2, 0)
+	if _player_has_food() and dist < 7.0:
+		# Comes for the sausage and swaps.
+		_move_to(p + Vector3(-main.player.facing * 0.7, 0, 0.2), speed * 0.8, dt)
+		if dist < 1.1:
+			main.player._consume_hand_item()
+			main.popup("♥", position + Vector3(0, 0.9, 0), Color(1, 0.5, 0.6))
+			GameState.unlock("DOG_TRADE")
+			drop_carried()
+		return
+	if dist < 0.7:
+		# Caught it.
+		main.popup("Vuh!", position + Vector3(0, 0.9, 0), Color(1, 1, 1))
+		drop_carried()
+		_run_off("Hau!")
+		return
+	if _dart_t > 0.0:
+		# Darting past the player out of a corner.
+		_dart_t -= dt
+		_move_to(_dart, speed * 1.6, dt)
+		return
+	if dist < KEEP_AWAY:
+		_pause_t = 0.0
+		var away := Vector2(position.x - p.x, position.z - p.z).normalized()
+		# A zigzag, so it isn't a straight line.
+		away = away.rotated(sin(_t * 3.1) * 0.6)
+		var want := position + Vector3(away.x, 0, away.y) * 2.0
+		var cornered := absf(want.x) > KEEP_X or want.z < KEEP_Z_MIN or want.z > KEEP_Z_MAX
+		if cornered and dist < 3.0:
+			# Past the player on the other side of the street.
+			_dart_t = 1.3
+			var zs := 1.0 if p.z < -1.25 else -1.0
+			_dart = Vector3(clampf(p.x - signf(position.x) * 5.0, -KEEP_X, KEEP_X), 0,
+				clampf(p.z + zs * 3.5, KEEP_Z_MIN, KEEP_Z_MAX))
+			main.popup("Hau!", position + Vector3(0, 0.9, 0), Color(1, 1, 1))
+			return
+		want.x = clampf(want.x, -KEEP_X, KEEP_X)
+		want.z = clampf(want.z, KEEP_Z_MIN, KEEP_Z_MAX)
+		_move_to(want, speed * 1.5, dt)
+		return
+	# Out of reach: pause and look back now and then (tail going), or trot
+	# about a bit.
+	_pause_t -= dt
+	if _pause_t <= -2.5:
+		_pause_t = _rng.randf_range(1.0, 2.5)
+		_target = Vector3(clampf(position.x + _rng.randf_range(-5.0, 5.0), -KEEP_X, KEEP_X), 0,
+			_rng.randf_range(KEEP_Z_MIN, KEEP_Z_MAX))
+		if dist < 12.0 and _rng.randf() < 0.5:
+			main.popup("Hau!", position + Vector3(0, 0.9, 0), Color(1, 1, 1))
+	if _pause_t > 0.0:
+		# Facing the player, wagging.
+		_model.rotation.y = lerp_angle(_model.rotation.y, atan2(-(p.z - position.z), p.x - position.x), 1.0 - exp(-8.0 * dt))
+		if _tail != null:
+			_tail.rotation.y = sin(_t * 18.0) * 0.6
+	else:
+		_move_to(_target, speed * 0.5, dt)
+
+
 # --- Behaviour ------------------------------------------------------------------
 
 func _process(_delta: float) -> void:
@@ -181,6 +313,8 @@ func _process(_delta: float) -> void:
 	if flat.length() > 0.001:
 		_model.rotation.y = lerp_angle(_model.rotation.y, atan2(-flat.y, flat.x), 1.0 - exp(-10.0 * dt))
 	_animate(dt, flat.length() / dt)
+	if carry_id != "":
+		position.x = clampf(position.x, -KEEP_X - 1.0, KEEP_X + 1.0)
 	if absf(position.x) > 30.0 or position.y > 12.0:
 		main.remove_animal(self)
 
@@ -314,6 +448,7 @@ func hit_by_item(_kind: int) -> void:
 		main.popup("*", position + Vector3(0, 0.5, 0), Color(1, 1, 1))
 		return
 	angry = false
+	drop_carried()
 	_run_off("Vink!")
 
 
@@ -327,6 +462,11 @@ func swat() -> void:
 			main.popup("*", position + Vector3(0, 0.5, 0), Color(1, 1, 1))
 		return
 	# Dog: backs off; enough punches and it runs away whimpering.
+	if carry_id != "":
+		# Startled: lets go and legs it.
+		drop_carried()
+		_run_off("Vink!")
+		return
 	hp -= 1
 	_knock = 4.0 * signf(position.x - main.player.position.x)
 	_cooldown = 1.5
@@ -352,9 +492,15 @@ func _dog(dt: float) -> void:
 	if state != A.EAT and state != A.FLEE and not carrying_food:
 		var f = main.food_on_ground_near(position, 6.0)
 		if f != null:
+			# Food beats anything in the mouth: drops it and goes to eat.
+			if carry_id != "":
+				GameState.unlock("DOG_TRADE")
+				drop_carried()
 			_food_item = f
 			state = A.EAT
 	match state:
+		A.KEEP:
+			_keep(dt)
 		A.WANDER:
 			if angry and _player_dist() < 5.0:
 				state = A.ATTACK
