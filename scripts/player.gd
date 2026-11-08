@@ -269,6 +269,7 @@ func _process(delta: float) -> void:
 
 	_handle_action(delta)
 	_check_pickups()
+	_check_glass(delta)
 	_hunger_signs()
 	_drunk_states(moving)
 	for n in main.npcs:
@@ -1089,6 +1090,23 @@ func _throw(t: float) -> void:
 	model.punch()
 	# Keep time running a little past the landing so it can bounce and roll.
 	GameState.busy_time = maxf(GameState.busy_time, it.flight_time + 0.7)
+
+
+## Barefoot on broken glass: ouch (now and then while standing on it).
+const GLASS_DAMAGE := 4.0
+var _glass_cd := 0.0
+
+
+func _check_glass(delta: float) -> void:
+	_glass_cd = maxf(0.0, _glass_cd - delta)
+	if _glass_cd > 0.0 or not GameState.is_lost("shoes") or is_helpless() or GameState.world_dt <= 0.0:
+		return
+	if main.glass_at(position) == null:
+		return
+	_glass_cd = 1.2
+	GameState.damage(GLASS_DAMAGE, "glass")
+	main.hud.flash_hurt()
+	main.popup("Ai!", position + Vector3(0, 2.1, 0), Color(1, 0.45, 0.4))
 
 
 func _check_pickups() -> void:

@@ -191,7 +191,7 @@ func _fly(delta: float) -> void:
 			_hit_done = true
 			npc.hit_by_item(kind)
 			_bounce_off()
-			if kind == Kind.BOTTLE:
+			if kind == Kind.BOTTLE and _shatters():
 				_break()
 				return
 		elif animal != null and centre.y < 1.2 and kind != Kind.FOOD:
@@ -199,7 +199,7 @@ func _fly(delta: float) -> void:
 			_hit_done = true
 			animal.hit_by_item(kind)
 			_bounce_off()
-			if kind == Kind.BOTTLE:
+			if kind == Kind.BOTTLE and _shatters():
 				_break()
 				return
 	# At rest (or lost): lie where it ended up.
@@ -217,13 +217,14 @@ func _bounce_off() -> void:
 	_body.linear_velocity = Vector3(-v.x * 0.25, maxf(v.y, 1.0) * 0.5, -v.z * 0.25)
 
 
-## Bottles break on the first thing they hit (street, wall, person).
+## A thrown bottle breaks on the first thing it hits (street, wall, person)
+## half the time; otherwise it survives that and doesn't break any more.
 ## Everything else gets rolling resistance once it touches down, so it
 ## doesn't roll on like a wheel; the soft sausage stops almost at once.
 func _on_body_hit(_other: Node) -> void:
 	if state != St.FLYING:
 		return
-	if kind == Kind.BOTTLE and _air_t > 0.05:
+	if kind == Kind.BOTTLE and _air_t > 0.05 and _shatters():
 		_break()
 		return
 	if _body != null and is_instance_valid(_body):
@@ -235,11 +236,26 @@ func _on_body_hit(_other: Node) -> void:
 			_body.linear_damp = maxf(_body.linear_damp, 0.6)
 
 
+## Decided once per throw, on the first impact.
+const SHATTER_CHANCE := 0.5
+var _shatter_rolled := false
+var _will_shatter := false
+
+
+func _shatters() -> bool:
+	if not _shatter_rolled:
+		_shatter_rolled = true
+		_will_shatter = randf() < SHATTER_CHANCE
+	return _will_shatter
+
+
+## Smashes into shards that stay on the street.
 func _break() -> void:
 	if state != St.FLYING:
 		return
 	state = St.GROUND
 	main.popup("*", global_position + Vector3(0, 0.4, 0), Color(0.6, 0.9, 0.6))
+	main.spawn_glass(global_position, DRINK_COLOR[drink])
 	if _body != null and is_instance_valid(_body):
 		_body.queue_free()
 	_body = null
@@ -288,6 +304,7 @@ func throw_from(start: Vector3, dir: Vector3, dist: float) -> void:
 	_to_world()
 	state = St.FLYING
 	_hit_done = false
+	_shatter_rolled = false
 	_still_t = 0.0
 	_air_t = 0.0
 	_frozen = false
@@ -310,6 +327,7 @@ func launch(start: Vector3, vel: Vector3) -> void:
 	_to_world()
 	state = St.FLYING
 	_hit_done = true  # it hits nobody on the way
+	_shatter_rolled = false
 	_still_t = 0.0
 	_air_t = 0.0
 	_frozen = false

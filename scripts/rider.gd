@@ -3,8 +3,14 @@ extends Node3D
 ## Rings the bell / honks when the player is in the way ahead, swerves a
 ## little, and knocks the player over if they don't step aside. Rides on
 ## out of the block and is gone. Moves in world time.
+## Broken glass: a scooter crashes spectacularly (the rider flies off as a
+## rag doll); a bike gets a flat tyre and wobbles about, maybe out onto
+## the road under a car.
 
 const PersonModel = preload("res://scripts/person_model.gd")
+const Ragdoll = preload("res://scripts/ragdoll.gd")
+## Seconds a crashed rider lies there before being cleared away.
+const CRASH_LINGER := 7.0
 
 const EDGE_X := 30.0
 
@@ -19,6 +25,15 @@ var _warned := false
 var _hit := false
 var _swerve := 0.0
 var _t := 0.0
+## Vehicle parts (each in its own holder) so they can tumble in a crash.
+var _holders: Array = []
+var crashed := false
+var _crash_t := 0.0
+var _ragdoll = null
+## Flat tyre (bike): wobbles and drifts about.
+var flat := false
+var _drift := 0.0
+var _drift_t := 0.0
 
 
 func setup(rng: RandomNumberGenerator, d: int) -> void:
@@ -66,6 +81,7 @@ func _part(mesh: Mesh, pos: Vector3, rot: Vector3, c: Color) -> MeshInstance3D:
 	var holder := Node3D.new()
 	holder.rotation.y = 0.0 if dir > 0 else PI
 	add_child(holder)
+	_holders.append(holder)
 	holder.add_child(mi)
 	return mi
 
@@ -112,6 +128,20 @@ func _process(_delta: float) -> void:
 	if dt <= 0.0 or main == null:
 		return
 	_t += dt
+	if crashed:
+		_crash_t += dt
+		if _crash_t > CRASH_LINGER:
+			main.remove_rider(self)
+		return
+	# Over broken glass.
+	if main.glass_at(position) != null:
+		if kind == "scooter":
+			main.popup("!", position + Vector3(0, 2.2, 0), Color(1, 0.5, 0.4))
+			crash(Vector3(dir * speed * 0.9, 3.2, randf_range(-0.8, 0.8)))
+			return
+		elif not flat:
+			flat = true
+			main.popup("pssh!", position + Vector3(0, 1.8, 0), Color(0.85, 0.9, 1.0))
 	var p: Vector3 = main.player.position
 	var ahead: float = (p.x - position.x) * dir
 	var dz: float = p.z - position.z
@@ -123,6 +153,8 @@ func _process(_delta: float) -> void:
 		_swerve = move_toward(_swerve, -signf(dz if dz != 0.0 else 1.0) * 0.6, dt * 1.5)
 	else:
 		_swerve = move_toward(_swerve, 0.0, dt * 0.8)
+	if flat:
+		_wobble(dt)
 	position.x += dir * speed * dt
 	position.z = lane_z + _swerve
 	# Too late: the player is knocked over.
@@ -137,3 +169,44 @@ func _process(_delta: float) -> void:
 		_model.animate(0.0, dt)
 	if absf(position.x) > EDGE_X + 1.0:
 		main.remove_rider(self)
+
+
+## Flat tyre: slower, the bike leans from side to side and heads off in
+## odd directions now and then, a little more often towards the road.
+func _wobble(dt: float) -> void:
+	speed = move_toward(speed, 3.4, dt * 1.2)
+	_drift_t -= dt
+	if _drift_t <= 0.0:
+		_drift_t = randf_range(0.35, 0.9)
+		var to_road := signf(-1.2 - lane_z)
+		_drift = randf_range(-2.0, 2.0) + to_road * 0.7
+	lane_z = clampf(lane_z + _drift * dt, -7.3, 5.4)
+	rotation.x = sin(_t * 8.0) * 0.12 + _drift * 0.05
+
+
+## Hit by a car while wobbling on the road.
+func hit_by_car(car_dir: int, car_speed: float) -> void:
+	if crashed:
+		return
+	main.popup("!", position + Vector3(0, 2.2, 0), Color(1, 0.4, 0.3))
+	main.shake(0.15)
+	crash(Vector3(car_dir * car_speed * 1.0, 4.5, randf_range(-1.0, 1.0)))
+
+
+## Off the vehicle: the rider flies on as a rag doll and the bike or
+## scooter tumbles over and slides to a stop.
+func crash(vel: Vector3) -> void:
+	if crashed:
+		return
+	crashed = true
+	rotation.x = 0.0
+	_ragdoll = Ragdoll.new()
+	add_child(_ragdoll)
+	_ragdoll.build(_model, vel)
+	_model.visible = false
+	var slide := Vector3(vel.x * 0.25, 0.0, vel.z * 0.2)
+	for h in _holders:
+		var tw := create_tween()
+		tw.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tw.tween_property(h, "rotation:x", PI * 0.5 * (1.0 if randf() < 0.5 else -1.0), 0.35)
+		tw.parallel().tween_property(h, "position", h.position + slide, 0.8)
