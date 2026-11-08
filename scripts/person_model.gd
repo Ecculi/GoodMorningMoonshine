@@ -19,6 +19,8 @@ var _punch_t := 0.0
 ## 0..1 while a punch is being charged (arm pulled back), otherwise -1.
 var _windup := -1.0
 var _raised := false
+## Arm held straight out, pointing at something in front.
+var pointing := false
 
 
 var shirt_color: Color
