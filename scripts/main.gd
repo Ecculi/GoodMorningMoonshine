@@ -151,6 +151,7 @@ func _ready() -> void:
 	add_child(debug_tools)
 
 	GameState.day_ended.connect(_on_day_ended)
+	GameState.silly_moment.connect(_on_silly_moment)
 	GameState.achievement_unlocked.connect(func(id): hud.show_achievement(id))
 	GameState.player_died.connect(_on_player_died)
 	_new_game()
@@ -1286,6 +1287,9 @@ func _spawn_street_folk() -> void:
 	# From day 5 grannies are out with their handbags.
 	if GameState.day >= 5 and rng.randf() < 0.35:
 		_spawn_npc(false, "granny")
+	# From day 6 an influencer films anything silly the player does.
+	if GameState.day >= 6 and rng.randf() < 0.3:
+		_spawn_npc(false, "influencer")
 	# From day 5 a pickpocket prowls the streets.
 	if GameState.day >= 5 and rng.randf() < 0.3:
 		_spawn_npc(false, "thief")
@@ -1728,6 +1732,9 @@ func report_crime(pos: Vector3, alarm: bool, animal := false) -> void:
 	# Drunk and loud: noticed from further away even when sneaking.
 	if GameState.promille > GameState.PROMILLE_DRUNK:
 		reach *= 2.0
+	# The viral video: recognised from further away.
+	if GameState.viral:
+		reach *= GameState.VIRAL_SIGHT
 	var sight := police_sight()
 	for n in npcs:
 		if not n.is_lawman() or n.is_down():
@@ -1756,6 +1763,8 @@ func police_sight() -> float:
 		r = SNEAK_NOTICE_DIST
 	if GameState.promille > GameState.PROMILLE_DRUNK:
 		r *= 2.0 if GameState.is_lost("shoes") else 1.25
+	if GameState.viral:
+		r *= GameState.VIRAL_SIGHT
 	return r
 
 
@@ -1785,6 +1794,20 @@ const CHOKE_TIME := 2.2
 ## How far a bouncer notices someone starting a fight (every direction).
 const BOUNCER_SIGHT := 10.0
 var choke := 0.0
+
+
+## Something silly happened: an influencer close enough starts filming.
+const INFLUENCER_RANGE := 12.0
+
+
+func _on_silly_moment() -> void:
+	if GameState.viral:
+		return
+	for n in npcs:
+		if n.role == "influencer" and not n.is_down():
+			var d := Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length()
+			if d < INFLUENCER_RANGE:
+				n.start_filming()
 
 
 ## A thief got away round the corner with the loot: money is gone; a

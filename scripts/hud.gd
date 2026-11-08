@@ -299,6 +299,13 @@ func _draw_phone_icon(vs: Vector2, font: Font) -> void:
 	if mode != "" or GameState.modal != "":
 		return
 	var r := _phone_icon_rect(vs)
+	if GameState.viral:
+		# A video of you is going round: a red "play" badge by the phone.
+		var vb := Rect2(Vector2(r.position.x - 50, r.position.y + 10), Vector2(40, 28))
+		var pulse := 0.8 + 0.2 * sin(Time.get_ticks_msec() / 250.0)
+		draw_rect(vb, Color(0.9, 0.12, 0.12, pulse))
+		var vc := vb.get_center()
+		draw_colored_polygon(PackedVector2Array([vc + Vector2(-6, -8), vc + Vector2(9, 0), vc + Vector2(-6, 8)]), Color.WHITE)
 	var body := Rect2(r.position + Vector2(10, 0), Vector2(28, 48))
 	var col := Color(0.12, 0.12, 0.14)
 	for c in [Vector2(3, 3), Vector2(25, 3), Vector2(3, 45), Vector2(25, 45)]:
