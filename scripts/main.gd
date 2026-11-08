@@ -1283,6 +1283,9 @@ func _spawn_street_folk() -> void:
 		d.position.z = rng.randf_range(-7.0, -5.8) if rng.randf() < 0.5 else rng.randf_range(3.3, 4.8)
 	if GameState.day >= 2 and rng.randf() < 0.2:
 		_spawn_punks()
+	# From day 8 tourists ask the way.
+	if GameState.day >= 8 and rng.randf() < 0.3:
+		_spawn_npc(false, "tourist")
 	# From day 5 grannies are out with their handbags.
 	if GameState.day >= 5 and rng.randf() < 0.35:
 		_spawn_npc(false, "granny")
@@ -1785,6 +1788,30 @@ const CHOKE_TIME := 2.2
 ## How far a bouncer notices someone starting a fight (every direction).
 const BOUNCER_SIGHT := 10.0
 var choke := 0.0
+
+
+## A sight for a tourist to ask about: not in this block, at least a
+## block away. {} if none.
+func pick_landmark() -> Dictionary:
+	var options: Array = []
+	for lm in CityMap.landmarks():
+		if lm["seg"] != segment and GameState.seg_distance(segment, lm["seg"]) >= 1.0:
+			options.append(lm)
+	if options.is_empty():
+		return {}
+	return options[rng.randi() % options.size()]
+
+
+## Did walking `moved` from `from` (in this block) head towards block
+## `target`? Compared on the street grid: the step has to point within
+## about 70 degrees of the way there.
+func points_towards(from: Vector3, moved: Vector3, target: Vector3i) -> bool:
+	var step := CityMap.grid_dir(segment, Vector2(moved.x, moved.z)).normalized()
+	var here := CityMap.grid_pos(segment, from.x)
+	var to: Vector2 = GameState._seg_center(target) - here
+	if to.length() < 0.01:
+		return true
+	return step.dot(to.normalized()) > 0.35
 
 
 ## A thief got away round the corner with the loot: money is gone; a

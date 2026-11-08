@@ -10,6 +10,9 @@ extends Node3D
 ##   then walks back to the door
 ## - "collector": can collector (from day 4); gets to the bins before the
 ##   player and picks up bottles and cans lying in the street
+## - "tourist": (from day 8) asks the way with a picture of a sight in a
+##   thought bubble; walk a few steps the right way from beside them to
+##   answer. Right: a tip; wrong: an angry tourist.
 ## - "thief": pickpocket (from day 5) in a dark hoodie; sidles up, bumps
 ##   into the player and takes money or a pocket thing, then runs. Catch
 ##   him or knock him out to get it back.
@@ -173,6 +176,32 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			stationary = true
 			chase_speed = BOUNCER_SPEED
 			telegraphs = true
+		"tourist":
+			var tshirt: Color = [Color(1.0, 0.55, 0.15), Color(0.15, 0.75, 0.7), Color(0.95, 0.85, 0.2),
+				Color(0.9, 0.35, 0.5)][rng.randi() % 4]
+			model = PersonModel.new(tshirt, Color(0.8, 0.72, 0.5), skin, HAIRS[rng.randi() % HAIRS.size()], 1.0)
+			_head_box(Vector3(0, 1.84, 0), Vector3(0.42, 0.04, 0.46), Color(0.9, 0.88, 0.75))  # sun hat brim
+			_head_box(Vector3(-0.01, 1.89, 0), Vector3(0.26, 0.1, 0.3), Color(0.9, 0.88, 0.75))
+			# Camera on a strap round the neck.
+			var cam := MeshInstance3D.new()
+			var cbm := BoxMesh.new()
+			cbm.size = Vector3(0.08, 0.1, 0.16)
+			cam.mesh = cbm
+			var cmat := StandardMaterial3D.new()
+			cmat.albedo_color = Color(0.08, 0.08, 0.09)
+			cam.material_override = cmat
+			cam.position = Vector3(0.18, 1.3, 0)
+			model.add_child(cam)
+			var lens := MeshInstance3D.new()
+			var lbm := BoxMesh.new()
+			lbm.size = Vector3(0.06, 0.06, 0.06)
+			lens.mesh = lbm
+			var lmat := StandardMaterial3D.new()
+			lmat.albedo_color = Color(0.3, 0.32, 0.36)
+			lens.material_override = lmat
+			lens.position = Vector3(0.24, 1.3, 0)
+			model.add_child(lens)
+			speed = 0.9
 		"thief":
 			model = PersonModel.new(Color(0.16, 0.17, 0.2), Color(0.12, 0.14, 0.22), skin,
 				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.95, 1.02))
@@ -431,6 +460,174 @@ func offer_trade(p: Node3D) -> bool:
 ## Returns true while busy with that (instead of just walking).
 var _goal := {}
 var _rummage_t := 0.0
+
+
+## Tourist: "wander", "ask" (bubble up, waiting for the player to show
+## the way) or "done".
+var tour_mode := "wander"
+var _landmark := {}
+var _ask_t := 0.0
+var _ask_from := Vector3.ZERO
+var _ask_near := false
+var _bubble: Node3D
+const ASK_DIST := 3.0
+## Standing this close counts as "beside" the tourist; walking this far
+## from there is the answer.
+const ASK_BESIDE := 1.6
+const ASK_ANSWER := 3.0
+const ASK_PATIENCE := 14.0
+
+
+func _tourist(dt: float) -> bool:
+	var p = main.player
+	var d := Vector2(p.position.x - position.x, p.position.z - position.z).length()
+	match tour_mode:
+		"wander":
+			if d < ASK_DIST and not p.is_helpless() and GameState.modal == "":
+				_landmark = main.pick_landmark()
+				if _landmark.is_empty():
+					tour_mode = "done"
+					return false
+				tour_mode = "ask"
+				_ask_t = 0.0
+				_ask_near = false
+				_show_bubble(_landmark["kind"])
+				return true
+		"ask":
+			dir = 1 if p.position.x >= position.x else -1
+			model.animate(0.0, dt)
+			_ask_t += dt
+			_bubble.position.y = 2.65 + sin(_ask_t * 3.0) * 0.05
+			if d < ASK_BESIDE:
+				_ask_near = true
+				_ask_from = p.position
+			elif _ask_near:
+				var moved: Vector3 = p.position - _ask_from
+				if Vector2(moved.x, moved.z).length() > ASK_ANSWER:
+					_answered(main.points_towards(_ask_from, moved, _landmark["seg"]), moved)
+					return true
+			if _ask_t > ASK_PATIENCE:
+				_hide_bubble()
+				main.popup("?", position + Vector3(0, 2.2, 0), Color(1, 1, 1))
+				tour_mode = "done"
+			return true
+	return false
+
+
+func _answered(right: bool, moved: Vector3) -> void:
+	_hide_bubble()
+	tour_mode = "done"
+	if right:
+		var tip: int = main.rng.randi_range(2, 5)
+		GameState.money += tip
+		main.popup("+%d €" % tip, main.player.position + Vector3(0, 2.4, 0), Color(1, 0.85, 0.3))
+		main.popup("♥", position + Vector3(0, 2.3, 0), Color(1, 0.5, 0.6), 1.3)
+		GameState.unlock("TOURIST_GUIDE")
+		# Off the way they were shown.
+		dir = 1 if moved.x >= 0.0 else -1
+	else:
+		main.popup("#!?", position + Vector3(0, 2.3, 0), Color(1, 0.3, 0.25), 1.4)
+		_flinch = -0.25  # stamps a foot, leaning in
+		dir = -1 if moved.x >= 0.0 else 1
+		speed = 1.6  # storms off
+
+
+## Thought bubble with a little picture of the sight (no words).
+func _show_bubble(kind: String) -> void:
+	_hide_bubble()
+	_bubble = Node3D.new()
+	_bubble.position = Vector3(0, 2.65, 0)
+	add_child(_bubble)
+	var white := Color(0.98, 0.98, 0.98)
+	_bub_ball(Vector3(0, 0, 0), Vector3(0.95, 0.7, 0.08), white)
+	_bub_ball(Vector3(-0.32, -0.42, 0), Vector3(0.14, 0.12, 0.05), white)
+	_bub_ball(Vector3(-0.42, -0.56, 0), Vector3(0.08, 0.07, 0.04), white)
+	var z := 0.06
+	match kind:
+		"church":
+			_bub_box(Vector3(0, -0.08, z), Vector3(0.22, 0.26, 0.02), Color(0.92, 0.9, 0.85))
+			_bub_prism(Vector3(0, 0.13, z), Vector3(0.28, 0.16, 0.02), Color(0.3, 0.32, 0.36), 0.5)
+			_bub_box(Vector3(0, 0.26, z), Vector3(0.025, 0.1, 0.02), Color(0.85, 0.7, 0.2))
+			_bub_box(Vector3(0, 0.27, z), Vector3(0.07, 0.022, 0.02), Color(0.85, 0.7, 0.2))
+			_bub_box(Vector3(0, -0.15, z + 0.01), Vector3(0.06, 0.1, 0.02), Color(0.4, 0.25, 0.15))
+		"market":
+			_bub_box(Vector3(0, -0.14, z), Vector3(0.36, 0.08, 0.02), Color(0.55, 0.35, 0.2))
+			for k in 4:
+				_bub_box(Vector3(-0.135 + k * 0.09, 0.08, z), Vector3(0.09, 0.08, 0.02),
+					Color(0.85, 0.15, 0.15) if k % 2 == 0 else Color(0.97, 0.97, 0.97))
+			for sx in [-0.16, 0.16]:
+				_bub_box(Vector3(sx, -0.03, z), Vector3(0.02, 0.2, 0.02), Color(0.4, 0.3, 0.2))
+			var fruit := [Color(0.95, 0.5, 0.1), Color(0.3, 0.7, 0.2), Color(0.9, 0.2, 0.2)]
+			for k in 3:
+				_bub_box(Vector3(-0.09 + k * 0.09, -0.07, z + 0.01), Vector3(0.05, 0.05, 0.02), fruit[k])
+		"station":
+			_bub_box(Vector3(0, -0.08, z), Vector3(0.4, 0.2, 0.02), Color(0.65, 0.3, 0.22))
+			_bub_box(Vector3(0, 0.12, z), Vector3(0.1, 0.2, 0.02), Color(0.65, 0.3, 0.22))
+			_bub_ball(Vector3(0, 0.15, z + 0.01), Vector3(0.07, 0.07, 0.01), Color(0.97, 0.97, 0.9))
+			_bub_box(Vector3(0, 0.165, z + 0.02), Vector3(0.008, 0.03, 0.01), Color(0.1, 0.1, 0.1))
+			_bub_box(Vector3(0.012, 0.15, z + 0.02), Vector3(0.025, 0.008, 0.01), Color(0.1, 0.1, 0.1))
+			for wx in [-0.13, -0.06, 0.06, 0.13]:
+				_bub_box(Vector3(wx, -0.06, z + 0.01), Vector3(0.04, 0.07, 0.01), Color(0.95, 0.85, 0.5))
+		_:
+			# Harbour: a boat with a sail on the waves.
+			_bub_box(Vector3(0, -0.18, z), Vector3(0.44, 0.07, 0.02), Color(0.2, 0.45, 0.8))
+			_bub_box(Vector3(0, -0.11, z + 0.01), Vector3(0.26, 0.06, 0.02), Color(0.5, 0.3, 0.15))
+			_bub_box(Vector3(0, 0.04, z + 0.01), Vector3(0.015, 0.26, 0.02), Color(0.4, 0.3, 0.2))
+			_bub_prism(Vector3(0.09, 0.05, z + 0.01), Vector3(0.16, 0.22, 0.02), Color(0.97, 0.97, 0.97), 0.0)
+	var q := Label3D.new()
+	q.text = "?"
+	q.font_size = 72
+	q.pixel_size = 0.006
+	q.no_depth_test = true
+	q.modulate = Color(0.15, 0.15, 0.2)
+	q.position = Vector3(0.36, 0.14, 0.1)
+	_bubble.add_child(q)
+
+
+func _hide_bubble() -> void:
+	if _bubble != null:
+		_bubble.queue_free()
+		_bubble = null
+
+
+func _flat(c: Color) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	return m
+
+
+func _bub_ball(pos: Vector3, scl: Vector3, c: Color) -> void:
+	var sm := SphereMesh.new()
+	sm.radius = 0.5
+	sm.height = 1.0
+	var mi := MeshInstance3D.new()
+	mi.mesh = sm
+	mi.material_override = _flat(c)
+	mi.position = pos
+	mi.scale = scl
+	_bubble.add_child(mi)
+
+
+func _bub_box(pos: Vector3, size: Vector3, c: Color) -> void:
+	var bm := BoxMesh.new()
+	bm.size = size
+	var mi := MeshInstance3D.new()
+	mi.mesh = bm
+	mi.material_override = _flat(c)
+	mi.position = pos
+	_bubble.add_child(mi)
+
+
+func _bub_prism(pos: Vector3, size: Vector3, c: Color, apex: float) -> void:
+	var pm := PrismMesh.new()
+	pm.size = size
+	pm.left_to_right = apex
+	var mi := MeshInstance3D.new()
+	mi.mesh = pm
+	mi.material_override = _flat(c)
+	mi.position = pos
+	_bubble.add_child(mi)
 
 
 ## Pickpocket: "prowl" (walks about, tails a passer-by, sidles up to the
@@ -818,6 +1015,8 @@ func _walk(dt: float) -> void:
 		return
 	if role == "thief" and _thieve(dt):
 		return
+	if role == "tourist" and _tourist(dt):
+		return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
 	# The way on is fenced off: turn back.
@@ -833,6 +1032,9 @@ func _walk(dt: float) -> void:
 ## already out to fight the player (or had hit them), it is self-defence;
 ## otherwise the player started it, and any bouncer close by steps in.
 func _hit_by_player() -> void:
+	if tour_mode == "ask":
+		_hide_bubble()
+		tour_mode = "done"
 	if role == "bouncer":
 		return  # hitting the bouncer himself: thrown out as before
 	if not player_started and not attacked_player:

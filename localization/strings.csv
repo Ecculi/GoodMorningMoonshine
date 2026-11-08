@@ -208,3 +208,5 @@ HL_GRANNY_3,"""Ei olisi kannattanut"", sanoo 84-vuotias"
 HL_GRANNY_4,Mummo palasi kauppareissulta voittajana
 CAP_GRANNY_1,Laukussa oli kuulemma vain villasukat ja purkki hilloa.
 CAP_GRANNY_2,Mummo jatkoi matkaa bussipysäkille kuin mitään ei olisi tapahtunut.
+ACH_TOURIST_GUIDE,Paikallisopas
+ACH_TOURIST_GUIDE_DESC,Neuvo turistille oikea suunta nähtävyydelle.
