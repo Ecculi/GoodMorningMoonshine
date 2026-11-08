@@ -385,6 +385,23 @@ func view_angle() -> float:
 	return model.rotation.y + model.head_yaw
 
 
+## A surprise punch from behind works only on someone just walking (or
+## standing) about, not fighting or chasing, with their back to `from`:
+## the face points more than SURPRISE_ANGLE away from it.
+const SURPRISE_ANGLE := deg_to_rad(105.0)
+
+
+func is_back_turned(from: Vector3) -> bool:
+	if state != S.WALK or model.sitting or _rise_t > 0.0:
+		return false
+	var to := Vector2(from.x - position.x, from.z - position.z)
+	if to.length() < 0.01:
+		return false
+	var a := view_angle()
+	var fwd := Vector2(cos(a), -sin(a))
+	return absf(fwd.angle_to(to)) > SURPRISE_ANGLE
+
+
 ## Police: is `p` inside the vision cone (`reach` metres long)?
 func sees(p: Vector3, reach: float) -> bool:
 	if state == S.KO:
@@ -668,11 +685,16 @@ func _fight(dt: float) -> void:
 			model.raise_arm(true)
 
 
-func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
+## surprise: punched from behind (see is_back_turned). `floor_them` (a
+## fully charged surprise punch) knocks anyone but police and guards out
+## at once, and they fall forward on their face.
+func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0, surprise := false, floor_them := false) -> void:
 	if state == S.KO:
 		return
 	times_hit += 1
 	hp -= dmg
+	if surprise and floor_them and not is_lawman():
+		hp = mini(hp, 0)
 	_knock = 3.5 * knock_mult * signf(position.x - attacker.position.x)
 	_windup = -1.0
 	model.raise_arm(false)
@@ -693,7 +715,21 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0) -> void:
 				_shoeless = true
 				model.set_shoes(false)
 				main.npc_shoes_fly_off(position, attacker.dir)
-		_knock_out(push)
+		if surprise:
+			# Forward on the face: pushed along the way they were facing.
+			var a: float = model.rotation.y
+			var fwd := Vector3(cos(a), 0.0, -sin(a))
+			push = fwd * randf_range(1.6, 2.2) + Vector3(0, 0.6, 0)
+			_knock_out(push, fwd)
+			if attacker == main.player:
+				GameState.unlock("BACKSTAB")
+		else:
+			_knock_out(push)
+	elif surprise and is_lawman():
+		# Police and guards are only staggered, but for longer.
+		state = S.STUNNED
+		_timer = 1.6
+		_mark.visible = true
 	elif role == "bouncer":
 		provoke()
 	elif not is_lawman():
@@ -852,7 +888,9 @@ func _end_ragdoll() -> void:
 		model.position.y = 0.0
 
 
-func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
+## face_down: a direction to topple the rag doll over forwards (fall on
+## the face); zero = the usual random tumble.
+func _knock_out(push := Vector3(0, 1.5, 0), face_down := Vector3.ZERO) -> void:
 	model.turn_head(0.0)  # the rag doll copies the head straight
 	state = S.KO
 	_timer = 0.0
@@ -875,6 +913,9 @@ func _knock_out(push := Vector3(0, 1.5, 0)) -> void:
 	_ragdoll = Ragdoll.new()
 	add_child(_ragdoll)
 	_ragdoll.build(model, push)
+	if face_down != Vector3.ZERO:
+		# Tip the top of the body over in that direction.
+		_ragdoll.torso.angular_velocity = Vector3.UP.cross(face_down.normalized()) * 5.0
 	model.visible = false
 	# Let the fall play out even if the player stands still.
 	GameState.busy_time = maxf(GameState.busy_time, 1.2)

@@ -1033,11 +1033,11 @@ func respawn_npc(n) -> void:
 	_spawn_npc(true, role if role == "police" else "civ")
 
 
-func popup(text: String, pos: Vector3, color: Color) -> void:
+func popup(text: String, pos: Vector3, color: Color, size := 1.0) -> void:
 	var l := Label3D.new()
 	l.text = text
 	l.font_size = 64
-	l.pixel_size = 0.006
+	l.pixel_size = 0.006 * size
 	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	l.no_depth_test = true
 	l.modulate = color
