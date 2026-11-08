@@ -2,6 +2,9 @@ extends Node3D
 ## A car driving along the street (right-hand traffic). Stops for anyone on
 ## a zebra crossing and for the car in front; anyone walking on the road
 ## elsewhere may get run over. Lives in world time.
+## Broken glass punctures a tyre: the car doesn't brake but slows down
+## little by little, swerving about, until it stops or crashes into a
+## wall, another car or someone.
 
 const HALF_LEN := 2.1
 const MAX_SPEED := 7.5
@@ -30,6 +33,18 @@ var parked := false
 var driver = null
 ## Half the car's width (for bumping into its side).
 const HALF_WIDTH := 0.85
+## Flat tyre: slowing (m/s²) and how hard it swerves.
+const FLAT_SLOWDOWN := 0.9
+const FLAT_SWERVE := 2.4
+## The car body can't go past the house walls (far side) or the hedges
+## (near side).
+const WALL_Z := -7.0
+const HEDGE_Z := 5.0
+var flat := false
+## Crashed or rolled to a stop with a flat: stays put.
+var wrecked := false
+var _drift := 0.0
+var _drift_t := 0.0
 
 
 func setup(rng: RandomNumberGenerator, d: int, x: float) -> void:
@@ -66,6 +81,15 @@ func _process(_delta: float) -> void:
 	if dt <= 0.0:
 		return
 	_hit_cool = maxf(0.0, _hit_cool - dt)
+	if wrecked:
+		speed = 0.0
+		return
+	if flat:
+		_drive_flat(dt)
+		return
+	if speed > 1.0 and _on_glass():
+		_puncture()
+		return
 	if parked:
 		speed = 0.0
 		# The driver is gone (block change etc.): drive on.
@@ -105,13 +129,26 @@ func _process(_delta: float) -> void:
 		var ahead2: float = (lp.x - position.x) * dir
 		if ahead2 > 0.0 and ahead2 < 14.0 and absf(lp.z - position.z) < 1.6:
 			want = minf(want, maxf(0.0, (ahead2 - HALF_LEN - 1.0) * 1.6))
-	# Keep a gap to the car in front.
+	# Keep a gap to the car in front. A wreck in the way is driven round
+	# slowly on the other side of it.
+	var lane := LANE_RIGHT if dir > 0 else LANE_LEFT
+	var want_z := lane
 	for other in main.cars:
-		if other == self or other.dir != dir:
+		if other == self or absf(other.position.z - position.z) > 2.2:
 			continue
 		var gap: float = (other.position.x - position.x) * dir
+		if other.wrecked:
+			if gap > -HALF_LEN * 2.0 and gap < 14.0 and absf(other.position.z - lane) < 2.0:
+				want_z = other.position.z + (2.0 if other.position.z < -1.25 else -2.0)
+				want = minf(want, 3.0)
+				if gap > 0.0 and gap < HALF_LEN * 2.0 + 0.6 and absf(other.position.z - position.z) < HALF_WIDTH * 2.0:
+					want = 0.0
+			continue
+		if other.dir != dir or absf(other.position.z - position.z) > 1.6:
+			continue
 		if gap > 0.0 and gap < FOLLOW_GAP + 6.0:
 			want = minf(want, maxf(0.0, (gap - FOLLOW_GAP) * 2.0))
+	position.z = move_toward(position.z, want_z, 1.8 * dt)
 	speed = move_toward(speed, want, ACCEL * dt)
 	position.x += dir * speed * dt
 	if speed > 2.0 and _hit_cool <= 0.0 and not parked:
@@ -120,10 +157,80 @@ func _process(_delta: float) -> void:
 		main.remove_car(self)
 
 
+## Any shards under the car's footprint?
+func _on_glass() -> bool:
+	for g in main.glass:
+		if absf(g.position.x - position.x) < HALF_LEN and absf(g.position.z - position.z) < HALF_WIDTH + 0.2:
+			return true
+	return false
+
+
+## A shard in the tyre: bang, and from now on it swerves about.
+func _puncture() -> void:
+	flat = true
+	braking = false
+	_brake_in = -1.0
+	main.popup("PAM!", position + Vector3(0, 1.8, 0), Color(1, 0.85, 0.4))
+	main.shake(0.06)
+
+
+## Flat tyre: no braking for anything, just slowing down bit by bit while
+## the car pulls one way and then the other, more often towards its own
+## kerb. Ends against a wall, a hedge or another car, or rolls to a stop.
+func _drive_flat(dt: float) -> void:
+	speed = move_toward(speed, 0.0, FLAT_SLOWDOWN * dt)
+	_drift_t -= dt
+	if _drift_t <= 0.0:
+		_drift_t = main.rng.randf_range(0.3, 0.8)
+		var kerb := 1.0 if dir > 0 else -1.0
+		_drift = main.rng.randf_range(-FLAT_SWERVE, FLAT_SWERVE) + kerb * 0.6
+	var pull := speed / MAX_SPEED + 0.25
+	position.z += _drift * pull * dt
+	position.x += dir * speed * dt
+	# Nose turned the way it is swerving, and the flat corner sags.
+	rotation.y = lerp_angle(rotation.y, -_drift * pull * 0.12 * dir, 1.0 - exp(-6.0 * dt))
+	rotation.x = 0.04 * dir
+	if speed > 2.0 and _hit_cool <= 0.0:
+		_check_hits()
+	if position.z < WALL_Z or position.z > HEDGE_Z:
+		position.z = clampf(position.z, WALL_Z, HEDGE_Z)
+		_crash()
+		return
+	for other in main.cars:
+		if other != self and absf(other.position.x - position.x) < HALF_LEN * 2.0 \
+				and absf(other.position.z - position.z) < HALF_WIDTH * 2.0:
+			_crash()
+			other.hit_by_wreck()
+			return
+	if speed <= 0.0:
+		wrecked = true
+	if absf(position.x) > EDGE_X:
+		main.remove_car(self)
+
+
+func _crash() -> void:
+	if wrecked:
+		return
+	if speed > 1.5:
+		main.popup("KRÄSH!", position + Vector3(0, 2.0, 0), Color(1, 0.55, 0.3), 1.4)
+		main.shake(0.1 + speed * 0.02)
+	wrecked = true
+	speed = 0.0
+
+
+## A swerving car ran into this one: it stops dead too.
+func hit_by_wreck() -> void:
+	if not wrecked:
+		main.popup("KRÄSH!", position + Vector3(0, 2.0, 0), Color(1, 0.55, 0.3), 1.4)
+	wrecked = true
+	speed = 0.0
+	parked = false
+
+
 ## Someone walked into the side: sometimes the car stops and the driver
 ## gets out to fight.
 func side_bump(p: Node3D) -> void:
-	if parked or driver != null or main.rng.randf() > 0.33:
+	if flat or wrecked or parked or driver != null or main.rng.randf() > 0.33:
 		return
 	parked = true
 	speed = 0.0
@@ -160,6 +267,11 @@ func _check_hits() -> void:
 			continue
 		if absf(n.position.x - position.x) < HALF_LEN + 0.3 and absf(n.position.z - position.z) < 1.1:
 			n.take_hit(10, self)
+			_hit_cool = 1.0
+	# A cyclist wobbling about on the road.
+	for rd in main.riders:
+		if not rd.crashed and absf(rd.position.x - position.x) < HALF_LEN + 0.3 and absf(rd.position.z - position.z) < 1.1:
+			rd.hit_by_car(dir, speed)
 			_hit_cool = 1.0
 
 

@@ -9,6 +9,7 @@ const Npc = preload("res://scripts/npc.gd")
 const Animal = preload("res://scripts/animal.gd")
 const Vision = preload("res://scripts/vision.gd")
 const Rider = preload("res://scripts/rider.gd")
+const Glass = preload("res://scripts/glass.gd")
 const Item = preload("res://scripts/item.gd")
 const Hud = preload("res://scripts/hud.gd")
 const TouchControls = preload("res://scripts/touch_controls.gd")
@@ -86,6 +87,10 @@ var rng := RandomNumberGenerator.new()
 ## Items left on the ground in blocks visited today: key -> [[kind, pos, value], ...].
 ## Cleared every morning, so the content changes daily.
 var _block_items := {}
+## Broken glass in this block, and in the blocks visited today
+## (key -> [[position, colour], ...]).
+var glass: Array = []
+var _block_glass := {}
 var _lock_hits := 0
 ## Phone and shop state (GameState.modal says which is open).
 var phone_page := 0
@@ -330,6 +335,9 @@ func _clear_block_content() -> void:
 	for rd in riders:
 		rd.queue_free()
 	riders.clear()
+	for g in glass:
+		g.queue_free()
+	glass.clear()
 	var keep = player.hand_item
 	for it in items:
 		if is_instance_valid(it) and it != keep:
@@ -345,10 +353,16 @@ func _save_block_items() -> void:
 		if is_instance_valid(it) and it != player.hand_item and it.state == Item.St.GROUND:
 			saved.append([it.kind, it.global_position, it.value, it.drink])
 	_block_items[_key(segment)] = saved
+	var shards := []
+	for g in glass:
+		shards.append([g.position, g.get_meta("color")])
+	_block_glass[_key(segment)] = shards
 
 
 func _populate_block() -> void:
 	var key := _key(segment)
+	for entry in _block_glass.get(key, []):
+		spawn_glass(entry[0], entry[1])
 	if _block_items.has(key):
 		for entry in _block_items[key]:
 			spawn_item(entry[0], entry[1], entry[2], entry[3])
@@ -825,6 +839,7 @@ func _new_game() -> void:
 	_lock_hits = 0
 	_friend_refused = false
 	_block_items.clear()
+	_block_glass.clear()
 	player.reset(Vector3.ZERO)
 	_enter_block(GameState.home_seg, _home_door_pos(), 1)
 	hud.show_pocket_check()
@@ -836,6 +851,7 @@ func _new_game() -> void:
 func _new_day() -> void:
 	_pending_followers.clear()
 	_block_items.clear()
+	_block_glass.clear()
 	_searched_bins.clear()
 	_friend_refused = false
 	arrest = 0.0
@@ -872,7 +888,7 @@ func _on_day_ended(cause: String) -> void:
 ## and CAP_<CAUSE>_n in the translations).
 const HEADLINES := {"SOBER": [8, 3], "FIGHT": [9, 3], "CAR": [9, 6], "DOG": [6, 3], "BOUNCER": [5, 2],
 	"FALL": [6, 2], "COLD": [6, 2], "HUNGER": [4, 2], "HANGOVER": [6, 2], "EXHAUST": [4, 2],
-	"BIKE": [3, 2]}
+	"BIKE": [3, 2], "GLASS": [3, 2]}
 
 
 ## Captions that fit any death (CAP_ANY_n), used now and then.
@@ -1006,6 +1022,25 @@ func spawn_item(kind: int, pos: Vector3, value := 1, drink := 0):
 	it.global_position = Vector3(pos.x, Item.ground_y(pos) if pos.y <= 0.01 else pos.y, pos.z)
 	items.append(it)
 	return it
+
+
+## A bottle smashed here: shards on the ground (stay for the day).
+func spawn_glass(pos: Vector3, col: Color) -> void:
+	var g = Glass.new()
+	g.main = self
+	g.set_meta("color", col)
+	g.setup(rng, col)
+	add_child(g)
+	g.position = Vector3(pos.x, Item.ground_y(pos), clampf(pos.z, -7.5, 5.6))
+	glass.append(g)
+
+
+## Shards under `pos`, or null. `extra` widens the check (a car's tyres).
+func glass_at(pos: Vector3, extra := 0.0):
+	for g in glass:
+		if g.covers(pos, extra):
+			return g
+	return null
 
 
 func remove_item(it) -> void:
