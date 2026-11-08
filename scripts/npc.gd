@@ -717,7 +717,7 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0, surprise := false, 
 				main.npc_shoes_fly_off(position, attacker.dir)
 		if surprise:
 			# Forward on the face: pushed along the way they were facing.
-			var a := model.rotation.y
+			var a: float = model.rotation.y
 			var fwd := Vector3(cos(a), 0.0, -sin(a))
 			push = fwd * randf_range(1.6, 2.2) + Vector3(0, 0.6, 0)
 			_knock_out(push, fwd)
