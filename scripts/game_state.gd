@@ -914,7 +914,7 @@ const ACHIEVEMENTS := [
 	"DOCTOR", "SOBER_30", "ELEPHANTS", "MORNING_BEER", "HOME_DRUNK", "PROMILLE_333",
 	"CLEAN_DAY", "NO_MAP", "BEGGAR_PAY",
 	"GRAVITY5", "BONNET_SURVIVE", "RUN_OVER_SURVIVE", "LAUNDRY", "HEADLINES10", "BACKSTAB",
-	"DOG_TRADE", "THIEF_CAUGHT", "COLLEAGUE", "VIRAL",
+	"DOG_TRADE", "THIEF_CAUGHT", "COLLEAGUE", "VIRAL", "TOURIST_GUIDE",
 ]
 const ACH_FILE := "user://achievements.cfg"
 ## Seconds of game time in the mending zone / under the hangover limit.

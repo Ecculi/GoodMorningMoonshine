@@ -38,6 +38,12 @@ const CITIES := [
 		# Storm days: chance per morning, from this day on.
 		"storm_chance": 0.15,
 		"storm_from_day": 2,
+		# Sights tourists ask the way to (kind -> block).
+		"landmarks": [
+			{"kind": "market", "seg": Vector3i(0, 0, 3)},   # Kauppatori: Rantakatu by Kauppurienkatu
+			{"kind": "church", "seg": Vector3i(0, 3, 4)},   # Tuomiokirkko: Kirkkokatu
+			{"kind": "station", "seg": Vector3i(0, 8, 5)},  # Rautatieasema: Rautatienkatu by Asemakatu
+		],
 	},
 	{
 		"name": "Raahe",
@@ -57,6 +63,11 @@ const CITIES := [
 		# Raahe by the open sea: it blows nearly every day, from the first.
 		"storm_chance": 0.5,
 		"storm_from_day": 1,
+		"landmarks": [
+			{"kind": "church", "seg": Vector3i(1, 2, 2)},   # Pyhän Ristin kirkko: Kirkkokatu
+			{"kind": "market", "seg": Vector3i(0, 3, 1)},   # Pekkatori (roughly)
+			{"kind": "harbor", "seg": Vector3i(0, 0, 2)},   # the shore, Kirkkolahti
+		],
 	},
 ]
 
@@ -93,6 +104,29 @@ static func police_door_x() -> float:
 
 static func view_azimuth(family: int) -> float:
 	return data()["view_azimuth"][family]
+
+
+static func landmarks() -> Array:
+	return data()["landmarks"]
+
+
+## Grid position (u = B index along A streets, v = A index) of the spot
+## at `x` metres along block `seg` (blocks run from x = -16 to 16).
+static func grid_pos(seg: Vector3i, x: float) -> Vector2:
+	var f := clampf((x + 16.0) / 32.0, 0.0, 1.0)
+	if seg.x == 0:
+		return Vector2(seg.z + f, seg.y)
+	return Vector2(seg.y, seg.z + f)
+
+
+## A step on screen (x: + right, y: world z, + towards the camera) in
+## block `seg` as a grid direction: on A streets +x = higher B index and
+## up = towards the shore (lower A index); on B streets +x = higher A
+## index and up = higher B index.
+static func grid_dir(seg: Vector3i, screen: Vector2) -> Vector2:
+	if seg.x == 0:
+		return Vector2(screen.x, screen.y)
+	return Vector2(-screen.y, screen.x)
 
 
 static func storm_chance() -> float:
