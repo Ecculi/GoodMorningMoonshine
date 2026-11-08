@@ -35,6 +35,9 @@ const CITIES := [
 		"police": Vector3i(0, 4, 4),           # Isokatu, Pakkahuoneenkatu–Hallituskatu
 		"police_door_x": 8.0,
 		"pedestrian": "Kauppurienkatu",        # Rotuaari: no cars
+		# Storm days: chance per morning, from this day on.
+		"storm_chance": 0.15,
+		"storm_from_day": 2,
 	},
 	{
 		"name": "Raahe",
@@ -51,6 +54,9 @@ const CITIES := [
 		"police": Vector3i(0, 4, 2),           # Brahenkatu, Kirkkokatu–Reiponkatu
 		"police_door_x": 8.0,
 		"pedestrian": "",
+		# Raahe by the open sea: it blows nearly every day, from the first.
+		"storm_chance": 0.9,
+		"storm_from_day": 1,
 	},
 ]
 
@@ -87,6 +93,14 @@ static func police_door_x() -> float:
 
 static func view_azimuth(family: int) -> float:
 	return data()["view_azimuth"][family]
+
+
+static func storm_chance() -> float:
+	return data()["storm_chance"]
+
+
+static func storm_from_day() -> int:
+	return data()["storm_from_day"]
 
 
 static func is_pedestrian(seg: Vector3i) -> bool:
