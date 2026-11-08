@@ -144,7 +144,12 @@ func _animate_right_arm(dt: float, s: float, ph: float, k: float) -> void:
 	var tf := 0.15  # a relaxed little bend
 	var tpull := 0.0
 	var rate := 30.0
-	if _punch_t > 0.0:
+	if pointing and _punch_t <= 0.0 and _windup < 0.0:
+		# Pointing: arm straight out in front, held there.
+		tz = PI * 0.5
+		tf = 0.0
+		rate = 10.0
+	elif _punch_t > 0.0:
 		# Straight out in front, always a little upwards.
 		_punch_t -= dt
 		tz = PI * 0.5 + PUNCH_UP
