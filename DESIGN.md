@@ -206,7 +206,7 @@ Krapula ei kovene päivien mukaan.
   | Toiminto | Kontrolli |
   |---|---|
   | **Lyö** (nopea lyönti) | lyhyt painallus: käsi nousee suorana eteen |
-  | **Ladattu lyönti** (käsi tyhjä) | pitkä painallus: käsi koukistuu kyynärpäästä ja vetäytyy taaksepäin (nyrkki olkapään tasolle); lataus täyttyy sekunnissa, ja päällä näkyy latausrengas. Lyönti lähtee suorana eteen, kun nappi päästetään. Mitä pidempi lataus, sitä kauemmas vastustaja lentää ja sitä enemmän kuntoa kuluu (väliaikaista healthia 4–12). Täysi lataus tekee yhden vahingon enemmän (selvin päin 2, humalassa 3). |
+  | **Ladattu lyönti** (käsi tyhjä) | pitkä painallus: käsi koukistuu kyynärpäästä, ja kyynärpää vetäytyy taakse ja sivulle (nyrkki olkapään tasolle), olkapää vetäytyy taaksepäin ja vasen käsi nousee eteen suojaksi. Koukku näkyy siis myös silloin, kun hahmo kulkee kohti kameraa tai siitä poispäin. Asento syvenee latauksen mukana; lataus täyttyy sekunnissa, ja päällä näkyy latausrengas. Kun nappi päästetään, käsi iskee suoraksi eteen (noin 0,07 s) olkapää edellä, pysyy hetken ojennettuna ja palaa pehmeästi. Kaikki käden asennot (myös portsarin nostettu nyrkki) vaihtuvat pehmeästi eivätkä hyppää. Mitä pidempi lataus, sitä kauemmas vastustaja lentää ja sitä enemmän kuntoa kuluu (väliaikaista healthia 4–12). Täysi lataus tekee yhden vahingon enemmän (selvin päin 2, humalassa 3). |
   | **Syö / juo** käden tavara | lyhyt painallus, kun lähellä ei ole ketään |
   | **Mene sisään** | lyhyt painallus ovella |
   | **Heitä** käden tavara | pitkä painallus; mitä pidempään pitää pohjassa, sitä pidemmälle lentää. Latauksen aikana hahmo ei liiku, vaan nuolilla valitaan heiton suunta (myös ylös ja alas). Heitto lähtee, kun nappi päästetään. |
