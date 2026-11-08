@@ -10,7 +10,8 @@ extends CanvasLayer
 ##   F8 = phone battery +25 %, F9 = no hunger, cold or tiredness,
 ##   F10 = skip to the next day (as if slept at home),
 ##   F11 = new game in the next city (Oulu -> Raahe -> ...),
-##   F4 = roadworks: close the next block ahead (and the street is rebuilt).
+##   F4 = roadworks: close the next block ahead (and the street is rebuilt),
+##   F3 = storm on / off (the street is rebuilt).
 ## While they are on, the police vision cones are drawn on the street.
 
 const DEBUG_PROMILLE_STEP := 0.1
@@ -45,6 +46,7 @@ func _ready() -> void:
 	_button("F10 päivä+", _next_day)
 	_button("F11 kaupunki", _next_city)
 	_button("F4 tietyö", _roadworks)
+	_button("F3 myrsky", _storm)
 
 
 func _build_help() -> void:
@@ -215,6 +217,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_next_city()
 		KEY_F4:
 			_roadworks()
+		KEY_F3:
+			_storm()
 
 
 func _fill_health() -> void:
@@ -259,6 +263,17 @@ func _roadworks() -> void:
 		return
 	CityMap.closed.append(target)
 	main._enter_block(seg, main.player.position, f)
+
+
+## Storm on / off; a storm brings rain (or at least clouds).
+func _storm() -> void:
+	var main = get_parent()
+	if main == null or not main.has_method("_enter_block"):
+		return
+	GameState.storm = not GameState.storm
+	if GameState.storm and (GameState.weather == "sunny" or GameState.weather == "snow"):
+		GameState.weather = "rain"
+	main._enter_block(main.segment, main.player.position, main.player.facing)
 
 
 func _next_day() -> void:

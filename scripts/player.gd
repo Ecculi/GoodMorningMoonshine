@@ -235,6 +235,21 @@ func _process(delta: float) -> void:
 		_slide_v = v
 	var sliding := _slide_v.length() > 0.3 and not moving
 
+	# Storm: the wind shoves the character along (harder when drunk, and
+	# a bit even when standing still in a strong gust).
+	var wind: Vector3 = main.wind_at(position + Vector3(0, 1.0, 0))
+	if wind != Vector3.ZERO and not is_helpless():
+		var shove := WIND_PUSH * (1.0 + drunk * 0.8)
+		var still := 1.0 if moving else clampf((absf(wind.x) - 8.0) / 6.0, 0.0, 1.0)
+		if still > 0.0:
+			v += Vector3(wind.x, 0.0, wind.z * 0.5) * shove * still
+			if not moving:
+				GameState.busy_time = maxf(GameState.busy_time, 0.05)
+		# Leaning into the wind.
+		_wind_lean = lerpf(_wind_lean, clampf(wind.x * 0.012 * float(facing), -0.15, 0.15), 1.0 - exp(-4.0 * delta))
+	else:
+		_wind_lean = lerpf(_wind_lean, 0.0, 1.0 - exp(-4.0 * delta))
+
 	var before := position
 	position += (v + _knock) * delta
 	_knock = _knock.move_toward(Vector3.ZERO, 12.0 * delta)
@@ -771,7 +786,7 @@ func _heavy_breathing() -> void:
 func _hunger_signs() -> void:
 	var hungry := GameState.hunger >= GameState.HUNGER_EMPTY_STOMACH
 	# Hunger slumps forward; the silly walk leans back and bounces.
-	model.rotation.z = (-0.12 if hungry else 0.0) + model.silly_lean
+	model.rotation.z = (-0.12 if hungry else 0.0) + model.silly_lean + _wind_lean
 	model.position.y = model.silly_bounce + (0.15 if _hic_jolt > 0.0 else 0.0)
 	# Cold and hangover shake differently:
 	# - cold: fast fine shivering, arms hugging the body, bluish face and
@@ -1090,6 +1105,11 @@ func _throw(t: float) -> void:
 	model.punch()
 	# Keep time running a little past the landing so it can bounce and roll.
 	GameState.busy_time = maxf(GameState.busy_time, it.flight_time + 0.7)
+
+
+## Storm: how much of the wind speed (m/s) pushes the character.
+const WIND_PUSH := 0.11
+var _wind_lean := 0.0
 
 
 ## Barefoot on broken glass: ouch (now and then while standing on it).

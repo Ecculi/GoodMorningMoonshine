@@ -45,6 +45,11 @@ var _gust_t := 0.0
 var _gust_len := 0.0
 var _gust_cd := 4.0
 var _wet := false
+## Storm: wind several times stronger, gusts often, litter flying about.
+var _storm := false
+const STORM_BASE_MIN := 3.0
+const STORM_BASE_MAX := 6.0
+const LITTER := 14
 ## No leaves at all (snow).
 var _off := false
 
@@ -56,28 +61,46 @@ func setup(segment: Vector3i, weather: String) -> void:
 		_off = true  # covered by snow
 		return
 	_wet = weather == "rain"
+	_storm = GameState.storm
 	_base = _rng.randf_range(-1.5, 1.5)
+	if _storm:
+		_base = (1.0 if _rng.randf() < 0.5 else -1.0) * _rng.randf_range(STORM_BASE_MIN, STORM_BASE_MAX)
+		_gust_cd = 1.0
 	_base_target = _base
-	for i in GROUND_LEAVES:
+	for i in GROUND_LEAVES * (2 if _storm else 1):
 		var p := Vector3(_rng.randf_range(X_MIN, X_MAX), 0.0, _rng.randf_range(Z_MIN, Z_MAX))
 		# Leaves gather by the walls and the curbs.
 		if _rng.randf() < 0.5:
 			p.z = [-7.7, -5.1, 2.6, 5.5][_rng.randi() % 4] + _rng.randf_range(-0.15, 0.15)
 		p.y = _ground_y(p)
 		_add_leaf(p, false)
+	if _storm:
+		# Litter: newspaper pages, wrappers and plastic bags.
+		for i in LITTER:
+			var p := Vector3(_rng.randf_range(X_MIN, X_MAX), 0.0, _rng.randf_range(Z_MIN, Z_MAX))
+			p.y = _ground_y(p)
+			_add_leaf(p, _rng.randf() < 0.4, Vector3.ZERO, true)
 
 
-func _add_leaf(p: Vector3, airborne: bool, vel := Vector3.ZERO) -> Dictionary:
+const LITTER_COLORS := [Color(0.92, 0.92, 0.88), Color(0.85, 0.85, 0.8), Color(0.95, 0.95, 0.97),
+	Color(0.85, 0.2, 0.15), Color(0.2, 0.4, 0.8), Color(0.95, 0.85, 0.2)]
+
+
+func _add_leaf(p: Vector3, airborne: bool, vel := Vector3.ZERO, litter := false) -> Dictionary:
 	var mi := MeshInstance3D.new()
 	var qm := QuadMesh.new()
 	var s := _rng.randf_range(0.08, 0.14)
-	qm.size = Vector2(s, s * 0.75)
+	if litter:
+		s = _rng.randf_range(0.22, 0.4)
+	qm.size = Vector2(s, s * (0.75 if not litter else _rng.randf_range(0.6, 1.3)))
 	mi.mesh = qm
 	var m := StandardMaterial3D.new()
 	var c: Color = COLORS[_rng.randi() % COLORS.size()]
+	if litter:
+		c = LITTER_COLORS[_rng.randi() % LITTER_COLORS.size()]
 	if _wet:
 		c = c.darkened(0.3)
-	m.albedo_color = c.lerp(Color(0.5, 0.35, 0.15), _rng.randf_range(0.0, 0.3))
+	m.albedo_color = c if litter else c.lerp(Color(0.5, 0.35, 0.15), _rng.randf_range(0.0, 0.3))
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.roughness = 0.9
 	mi.material_override = m
@@ -121,6 +144,19 @@ func _ground_y(p: Vector3) -> float:
 	if near and not CityMap.can_turn(seg, p.x > 0.0, false):
 		return SIDEWALK_Y
 	return 0.0
+
+
+## Wind at a point (for the player and thrown things); zero when the
+## leaves are off (snow).
+func wind_at(p: Vector3) -> Vector3:
+	if _off:
+		return Vector3.ZERO
+	return _wind(p)
+
+
+## Strength of the wind right now (base + gust), signed along x.
+func strength() -> float:
+	return 0.0 if _off else _base + _gust
 
 
 ## Wind at a point: base + gust, with a little variation along the street
@@ -183,6 +219,9 @@ func _update_wind(dt: float) -> void:
 		if dir == 0.0:
 			dir = 1.0
 		_base_target = dir * _rng.randf_range(0.3, 2.0)
+		if _storm:
+			# A storm keeps blowing the same way.
+			_base_target = signf(_base) * _rng.randf_range(STORM_BASE_MIN, STORM_BASE_MAX)
 	_base = move_toward(_base, _base_target, dt * 0.25)
 	if _gust_len > 0.0:
 		# Rise quickly (first quarter), fade out slowly.
@@ -200,7 +239,10 @@ func _update_wind(dt: float) -> void:
 			_gust_len = _rng.randf_range(2.0, 4.0)
 			_gust_t = 0.0
 			_gust_peak = _rng.randf_range(3.0, 7.5)
-			if not _wet and _rng.randf() < 0.45:
+			if _storm:
+				_gust_cd = _rng.randf_range(1.5, 4.5)
+				_gust_peak = _rng.randf_range(7.0, 13.0)
+			if (not _wet or _storm) and _rng.randf() < (0.8 if _storm else 0.45):
 				_blow_heap()
 
 
@@ -224,7 +266,7 @@ func _blow_heap() -> void:
 		lf["swirl"] = c
 		lf["swirl_t"] = _rng.randf_range(1.5, 2.5) * swirl_dir
 	# Don't let leaves pile up forever: drop the oldest ground ones.
-	while _leaves.size() > GROUND_LEAVES + 24:
+	while _leaves.size() > GROUND_LEAVES * (2 if _storm else 1) + 24 + (LITTER if _storm else 0):
 		var old: Dictionary = _leaves.pop_front()
 		old["mi"].queue_free()
 

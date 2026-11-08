@@ -87,6 +87,18 @@ var rng := RandomNumberGenerator.new()
 ## Items left on the ground in blocks visited today: key -> [[kind, pos, value], ...].
 ## Cleared every morning, so the content changes daily.
 var _block_items := {}
+## The block's wind (leaves.gd); on a storm day it pushes people and
+## thrown things too.
+var wind_field = null
+
+
+## Storm wind at `pos` (zero on an ordinary day).
+func wind_at(pos: Vector3) -> Vector3:
+	if not GameState.storm or wind_field == null or not is_instance_valid(wind_field):
+		return Vector3.ZERO
+	return wind_field.wind_at(pos)
+
+
 ## Broken glass in this block, and in the blocks visited today
 ## (key -> [[position, colour], ...]).
 var glass: Array = []
@@ -312,6 +324,7 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	level.add_child(leaves)
 	leaves.main = self
 	leaves.setup(seg, GameState.weather)
+	wind_field = leaves
 	player.position = pos
 	player.facing = facing
 	camera.position.x = clampf(pos.x, -10.0, 10.0)
@@ -1925,6 +1938,10 @@ func _update_precipitation(weather: String) -> void:
 		p.emitting = pair[1]
 		p.speed_scale = 1.0 if GameState.world_dt > 0.0 else 0.0
 		p.position.x = camera.position.x
+	# Storm: the rain lashes sideways with the wind.
+	var wx := wind_at(Vector3(camera.position.x, 2.0, -1.0)).x
+	rain.gravity = Vector3(wx * 3.0, -18.0, 0.0)
+	rain.particle_flag_align_y = GameState.storm
 	snow_cover.visible = snowing
 	snow_cover.position.x = camera.position.x
 	env.fog_enabled = raining or snowing
