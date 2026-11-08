@@ -123,6 +123,13 @@ var busy_time := 0.0
 var active := false
 ## Delta time for everything that lives in the game world (0 when frozen).
 var world_dt := 0.0
+## Seconds the world stays frozen after a landed punch ("hit stop").
+var hit_stop_t := 0.0
+
+
+## A tiny freeze when a punch lands, so it feels like it connects.
+func hit_stop(t: float) -> void:
+	hit_stop_t = maxf(hit_stop_t, t)
 ## True during death and day-change screens.
 var over := false
 
@@ -217,6 +224,10 @@ func _process(delta: float) -> void:
 		world_dt = delta
 	else:
 		world_dt = 0.0
+	if hit_stop_t > 0.0:
+		hit_stop_t -= delta
+		world_dt = 0.0
+		return
 	if not active:
 		return
 
