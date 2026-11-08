@@ -129,6 +129,8 @@ var _fore_z := 0.15
 ## 0..1 how far the right shoulder is drawn back (charging) or thrown
 ## forward (negative, the punch).
 var _pull := 0.0
+## A punch goes a little upwards from straight ahead (radians).
+const PUNCH_UP := 0.3
 ## Seconds the arm takes to snap straight when a punch is released.
 const PUNCH_EXTEND := 0.07
 
@@ -142,30 +144,25 @@ func _animate_right_arm(dt: float, s: float, ph: float, k: float) -> void:
 	var tf := 0.15  # a relaxed little bend
 	var tpull := 0.0
 	var rate := 30.0
-	if pointing and _punch_t <= 0.0 and _windup < 0.0:
-		# Pointing: arm straight out in front, held there.
-		tz = PI * 0.5
-		tf = 0.0
-		rate = 10.0
-	elif _punch_t > 0.0:
-		# Straight forward at shoulder height.
+	if _punch_t > 0.0:
+		# Straight out in front, always a little upwards.
 		_punch_t -= dt
-		tz = PI * 0.5
+		tz = PI * 0.5 + PUNCH_UP
 		tf = 0.0
 		tpull = -0.6
 		# Snap out within PUNCH_EXTEND, then hold.
 		rate = 3.0 / PUNCH_EXTEND
 	elif _windup >= 0.0:
-		# Charging: the elbow bends and goes back and out to the side, the
-		# fist comes up by the shoulder, and the shoulder is drawn back;
-		# further the longer it charges. Out to the side so that it also
-		# shows when walking towards or away from the camera.
+		# Charging: the forearm rises little by little from the elbow, from
+		# hanging down to a right angle (90°) at full charge, with the upper
+		# arm drawn a little back and out to the side (so it also shows when
+		# walking towards or away from the camera) and the shoulder back.
 		var w := _windup
-		tz = lerpf(-0.45, -1.05, w)
-		tf = lerpf(2.2, 2.85, w)
-		tx = lerpf(-0.35, -0.75, w)
-		tpull = lerpf(0.5, 1.0, w)
-		rate = 16.0
+		tz = lerpf(0.0, -0.3, w)
+		tf = lerpf(0.15, PI * 0.5, w)
+		tx = lerpf(-0.1, -0.35, w)
+		tpull = lerpf(0.2, 0.8, w)
+		rate = 12.0
 	elif _raised:
 		tz = 2.5
 		rate = 14.0
