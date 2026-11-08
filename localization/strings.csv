@@ -178,11 +178,6 @@ HL_BIKE_3,"""Kling kling"" olivat viimeiset kuullut äänet"
 CAP_BIKE_1,"Pyöräilijä: ""Jalkakäytävä on minun kaistani."""
 CAP_BIKE_2,Potkulauta ajoi pois kuin mitään ei olisi tapahtunut.
 CITY_SUB,Selviä tässä kaupungissa niin pitkään kuin pystyt
-WARM_1,Kylmä
-WARM_2,Haalea
-WARM_3,Lämmin
-WARM_4,Kuuma
-WARM_5,Polttaa!
 INTRO_1,Tavaroitasi hukkui yöllä – etsi ne (ylhäällä lista)
 INTRO_2,"Lämpömittari kertoo, kuinka lähellä tavara on"
 INTRO_3,"Juo sopivasti: selvänä kuolet, liikaa juotuasi sammut"
@@ -203,3 +198,7 @@ HOME_LABEL_FRIEND,Kaverin kämppä
 HOME_FOUND_FRIEND,Löysit kaverin kämpälle!
 GO_HOME_FRIEND,Kaikki löytyi – nyt kaverin kämpälle!
 INTRO_4_FRIEND,Lopuksi kaverin kämpälle nukkumaan
+ACH_THIEF_CAUGHT,Varas kiikissä
+ACH_THIEF_CAUGHT_DESC,Saa taskuvarkaan saalis takaisin ottamalla hänet kiinni tai tyrmäämällä.
+ACH_COLLEAGUE,Ammattikunta
+ACH_COLLEAGUE_DESC,Yritä taskuvarkautta samalle ihmiselle kuin taskuvaras.

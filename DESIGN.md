@@ -124,13 +124,14 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 | 2 | lokit ja punkkariporukat |
 | 3 | koirat (voivat auttaa tai olla vihollisia) |
 | 4 | pyöräilijät ja sähköpotkulaudat (kaahaavat jalkakäytävillä, myös kävelykadulla; soittavat kelloa tai tööttäävät, kun pelaaja on edessä, väistävät vähän, mutta kaatavat, jos ei väistä: 6 healthia) ja tölkinkerääjä (sininen kassi; ehtii roskiksiin ennen pelaajaa ja poimii kadulla lojuvat pullot ja tölkit) |
+| 5 | taskuvaras (tumma huppari, huppu päässä; noin joka kolmannessa korttelissa). Kävelee jonkun ohikulkijan perässä, mutta kun pelaaja on alle 7 metrin päässä, hän lipuu tämän luo, törmää ohimennen ja vie joko puolet rahoista tai tavaran taskusta (lompakko, puhelin, avaimet, henkkarit, silmälasit tai aurinkolasit). Viety tavara ilmestyy heti "Etsi:"-listaan ja ajatuskuplaan. Sitten varas juoksee (4,6 m/s) kauemmas pelaajasta korttelin päähän. Kiinni ottamalla (juokseva pelaaja on nopeampi) tai tyrmäämällä saalis palautuu: rahat suoraan ja tavara maahan. Jos varas pääsee korttelin päähän, rahat ovat menneet ja tavara heitetään johonkin seuraavan korttelin kadulle, josta sen voi etsiä. Varkaan lyöminen on itsepuolustusta. **Kollegakohtaus:** jos pelaaja yrittää taskuvarkautta samalle ohikulkijalle, jota varas seuraa (tai varkaan vieressä), kummankin päälle tulee "!?", varas toteaa "Kollega!" ja jättää pelaajan rauhaan. Saavutukset: Varas kiikissä ja Ammattikunta. |
 | myöhemmin | lisää ideoita alla (Tulevat haasteet) |
 
 #### Tulevat haasteet (ideoita, ei vielä pelissä)
 
 Uudet hahmot päivä kerrallaan:
 
-- **Päivä 5:** **taskuvaras** (törmää ohimennen ja vie tavaran, joka muuttuu kesken päivän hukatuksi; saa takaisin kiinni ottamalla) ja **mummo** (hidas, mutta käsilaukku osuu kovaa).
+- **Päivä 5:** **mummo** (hidas, mutta käsilaukku osuu kovaa).
 - **Päivä 6:** **some-vaikuttaja** (kuvaa pelaajaa; video leviää ja poliisit tunnistavat loppupäivän helpommin) ja **pappi** (auttaja: antaa pullaa tai kahvia kylmissään tai nälkäiselle).
 - **Päivä 7:** **lokkiparvet** (useampi lokki hyökkää ruoan perään yhtä aikaa) ja **poliisiparit**.
 - **Päivä 8 ja myöhemmin:** **turisti** (kysyy tietä; oikea neuvo tuo rahaa), **ääripuolueen edustaja** (tunkee lentolehtistä, ei pääse eroon) ja **poliitikko** (vaalikoju: ilmaista kahvia ja karkkia).
@@ -563,7 +564,7 @@ Lisätty prototyyppiin:
   - Kerjäläisiä on silloin kaksi kertaa useammin.
 - **Koti:** kodin korttelissa oven yllä kelluu sykkivä vihreä talo ja teksti "Koti". Kun pelaaja tulee lähelle ensimmäisen kerran päivässä, ruudun keskelle ponnahtaa "Löysit kotiin!" (ei silloin, kun päivä alkaa kotiovelta, vaan vasta kun on ensin käynyt kauempana). Kadun puolelta nuoli osoittaa ovelle, ja aivan oven vieressä näkyy napin kuva → sänky. **Jos koti on kaverin kämppä, peli ei kutsu sitä kodiksi:** oven yllä lukee "Kaverin kämppä", saapuessa "Löysit kaverin kämpälle!", ja aloitusohjeessa ja "kaikki löytyi" -tekstissä puhutaan kaverin kämpästä.
 - **Selitys pelin alussa:** kaupungin nimen alla neljä lyhyttä riviä kuvakkeineen: tavarat hukkuivat yöllä – etsi ne; lämpömittari kertoo, kuinka lähellä tavara on; juo sopivasti (selvänä kuolet, liikaa juotuasi sammut); lopuksi kotiin nukkumaan. Häipyvät, kun hahmo liikkuu.
-- **Lämpömittari:** "Etsi:"-listan jokaisen puuttuvan tavaran alla on mittari (sininen = kaukana, punainen = lähellä), ja listan lopussa sana lähimmän puuttuvan mukaan: Kylmä (yli 2 korttelia), Haalea, Lämmin, Kuuma (samassa korttelissa) ja Polttaa! (aivan vieressä). Samassa korttelissa lämpö kasvaa metrien mukaan.
+- **Lämpömittari:** "Etsi:"-listan jokaisen puuttuvan tavaran alla on oma mittari (sininen = kaukana, punainen = lähellä), ja kuvakkeen takana hehku sykkii sitä nopeammin, mitä lähempänä tavara on. Mittari on täynnä ja punainen aivan vieressä ja lähes tyhjä yli kahden korttelin päässä. Samassa korttelissa lämpö kasvaa metrien mukaan. Listassa ei ole erillistä sanaa (Kylmä … Polttaa!), koska useamman hukatun tavaran kanssa ei olisi selvää, mitä tavaraa se tarkoittaa.
 - **Hukattu tavara maassa:** lähellä (noin 4 m, ilman silmälaseja 1,6 m) tavara saa värinsä, pyörii ja hyppii, sen ympärillä sykkii hehkuva keltainen rengas, ja yllä pomppii nuoli.
 - **Reunanuoli:** jos hukattu tavara on samassa korttelissa mutta ruudun ulkopuolella, ruudun reunassa näkyy oranssi nuoli ja tavaran kuva siihen suuntaan.
 - **Löytö:** kun hukattu tavara löytyy, sen kuva ponnahtaa isona keskelle ruutua valkoiselle pohjalle säteiden ja vihreän rastin kanssa ja liukuu sitten ylös "Etsi:"-listaan.
