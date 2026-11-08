@@ -994,15 +994,32 @@ func _punch(target, charge: float, charged := false) -> void:
 	if dmg > 0 and charge >= 1.0:
 		dmg += 1
 	var full := charged and charge >= 1.0
+	# Counter: the opponent just swung and missed (see npc.is_open).
+	var counter: bool = target.has_method("is_open") and target.is_open()
+	# Combo: the third hit in a row, each within COMBO_WINDOW of the last,
+	# lands extra hard and knocks them flying.
+	_combo = _combo + 1 if _clock - _combo_last < COMBO_WINDOW else 1
+	_combo_last = _clock
+	var knock := 1.0 + charge
+	if _combo >= 3:
+		_combo = 0
+		dmg = maxi(dmg, 1) + 1
+		knock += 1.5
+		main.popup("×3", target.position + Vector3(0, 2.4, 0), Color(1, 0.75, 0.25), 1.6)
 	if surprise:
 		# Double damage (even a hangover punch lands), and a fully charged
 		# one knocks out at once.
 		dmg = maxi(dmg, 1) * 2
 		main.popup("!", target.position + Vector3(0, 2.4, 0), Color(1, 0.35, 0.2), 2.2)
 		main.popup("*", target.position + Vector3(0, 1.4, 0), Color(1, 0.95, 0.5), 1.8)
-		target.take_hit(dmg, self, 1.0 + charge, true, full)
-	else:
-		target.take_hit(dmg, self, 1.0 + charge)
+	elif counter:
+		dmg = maxi(dmg, 1) * 2
+		main.popup("!", target.position + Vector3(0, 2.4, 0), Color(1, 0.85, 0.3), 1.8)
+	# Weight: a tiny freeze and a camera jolt, bigger for harder blows.
+	if dmg > 0:
+		GameState.hit_stop(0.04 + 0.025 * mini(dmg, 4))
+		main.shake(0.04 + 0.03 * mini(dmg, 4))
+	target.take_hit(dmg, self, knock, surprise, full)
 	if charged and charge >= 1.0 and target.is_down() and target.times_hit == 1:
 		GameState.unlock("ONE_PUNCH")
 
@@ -1012,6 +1029,11 @@ func _punch(target, charge: float, charged := false) -> void:
 ## too. It comes back slowly once you have neither punched nor run for
 ## REST_DELAY seconds.
 const SPAM_WINDOW := 0.7
+## Hits in a row count as a combo if each comes within this many seconds
+## of the last (slower than spamming, so a steady rhythm pays off).
+const COMBO_WINDOW := 1.2
+var _combo := 0
+var _combo_last := -10.0
 const SPAM_COST := 7.0
 ## Temporary health used per second of running: a full heart lasts
 ## about 33 s (six to seven blocks) of running.
@@ -1121,6 +1143,7 @@ func take_hit(dmg: float, from_x: float, source := "fight") -> void:
 		return
 	_knock = Vector3(signf(position.x - from_x) * 4.0, 0.0, 0.0)
 	main.hud.flash_hurt()
+	_combo = 0
 	# The jacket softens blows.
 	if GameState.is_lost("jacket"):
 		dmg *= 1.3

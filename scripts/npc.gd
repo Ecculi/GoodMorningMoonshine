@@ -88,6 +88,18 @@ var _driver_far_t := 0.0
 
 var _windup := -1.0
 var _cooldown := 0.0
+## Fighting style: "normal", "quick" (fast, weak punches, backs off after
+## each one), "heavy" (slow, always visible wind-up, hits hard) or
+## "circler" (comes at you from the side, along the depth of the street).
+var style := "normal"
+var _windup_time := WINDUP
+var _cooldown_time := ATTACK_COOLDOWN
+var _side := 1.0
+## Seconds left of being wide open after a swing that missed: the
+## player's punch does double damage (a counter).
+var _open_t := 0.0
+## Lean from a hit (radians, + = backwards); fades out.
+var _flinch := 0.0
 var _timer := 0.0
 var _knock := 0.0
 var _mark: Label3D
@@ -208,6 +220,7 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			model = PersonModel.new(SHIRTS[rng.randi() % SHIRTS.size()], PANTS[rng.randi() % PANTS.size()],
 				skin, HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.92, 1.06))
 	add_child(model)
+	_pick_style(rng)
 	match role:
 		"police", "bouncer":
 			model.set_shoe_color(Color(0.05, 0.05, 0.06))
@@ -231,6 +244,40 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 	_mark.position = Vector3(0, 2.25, 0)
 	_mark.visible = false
 	add_child(_mark)
+
+
+## Opponents fight differently: some quick and weak, some slow and hard,
+## some come at you from the side.
+func _pick_style(rng: RandomNumberGenerator) -> void:
+	match role:
+		"guard", "bouncer":
+			style = "heavy"
+		"police":
+			style = "normal"
+		"punk":
+			style = ["quick", "circler", "normal"][rng.randi() % 3]
+		_:
+			var r := rng.randf()
+			style = "quick" if r < 0.3 else ("heavy" if r < 0.55 else ("circler" if r < 0.75 else "normal"))
+	_side = 1.0 if rng.randf() < 0.5 else -1.0
+	match style:
+		"quick":
+			_windup_time = 0.28
+			_cooldown_time = 0.9
+			hit_damage *= 0.6
+		"heavy":
+			_windup_time = 0.75
+			_cooldown_time = 1.8
+			hit_damage *= 1.6
+			telegraphs = true
+		"circler":
+			_windup_time = 0.4
+			_cooldown_time = 1.2
+
+
+## Missed a swing and is off balance for a moment.
+func is_open() -> bool:
+	return _open_t > 0.0 and state != S.KO
 
 
 func is_down() -> bool:
@@ -459,6 +506,7 @@ func _process(_delta: float) -> void:
 		_rise_t -= dt
 		return
 	var start_pos := position
+	_open_t = maxf(0.0, _open_t - dt)
 	match state:
 		S.WALK:
 			_walk(dt)
@@ -554,6 +602,11 @@ func _process(_delta: float) -> void:
 		_turn(position - start_pos - Vector3(_knock * dt, 0, 0), dt)
 	if role == "police" and state != S.KO:
 		_glance(dt)
+	# Leaning from a hit; straightens up again.
+	if _flinch != 0.0 and state != S.KO:
+		_flinch = move_toward(_flinch, 0.0, dt * 1.6)
+		var base: float = model.rotation.z if (role == "drunk" and state == S.WALK) else 0.0
+		model.rotation.z = base + _flinch
 
 
 ## Turn smoothly towards where this person is going (any direction, like
@@ -651,6 +704,12 @@ func _fight(dt: float) -> void:
 	_cooldown -= dt
 
 	var target := Vector2(p.position.x - dir * 0.8, p.position.z)
+	if style == "quick" and _cooldown > _cooldown_time * 0.4:
+		# Backs off a step after punching.
+		target.x = p.position.x - dir * 2.0
+	elif style == "circler" and _windup < 0.0 and _cooldown > 0.0:
+		# Circles round, out to one side, before coming in.
+		target = Vector2(p.position.x - dir * 1.1, clampf(p.position.z + _side * 0.9, -7.3, 5.1))
 	var cur := Vector2(position.x, position.z)
 	if _windup >= 0.0:
 		# Winding up: keeps stepping after the player (a lunge), so just
@@ -660,15 +719,23 @@ func _fight(dt: float) -> void:
 		position.x = lunge.x
 		position.z = lunge.y
 		model.animate(0.6, dt, 1.4)
-		if _windup >= WINDUP:
+		if _windup >= _windup_time:
 			_windup = -1.0
 			model.raise_arm(false)
-			model.punch()
-			_cooldown = ATTACK_COOLDOWN
+			model.punch(style == "heavy")
+			_cooldown = _cooldown_time * randf_range(0.85, 1.2)
 			dx = p.position.x - position.x
 			dz = p.position.z - position.z
 			if dx * dir > -0.2 and absf(dx) < 1.5 and absf(dz) < 0.6:
 				p.take_hit(hit_damage, position.x)
+				main.shake(0.12 if style == "heavy" else 0.06)
+			elif absf(dx) < 2.6 and absf(dz) < 2.0 and not p.is_helpless():
+				# Dodged: the swing goes through air and they stumble
+				# forward, wide open for a counter.
+				_open_t = OPEN_TIME
+				_knock = dir * 1.6
+				main.popup("?", position + Vector3(0, 2.1, 0), Color(0.8, 0.9, 1.0))
+			_side = -_side
 		return
 
 	if cur.distance_to(target) > 0.25:
@@ -679,10 +746,25 @@ func _fight(dt: float) -> void:
 	else:
 		model.animate(0.0, dt)
 	# Close enough: start the punch (no need to stand right next to them).
-	if _cooldown <= 0.0 and absf(dx) < 1.4 and absf(dz) < 0.6:
+	# Only one opponent winds up at a time; the others wait their turn.
+	if _cooldown <= 0.0 and absf(dx) < 1.4 and absf(dz) < 0.6 and _open_t <= 0.0:
+		if _someone_else_swinging():
+			_cooldown = randf_range(0.3, 0.6)
+			return
 		_windup = 0.0
 		if telegraphs:
 			model.raise_arm(true)
+
+
+## Seconds an opponent stays open after a missed swing.
+const OPEN_TIME := 1.0
+
+
+func _someone_else_swinging() -> bool:
+	for n in main.npcs:
+		if n != self and is_instance_valid(n) and n._windup >= 0.0 and n.state == S.FIGHT:
+			return true
+	return false
 
 
 ## surprise: punched from behind (see is_back_turned). `floor_them` (a
@@ -695,10 +777,17 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0, surprise := false, 
 	hp -= dmg
 	if surprise and floor_them and not is_lawman():
 		hp = mini(hp, 0)
-	_knock = 3.5 * knock_mult * signf(position.x - attacker.position.x)
+	var away := signf(position.x - attacker.position.x)
+	_knock = 3.5 * knock_mult * away
 	_windup = -1.0
+	_open_t = 0.0
 	model.raise_arm(false)
-	main.popup("*", position + Vector3(0, 1.7, 0), Color(1, 0.9, 0.4))
+	# Lean away from the blow: backwards if hit from the front, forwards
+	# if from behind; harder blows bend further.
+	var facing_x: float = cos(model.rotation.y)
+	var back := 1.0 if facing_x * away <= 0.0 else -1.0
+	_flinch = back * clampf(0.18 + 0.1 * dmg * knock_mult, 0.2, 0.6)
+	main.popup("*", position + Vector3(0, 1.7, 0), Color(1, 0.9, 0.4), 1.0 + 0.25 * dmg)
 	if attacker == main.player:
 		main.report_crime(position, false)
 	if attacker == main.player:
@@ -706,7 +795,6 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0, surprise := false, 
 	if hp <= 0:
 		# Cars throw people much further than fists.
 		# Knocked away from the punch.
-		var away := signf(position.x - attacker.position.x)
 		var push := Vector3(away * randf_range(1.3, 1.8), randf_range(1.3, 1.8), randf_range(-0.3, 0.3))
 		if attacker.has_method("_check_hits"):
 			push = Vector3(attacker.dir * 7.0, 3.5, randf_range(-0.8, 0.8))
@@ -735,6 +823,10 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0, surprise := false, 
 	elif not is_lawman():
 		provoke()
 		_cooldown = maxf(_cooldown, 0.5)
+		if dmg >= 3:
+			# A hard blow: reels for a moment and can't hit back.
+			state = S.STUNNED
+			_timer = 0.8
 	else:
 		# Hitting police or a guard only staggers them for a moment.
 		state = S.STUNNED
@@ -891,6 +983,8 @@ func _end_ragdoll() -> void:
 ## face_down: a direction to topple the rag doll over forwards (fall on
 ## the face); zero = the usual random tumble.
 func _knock_out(push := Vector3(0, 1.5, 0), face_down := Vector3.ZERO) -> void:
+	_flinch = 0.0
+	_open_t = 0.0
 	model.turn_head(0.0)  # the rag doll copies the head straight
 	state = S.KO
 	_timer = 0.0

@@ -147,6 +147,7 @@ func _process(delta: float) -> void:
 	_update_traffic()
 	var target_x := clampf(player.position.x, -10.0, 10.0)
 	camera.position.x = lerpf(camera.position.x, target_x, 1.0 - exp(-4.0 * delta))
+	_update_shake(delta)
 	_update_sun()
 	_update_focus(delta)
 	tilt_mat.set_shader_parameter("double_vision", _towards_passout(2.3))
@@ -1031,6 +1032,23 @@ func respawn_npc(n) -> void:
 	# Guards, beggars and drunks stay put; whoever walks off is replaced
 	# by an ordinary passer-by (punks only come as a gang).
 	_spawn_npc(true, role if role == "police" else "civ")
+
+
+## Screen shake strength in metres; dies away quickly.
+var _shake := 0.0
+
+
+## A short jolt of the camera (a punch landing, a hit taken).
+func shake(amount: float) -> void:
+	_shake = maxf(_shake, amount)
+
+
+func _update_shake(delta: float) -> void:
+	if _shake <= 0.0:
+		return
+	_shake = move_toward(_shake, 0.0, delta * 0.9)
+	camera.h_offset = randf_range(-1.0, 1.0) * _shake
+	camera.v_offset = randf_range(-1.0, 1.0) * _shake * 0.6
 
 
 func popup(text: String, pos: Vector3, color: Color, size := 1.0) -> void:
