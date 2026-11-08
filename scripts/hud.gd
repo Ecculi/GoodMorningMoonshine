@@ -403,6 +403,7 @@ func _draw() -> void:
 	_draw_achievement(vs, font)
 	_draw_head_heart(delta_draw())
 	_draw_arrest()
+	_draw_choke()
 	_draw_lost_list(vs)
 	if _bubble_on and mode == "" and GameState.modal == "":
 		_draw_pocket_check(vs)
@@ -533,6 +534,19 @@ func _draw_arrest() -> void:
 	draw_arc(sp, 34.0, 0, TAU, 40, Color(0, 0, 0, 0.35), 7.0, true)
 	var col := Color(0.25, 0.45, 1.0) if int(Time.get_ticks_msec() / 150) % 2 == 0 else Color(1.0, 0.25, 0.25)
 	draw_arc(sp, 34.0, -PI * 0.5, -PI * 0.5 + TAU * main.arrest, 40, col, 7.0, true)
+
+
+## Bouncer's chokehold: a purple ring round the player, filling up.
+func _draw_choke() -> void:
+	if main == null or main.choke <= 0.0:
+		return
+	var p: Vector3 = main.player.global_position + Vector3(0, 1.0, 0)
+	if main.camera.is_position_behind(p):
+		return
+	var sp: Vector2 = main.camera.unproject_position(p)
+	draw_arc(sp, 42.0, 0, TAU, 40, Color(0, 0, 0, 0.35), 7.0, true)
+	var pulse := 0.75 + 0.25 * sin(Time.get_ticks_msec() / 90.0)
+	draw_arc(sp, 42.0, -PI * 0.5, -PI * 0.5 + TAU * main.choke, 40, Color(0.75, 0.3, 1.0, pulse), 7.0, true)
 
 
 ## A lost thing in this block but out of view: an arrow at that edge of

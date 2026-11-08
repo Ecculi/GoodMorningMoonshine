@@ -171,6 +171,7 @@ func _process(delta: float) -> void:
 	_update_drunk_circle()
 	_check_lost_pickups()
 	_check_arrest()
+	_check_choke()
 	_update_signs()
 	if hud.mode == "dead" and hud.card_time > 1.0 and Input.is_action_just_pressed("action"):
 		_new_game()
@@ -1764,6 +1765,48 @@ func _check_arrest() -> void:
 	if arrest >= 1.0:
 		arrest = 0.0
 		_get_arrested()
+
+
+## Bouncer's chokehold: fills while a choking bouncer is right next to
+## the player; full = out cold for a while (the same day goes on).
+const CHOKE_TIME := 2.2
+## How far a bouncer notices someone starting a fight (every direction).
+const BOUNCER_SIGHT := 10.0
+var choke := 0.0
+
+
+## The player started a fight at `pos`: bouncers within sight come for
+## them.
+func player_started_fight(pos: Vector3) -> void:
+	for n in npcs:
+		if n.role != "bouncer" or n.is_down() or n.choking:
+			continue
+		var d := Vector2(n.position.x - pos.x, n.position.z - pos.z).length()
+		var dp := Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length()
+		if minf(d, dp) <= BOUNCER_SIGHT:
+			n.start_choke()
+			popup("!", n.position + Vector3(0, 2.4, 0), Color(0.75, 0.3, 1.0))
+
+
+func _check_choke() -> void:
+	var dt := GameState.world_dt
+	if GameState.over or dt <= 0.0:
+		return
+	var holder = null
+	for n in npcs:
+		if n.role == "bouncer" and n.choking and not n.is_down():
+			if Vector2(n.position.x - player.position.x, n.position.z - player.position.z).length() < 0.9:
+				holder = n
+	if holder != null and not player.is_helpless():
+		choke = minf(1.0, choke + dt / CHOKE_TIME)
+	else:
+		choke = maxf(0.0, choke - dt * 0.5)
+	if choke >= 1.0:
+		choke = 0.0
+		player.choked_out()
+		for n in npcs:
+			if n.role == "bouncer" and n.choking:
+				n.end_choke()
 
 
 func _get_arrested() -> void:
