@@ -125,13 +125,14 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 | 3 | koirat (voivat auttaa tai olla vihollisia) |
 | 4 | pyöräilijät ja sähköpotkulaudat (kaahaavat jalkakäytävillä, myös kävelykadulla; soittavat kelloa tai tööttäävät, kun pelaaja on edessä, väistävät vähän, mutta kaatavat, jos ei väistä: 6 healthia) ja tölkinkerääjä (sininen kassi; ehtii roskiksiin ennen pelaajaa ja poimii kadulla lojuvat pullot ja tölkit) |
 | 5 | taskuvaras (tumma huppari, huppu päässä; noin joka kolmannessa korttelissa). Kävelee jonkun ohikulkijan perässä, mutta kun pelaaja on alle 7 metrin päässä, hän lipuu tämän luo, törmää ohimennen ja vie joko puolet rahoista tai tavaran taskusta (lompakko, puhelin, avaimet, henkkarit, silmälasit tai aurinkolasit). Viety tavara ilmestyy heti "Etsi:"-listaan ja ajatuskuplaan. Sitten varas juoksee (4,6 m/s) kauemmas pelaajasta korttelin päähän. Kiinni ottamalla (juokseva pelaaja on nopeampi) tai tyrmäämällä saalis palautuu: rahat suoraan ja tavara maahan. Jos varas pääsee korttelin päähän, rahat ovat menneet ja tavara heitetään johonkin seuraavan korttelin kadulle, josta sen voi etsiä. Varkaan lyöminen on itsepuolustusta. **Kollegakohtaus:** jos pelaaja yrittää taskuvarkautta samalle ohikulkijalle, jota varas seuraa (tai varkaan vieressä), kummankin päälle tulee "!?", varas toteaa "Kollega!" ja jättää pelaajan rauhaan. Saavutukset: Varas kiikissä ja Ammattikunta. |
+| 5 | mummo (noin joka kolmannessa korttelissa; lyhyt, harmaat hiukset, huivi, värillinen takki, käsilaukku kädessä). Kävelee hitaasti (0,65 m/s) ja juoksee perään hitaasti (2,1 m/s), mutta jos häntä lyö, heittää tai yrittää taskuvarastaa (aina tappelu, ei avunhuutoa), hän nostaa laukun näkyvästi (0,6 s) ja lyö sillä yllättävän kovaa: 16 vahinkoa ("KOPS!"). Mummo kestää vain kaksi osumaa. Mummon tappama pelaaja saa omat lööpit ("Mummo voitti"). |
 | myöhemmin | lisää ideoita alla (Tulevat haasteet) |
 
 #### Tulevat haasteet (ideoita, ei vielä pelissä)
 
 Uudet hahmot päivä kerrallaan:
 
-- **Päivä 5:** **mummo** (hidas, mutta käsilaukku osuu kovaa).
+
 - **Päivä 6:** **some-vaikuttaja** (kuvaa pelaajaa; video leviää ja poliisit tunnistavat loppupäivän helpommin) ja **pappi** (auttaja: antaa pullaa tai kahvia kylmissään tai nälkäiselle).
 - **Päivä 7:** **lokkiparvet** (useampi lokki hyökkää ruoan perään yhtä aikaa) ja **poliisiparit**.
 - **Päivä 8 ja myöhemmin:** **turisti** (kysyy tietä; oikea neuvo tuo rahaa), **ääripuolueen edustaja** (tunkee lentolehtistä, ei pääse eroon) ja **poliitikko** (vaalikoju: ilmaista kahvia ja karkkia).
