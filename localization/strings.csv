@@ -210,3 +210,5 @@ CAP_GRANNY_1,Laukussa oli kuulemma vain villasukat ja purkki hilloa.
 CAP_GRANNY_2,Mummo jatkoi matkaa bussipysäkille kuin mitään ei olisi tapahtunut.
 ACH_VIRAL,Viraalihitti
 ACH_VIRAL_DESC,Joudu some-vaikuttajan videolle.
+ACH_TOURIST_GUIDE,Paikallisopas
+ACH_TOURIST_GUIDE_DESC,Neuvo turistille oikea suunta nähtävyydelle.
