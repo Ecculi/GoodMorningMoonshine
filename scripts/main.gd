@@ -1837,6 +1837,34 @@ func points_towards(from: Vector3, moved: Vector3, target: Vector3i) -> bool:
 	return step.dot(to.normalized()) > 0.35
 
 
+## A car crashed after a flat tyre on the player's broken glass. From the
+## fifth crash of the day on, every crash brings a police officer running
+## in from one end of the street to arrest the player.
+func car_crashed(_car) -> void:
+	GameState.crashes_today += 1
+	if GameState.crashes_today < GameState.CRASHES_FOR_POLICE:
+		return
+	var cop = _spawn_npc(true, "police")
+	var side := -1.0 if rng.randf() < 0.5 else 1.0
+	cop.position.x = Npc.EDGE_X * side
+	cop.position.z = clampf(player.position.z, Z_MIN, Z_MAX)
+	cop.notice()
+
+
+## Is a police officer after the player and in view? Passers-by then
+## point at the player ("that's the one!").
+func police_hunting_in_view() -> bool:
+	for n in npcs:
+		if n.role == "police" and n.state == Npc.S.CHASE:
+			var q: Vector3 = n.position + Vector3(0, 1.0, 0)
+			if camera.is_position_behind(q):
+				continue
+			var sx := camera.unproject_position(q).x
+			if sx >= play_left and sx <= play_right:
+				return true
+	return false
+
+
 ## A thief got away round the corner with the loot: money is gone; a
 ## thing is dumped somewhere in the next block that way.
 func thief_escaped(n) -> void:

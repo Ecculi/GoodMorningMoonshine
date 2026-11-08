@@ -19,6 +19,8 @@ var _punch_t := 0.0
 ## 0..1 while a punch is being charged (arm pulled back), otherwise -1.
 var _windup := -1.0
 var _raised := false
+## Arm held straight out, pointing at something in front.
+var pointing := false
 
 
 var shirt_color: Color
@@ -140,7 +142,12 @@ func _animate_right_arm(dt: float, s: float, ph: float, k: float) -> void:
 	var tf := 0.15  # a relaxed little bend
 	var tpull := 0.0
 	var rate := 30.0
-	if _punch_t > 0.0:
+	if pointing and _punch_t <= 0.0 and _windup < 0.0:
+		# Pointing: arm straight out in front, held there.
+		tz = PI * 0.5
+		tf = 0.0
+		rate = 10.0
+	elif _punch_t > 0.0:
 		# Straight forward at shoulder height.
 		_punch_t -= dt
 		tz = PI * 0.5
