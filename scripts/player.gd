@@ -1058,6 +1058,7 @@ func _punch(target, charge: float, charged := false) -> void:
 		GameState.hit_stop(0.04 + 0.025 * mini(dmg, 4))
 		main.shake(0.04 + 0.03 * mini(dmg, 4))
 	target.take_hit(dmg, self, knock, surprise, full)
+	GameState.silly_moment.emit()
 	if charged and charge >= 1.0 and target.is_down() and target.times_hit == 1:
 		GameState.unlock("ONE_PUNCH")
 

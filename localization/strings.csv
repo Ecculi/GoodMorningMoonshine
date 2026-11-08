@@ -202,3 +202,5 @@ ACH_THIEF_CAUGHT,Varas kiikissä
 ACH_THIEF_CAUGHT_DESC,Saa taskuvarkaan saalis takaisin ottamalla hänet kiinni tai tyrmäämällä.
 ACH_COLLEAGUE,Ammattikunta
 ACH_COLLEAGUE_DESC,Yritä taskuvarkautta samalle ihmiselle kuin taskuvaras.
+ACH_VIRAL,Viraalihitti
+ACH_VIRAL_DESC,Joudu some-vaikuttajan videolle.
