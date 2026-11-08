@@ -979,6 +979,10 @@ func _punch(target, charge: float, charged := false) -> void:
 	var drunk := clampf((p - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
 	# Too much caffeine: jittery hands miss half the time.
 	var miss := drunk * 0.35 + (0.5 if GameState.jitter_t > 0.0 else 0.0)
+	# From behind: the target doesn't see it coming (see npc.is_back_turned).
+	var surprise: bool = target.has_method("is_back_turned") and target.is_back_turned(position)
+	if surprise:
+		miss *= 0.5  # a still target is easier to hit
 	if randf() < miss:
 		main.popup("?", target.position + Vector3(0, 2.0, 0), Color(1, 1, 1))
 		return
@@ -989,7 +993,16 @@ func _punch(target, charge: float, charged := false) -> void:
 		dmg = 0  # hangover: a feeble punch that does no harm
 	if dmg > 0 and charge >= 1.0:
 		dmg += 1
-	target.take_hit(dmg, self, 1.0 + charge)
+	var full := charged and charge >= 1.0
+	if surprise:
+		# Double damage (even a hangover punch lands), and a fully charged
+		# one knocks out at once.
+		dmg = maxi(dmg, 1) * 2
+		main.popup("!", target.position + Vector3(0, 2.4, 0), Color(1, 0.35, 0.2), 2.2)
+		main.popup("*", target.position + Vector3(0, 1.4, 0), Color(1, 0.95, 0.5), 1.8)
+		target.take_hit(dmg, self, 1.0 + charge, true, full)
+	else:
+		target.take_hit(dmg, self, 1.0 + charge)
 	if charged and charge >= 1.0 and target.is_down() and target.times_hit == 1:
 		GameState.unlock("ONE_PUNCH")
 
