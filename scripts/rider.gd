@@ -155,6 +155,22 @@ func _process(_delta: float) -> void:
 		_swerve = move_toward(_swerve, 0.0, dt * 0.8)
 	if flat:
 		_wobble(dt)
+	# The way ahead is shut: off along the side street before the fence,
+	# or back the way they came if there is none.
+	if absf(position.x) > 18.5 and position.x * dir > 0.0 and not main.end_open(dir):
+		var t: int = main.shut_end_turn(dir)
+		if t == 2:
+			dir = -dir
+			_model.rotation.y = 0.0 if dir > 0 else PI
+			for h in _holders:
+				h.rotation.y = 0.0 if dir > 0 else PI
+		else:
+			lane_z += t * speed * dt
+			_swerve = 0.0
+			position.z = lane_z
+			if lane_z < -30.0 or lane_z > 24.0:
+				main.remove_rider(self)
+			return
 	position.x += dir * speed * dt
 	position.z = lane_z + _swerve
 	# Too late: the player is knocked over.

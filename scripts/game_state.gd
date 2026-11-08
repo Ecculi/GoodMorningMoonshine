@@ -567,6 +567,7 @@ func new_game() -> void:
 	lock_broken = false
 	lost.clear()
 	_roll_weather()
+	_roll_roadworks()
 	_lose_items()
 	_place_lost_items()
 	_make_phone_hints()
@@ -629,6 +630,7 @@ func new_day() -> void:
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
 	_roll_weather()
+	_roll_roadworks()
 	_choose_wake_place()
 	if sleep_place == "jail":
 		# Released at the police station door; without an ID card they keep
@@ -666,6 +668,27 @@ func _choose_wake_place() -> void:
 	wake_seg = best
 	var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
 	wake_pos = Vector3(rng.randf_range(-12.0, 12.0), 0.0, z)
+
+
+## Roadworks: from ROADWORKS_FROM_DAY on, some mornings one or two
+## blocks are closed (never home, the police station or where the day
+## starts). At most two, so every street stays reachable.
+const ROADWORKS_FROM_DAY := 3
+const ROADWORKS_CHANCE := 0.45
+
+
+func _roll_roadworks() -> void:
+	CityMap.closed.clear()
+	if day < ROADWORKS_FROM_DAY or rng.randf() > ROADWORKS_CHANCE:
+		return
+	var count := 1 if rng.randf() < 0.6 else 2
+	for attempt in 100:
+		if CityMap.closed.size() >= count:
+			break
+		var cand := CityMap.random_segment(rng)
+		if cand == home_seg or cand == CityMap.police_station() or cand == CityMap.start():
+			continue
+		CityMap.closed.append(cand)
 
 
 ## Every day has its own weather (and its own passing-out limit).

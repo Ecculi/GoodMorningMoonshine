@@ -200,6 +200,24 @@ func _draw_map(r: Rect2) -> void:
 		draw_line(to_screen.call(0.0, float(i)), to_screen.call(nb - 1.0, float(i)), Color(0.6, 0.6, 0.62), 3.0)
 	for j in nb:
 		draw_line(to_screen.call(float(j), 0.0), to_screen.call(float(j), na - 1.0), Color(0.6, 0.6, 0.62), 3.0)
+	# Roadworks: the closed block striped red and white, with a red cross.
+	for cs in CityMap.closed:
+		var ca: Vector2
+		var cb: Vector2
+		if cs.x == 0:
+			ca = to_screen.call(float(cs.z), float(cs.y))
+			cb = to_screen.call(cs.z + 1.0, float(cs.y))
+		else:
+			ca = to_screen.call(float(cs.y), float(cs.z))
+			cb = to_screen.call(float(cs.y), cs.z + 1.0)
+		var parts := 6
+		for k in parts:
+			var p0: Vector2 = ca.lerp(cb, float(k) / parts)
+			var p1: Vector2 = ca.lerp(cb, float(k + 1) / parts)
+			draw_line(p0, p1, Color(0.85, 0.12, 0.1) if k % 2 == 0 else Color(1, 1, 1), 6.0)
+		var cm: Vector2 = (ca + cb) * 0.5
+		draw_line(cm + Vector2(-6, -6), cm + Vector2(6, 6), Color(0.8, 0.05, 0.05), 3.0)
+		draw_line(cm + Vector2(-6, 6), cm + Vector2(6, -6), Color(0.8, 0.05, 0.05), 3.0)
 	# Home: a little house at the home door's position.
 	var hs: Vector3i = GameState.home_seg
 	var hf := clampf((GameState.home_x + 16.0) / 32.0, 0.0, 1.0)
