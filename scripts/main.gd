@@ -415,7 +415,11 @@ func _populate_block() -> void:
 	_spawn_street_folk()
 	for id in GameState.placements:
 		var pl: Array = GameState.placements[id]
-		if pl[0] == segment:
+		if pl[0] == segment and GameState.dog_items.has(id):
+			# In a stray dog's mouth.
+			var dg = _spawn_animal("dog", pl[1])
+			dg.carry(id)
+		elif pl[0] == segment:
 			var ln = LostItemNode.new()
 			ln.main = self
 			ln.setup(id)
@@ -1524,6 +1528,23 @@ func food_on_ground_near(pos: Vector3, r: float):
 			if Vector2(it.global_position.x - pos.x, it.global_position.z - pos.z).length() < r:
 				return it
 	return null
+
+
+## A dog let go of a lost thing: it lies on the ground there now.
+func dog_dropped(id: String, pos: Vector3) -> void:
+	GameState.dog_items.erase(id)
+	if not GameState.placements.has(id):
+		return
+	var at := clamp_walkable(pos)
+	at.y = 0.0
+	GameState.placements[id][1] = at
+	var ln = LostItemNode.new()
+	ln.main = self
+	ln.setup(id)
+	add_child(ln)
+	ln.position = at
+	lost_nodes.append(ln)
+	popup("!", at + Vector3(0, 1.4, 0), Color(1, 0.85, 0.3))
 
 
 ## The lost thing in this block nearest to `pos` (a dog can sniff it out).

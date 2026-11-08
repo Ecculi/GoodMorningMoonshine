@@ -144,6 +144,12 @@ var lock_broken := false
 var lost: Array = []
 ## Where each lost item lies today: id -> [segment, position].
 var placements := {}
+## Lost things a stray dog is carrying about in its mouth today (ids).
+var dog_items: Array = []
+## From this day (when the dogs arrive) a lost thing may be in a dog's
+## mouth, with this chance each (never the phone).
+const DOG_ITEM_FROM_DAY := 3
+const DOG_ITEM_CHANCE := 0.25
 ## Where the character slept: "home", "stairs" or "street".
 var sleep_place := "home"
 ## Wet and soiled trousers after a night on the street (brown at the back,
@@ -496,6 +502,7 @@ func lose_here(id: String, seg: Vector3i, pos: Vector3) -> void:
 func find_item(id: String) -> void:
 	lost.erase(id)
 	placements.erase(id)
+	dog_items.erase(id)
 	found_today.append(id)
 	# Everything found, the phone last (so without its map and hints).
 	if lost.is_empty() and id == "phone" and found_today.size() >= 2:
@@ -730,6 +737,7 @@ func _lose_items() -> void:
 ## They are placed anew every morning.
 func _place_lost_items() -> void:
 	placements.clear()
+	dog_items.clear()
 	var radius := search_radius()
 	var home_c := _seg_center(home_seg)
 	# Where the day starts (home on the first day).
@@ -754,6 +762,9 @@ func _place_lost_items() -> void:
 				break
 		var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
 		placements[id] = [seg, Vector3(rng.randf_range(-14.0, 14.0), 0.0, z)]
+		if id != "phone" and day >= DOG_ITEM_FROM_DAY and rng.randf() < DOG_ITEM_CHANCE:
+			dog_items.append(id)
+			placements[id][1].z = rng.randf_range(-4.0, 1.5)  # the dog trots about the street
 
 
 ## Each morning the phone has a little battery and maybe some hints about
@@ -888,6 +899,7 @@ const ACHIEVEMENTS := [
 	"DOCTOR", "SOBER_30", "ELEPHANTS", "MORNING_BEER", "HOME_DRUNK", "PROMILLE_333",
 	"CLEAN_DAY", "NO_MAP", "BEGGAR_PAY",
 	"GRAVITY5", "BONNET_SURVIVE", "RUN_OVER_SURVIVE", "LAUNDRY", "HEADLINES10", "BACKSTAB",
+	"DOG_TRADE",
 ]
 const ACH_FILE := "user://achievements.cfg"
 ## Seconds of game time in the mending zone / under the hangover limit.

@@ -197,3 +197,5 @@ HL_GLASS_2,Pullonsirut koituivat kävelijän kohtaloksi
 HL_GLASS_3,"""Joku tässä heitteli pulloja"", kertoo naapuri"
 CAP_GLASS_1,Kengät olivat kadonneet jo edellisenä iltana.
 CAP_GLASS_2,Pyöräilijät kiertävät paikkaa yhä kaukaa.
+ACH_DOG_TRADE,Vaihtokauppa
+ACH_DOG_TRADE_DESC,Saa koira luopumaan hukatusta tavarastasi makkaraa vastaan.
