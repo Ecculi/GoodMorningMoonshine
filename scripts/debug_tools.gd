@@ -2,6 +2,8 @@ extends CanvasLayer
 ## F1 = help: what the game is about and the controls (the game waits
 ## while it is open). Gamepad: Back / Select.
 ## F2 = the list of achievements (got ones ticked).
+## F3 = the high scores on this device (with the debug tools on, F3 is the
+## storm switch instead).
 ##
 ## Debug tools are hidden: open the help and press F12 to switch them on
 ## (or off). Only then do these work, and small buttons for them appear
@@ -27,6 +29,8 @@ var _buttons: VBoxContainer
 var _ach: PanelContainer
 var _ach_title: Label
 var _ach_grid: GridContainer
+var _scores: PanelContainer
+var _scores_grid: GridContainer
 
 
 func _ready() -> void:
@@ -34,6 +38,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_help()
 	_build_achievements()
+	_build_scores()
 	_buttons = VBoxContainer.new()
 	_buttons.position = Vector2(12, 130)
 	_buttons.visible = false
@@ -93,6 +98,50 @@ func _build_achievements() -> void:
 	_ach_grid.add_theme_constant_override("v_separation", 6)
 	box.add_child(_ach_grid)
 	_label(box, tr("HELP_CLOSE"), 15, Color(0.6, 0.6, 0.65))
+
+
+func _build_scores() -> void:
+	_scores = _panel()
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	_scores.add_child(box)
+	_label(box, tr("HISCORES"), 26, Color(1, 0.85, 0.35))
+	_scores_grid = GridContainer.new()
+	_scores_grid.columns = 5
+	_scores_grid.add_theme_constant_override("h_separation", 18)
+	_scores_grid.add_theme_constant_override("v_separation", 4)
+	box.add_child(_scores_grid)
+	_label(box, tr("HELP_CLOSE"), 15, Color(0.6, 0.6, 0.65))
+
+
+func _refresh_scores() -> void:
+	for c in _scores_grid.get_children():
+		c.queue_free()
+	if GameState.scores.is_empty():
+		_label(_scores_grid, "–", 16, Color(0.6, 0.6, 0.65))
+	for i in GameState.scores.size():
+		var e: Dictionary = GameState.scores[i]
+		var col := Color(0.95, 0.9, 0.6) if i == 0 else Color(0.9, 0.9, 0.92)
+		_label(_scores_grid, "%d." % (i + 1), 16, col)
+		_label(_scores_grid, str(e.get("score", 0)), 16, col)
+		_label(_scores_grid, tr("DAY_N") % e.get("day", 1), 16, col)
+		_label(_scores_grid, tr(str(e.get("headline", ""))), 14, Color(0.75, 0.75, 0.8), 320)
+		_label(_scores_grid, str(e.get("date", "")), 14, Color(0.6, 0.6, 0.65))
+
+
+func _toggle_scores() -> void:
+	if _scores.visible:
+		_scores.visible = false
+		if GameState.modal == "help":
+			GameState.modal = ""
+		return
+	if _help.visible:
+		_help.visible = false
+	elif GameState.modal != "" or GameState.over:
+		return
+	_refresh_scores()
+	_scores.visible = true
+	GameState.modal = "help"
 
 
 ## Fills the list: got ones bright with a tick, the rest grey.
@@ -161,10 +210,12 @@ func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed("help"):
 		if _ach.visible:
 			_toggle_achievements()
+		if _scores.visible:
+			_toggle_scores()
 		_toggle_help()
 	# Keep the open panel in the middle whatever the window size.
 	var vs := get_viewport().get_visible_rect().size
-	for p in [_help, _ach]:
+	for p in [_help, _ach, _scores]:
 		if p.visible:
 			p.position = (vs - p.size) * 0.5
 
@@ -184,7 +235,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var key: int = event.physical_keycode
 	if key == KEY_F2:
+		if _scores.visible:
+			_toggle_scores()
 		_toggle_achievements()
+		return
+	if key == KEY_F3 and not debug_on:
+		if _ach.visible:
+			_toggle_achievements()
+		_toggle_scores()
+		return
+	if _scores.visible:
+		if key == KEY_ESCAPE:
+			_toggle_scores()
 		return
 	if _ach.visible:
 		if key == KEY_ESCAPE:

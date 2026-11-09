@@ -205,6 +205,7 @@ func _ready() -> void:
 	_setup_input()
 	TranslationServer.set_locale("fi")
 	_load_achievements()
+	_load_scores()
 
 
 func _process(delta: float) -> void:
@@ -843,6 +844,43 @@ func _die(cause: String) -> void:
 	over = true
 	delete_save()
 	player_died.emit(cause)
+
+
+# --- High scores --------------------------------------------------------------
+
+## The best games on this device: [{"score", "day", "headline", "date"}],
+## best first. "headline" is the translation key of the death headline.
+const SCORES_FILE := "user://scores.cfg"
+const SCORES_MAX := 10
+var scores: Array = []
+
+
+func _load_scores() -> void:
+	var cf := ConfigFile.new()
+	if cf.load(SCORES_FILE) != OK:
+		return
+	scores = cf.get_value("scores", "list", [])
+
+
+## Puts this game in the list. Returns its place (1 = best), or 0 if it
+## didn't make the top ten.
+func record_score(headline: String) -> int:
+	var d := Time.get_date_dict_from_system()
+	var entry := {"score": score(), "day": day, "headline": headline,
+		"date": "%d.%d.%d" % [d["day"], d["month"], d["year"]]}
+	var place := scores.size()
+	for i in scores.size():
+		if entry["score"] > scores[i]["score"]:
+			place = i
+			break
+	if place >= SCORES_MAX:
+		return 0
+	scores.insert(place, entry)
+	scores.resize(mini(scores.size(), SCORES_MAX))
+	var cf := ConfigFile.new()
+	cf.set_value("scores", "list", scores)
+	cf.save(SCORES_FILE)
+	return place + 1
 
 
 # --- Morning save -----------------------------------------------------------------

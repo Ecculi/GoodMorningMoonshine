@@ -478,6 +478,7 @@ Hahmoideat:
 - Kuolema esitetään **paikallislehden lööppinä**, jossa on hahmon kuva ja humoristinen otsikko kuolinsyystä, esimerkiksi "Lokki vei viimeisen makkaran – nälkä voitti". Lehden nimi on keksitty.
 - Sen jälkeen näytetään **pisteet ja ennätyslista**.
   - Ennätyslista on aluksi **vain omalla laitteella**. **Yhteinen maailmanlaajuinen lista** lisätään myöhemmin; se vaatii palvelimen ja huijauksen eston.
+  - **Toteutus:** kymmenen parasta (pisteet, päivä, jona kuoli, lööpin otsikko ja päivämäärä) tallentuu tiedostoon `user://scores.cfg`. Lööpin alalaidassa pisteiden perässä näkyy sijoitus ("3. sija"), jos pisteet riittivät listalle. Napin painallus lööpistä avaa ennätyslistan, jossa oma rivi vilkkuu keltaisena, ja seuraava painallus aloittaa uuden pelin. Pelin aikana lista aukeaa F3:lla (kun debug ei ole päällä).
 - Uusi peli alkaa **heti napin painalluksella**, jotta tahti pysyy nopeana.
 
 ## Pisteytys

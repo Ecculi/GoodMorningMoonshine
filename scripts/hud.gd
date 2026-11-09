@@ -14,7 +14,9 @@ const BUBBLE_WALK := 5.0
 ## for day changes and death (newspaper headline).
 
 var main
-var mode := ""  # "", "day", "dead" or "start"
+var mode := ""  # "", "day", "dead", "scores" or "start"
+## Where the last game placed in the high scores (0 = not in the list).
+var score_place := 0
 ## Start menu (a saved morning exists): 0 = continue, 1 = new game.
 var start_sel := 0
 var card_title := ""
@@ -435,6 +437,46 @@ func _draw() -> void:
 		_draw_headline(vs, font)
 	elif mode == "start":
 		_draw_start_menu(vs, font)
+	elif mode == "scores":
+		_draw_scores(vs, font)
+
+
+## After the death headline: the best games on this device, this one
+## highlighted.
+func _draw_scores(vs: Vector2, font: Font) -> void:
+	draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, 0.8))
+	var w := minf(vs.x * 0.9, 820.0)
+	var row := clampf((vs.y - 170.0) / 11.0, 22.0, 40.0)
+	var h := row * (GameState.SCORES_MAX + 1) + 110.0
+	var r := Rect2((vs - Vector2(w, h)) * 0.5, Vector2(w, h))
+	draw_rect(r, Color(0.97, 0.95, 0.87))
+	draw_rect(Rect2(r.position, Vector2(w, 56)), Color(0.85, 0.1, 0.12))
+	draw_string(font, r.position + Vector2(0, 40), card_title, HORIZONTAL_ALIGNMENT_CENTER, w, 32, Color.WHITE)
+	var fs := int(clampf(row * 0.55, 13.0, 20.0))
+	var y := r.position.y + 70.0 + row * 0.7
+	for i in GameState.SCORES_MAX:
+		var x := r.position.x + 20.0
+		if i < GameState.scores.size():
+			var e: Dictionary = GameState.scores[i]
+			var mine := i + 1 == score_place
+			if mine:
+				var blink := 0.25 + 0.15 * sin(Time.get_ticks_msec() / 200.0)
+				draw_rect(Rect2(Vector2(r.position.x + 8, y - row * 0.72), Vector2(w - 16, row)), Color(1, 0.8, 0.2, blink))
+			var col := Color(0.08, 0.08, 0.08)
+			draw_string(font, Vector2(x, y), "%d." % (i + 1), HORIZONTAL_ALIGNMENT_RIGHT, 34, fs, col)
+			draw_string(font, Vector2(x + 44, y), str(e.get("score", 0)), HORIZONTAL_ALIGNMENT_RIGHT, 90, fs, col)
+			draw_string(font, Vector2(x + 150, y), tr("DAY_N") % e.get("day", 1), HORIZONTAL_ALIGNMENT_LEFT, 100, fs, col)
+			draw_string(font, Vector2(x + 255, y), tr(str(e.get("headline", ""))), HORIZONTAL_ALIGNMENT_LEFT,
+				w - 255 - 150, fs, Color(0.25, 0.25, 0.25))
+			draw_string(font, Vector2(r.end.x - 120, y), str(e.get("date", "")), HORIZONTAL_ALIGNMENT_RIGHT, 100, fs - 2,
+				Color(0.4, 0.4, 0.4))
+		else:
+			draw_string(font, Vector2(x, y), "%d.  –" % (i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0.6, 0.6, 0.6))
+		y += row
+	if card_time > 0.6:
+		var bc := r.end - Vector2(44, 34)
+		draw_circle(bc, 22.0, Color(0.85, 0.1, 0.12))
+		draw_colored_polygon(PackedVector2Array([bc + Vector2(-7, -11), bc + Vector2(12, 0), bc + Vector2(-7, 11)]), Color.WHITE)
 
 
 ## Start menu buttons: continue (left) and new game (right).

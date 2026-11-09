@@ -21,6 +21,6 @@ Ohjaus:
 | Puhelin auki / kiinni | P tai Tab | Y | puhelinnappi (pieni nappi ison napin yläpuolella) |
 | Selaa puhelinta | vasen / oikea | sama | sama |
 
-Ohje: F1 (peliohjaimella Back) avaa ohjeen, jossa on pelin tavoite ja näppäimet; peli odottaa sen ajan.
+Ohje: F1 (peliohjaimella Back) avaa ohjeen, jossa on pelin tavoite ja näppäimet; peli odottaa sen ajan. F2 avaa saavutukset ja F3 ennätyslistan (kymmenen parasta tällä laitteella).
 
 Debug: avaa ohje (F1) ja paina F12. Vasta sitten toimivat F5 health täyteen, F6 alkoholia +0,1 ‰ joka painalluksella (ei ylärajaa), F7 rahaa +100 €, F8 puhelimen akkua +25 % ja F9 nälkä, kylmä ja väsymys pois, F10 seuraava päivä, F11 uusi peli seuraavassa kaupungissa, F4 tietyöt edessä olevaan kortteliin, F3 myrsky päälle/pois, ja samat napit näkyvät ruudun vasemmassa reunassa. F12 ohjeessa uudestaan kytkee ne pois.

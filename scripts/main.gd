@@ -179,9 +179,12 @@ func _process(delta: float) -> void:
 	_check_arrest()
 	_check_choke()
 	_update_signs()
-	if hud.mode == "dead" and hud.card_time > 1.0 and Input.is_action_just_pressed("action"):
+	# Death: the headline, then the high scores, then a new game.
+	if hud.mode == "scores" and hud.card_time > 0.6 and Input.is_action_just_pressed("action"):
 		_new_game()
 		hud.hide_card()
+	if hud.mode == "dead" and hud.card_time > 1.0 and Input.is_action_just_pressed("action"):
+		hud.show_card("scores", tr("HISCORES"), "")
 	if hud.mode == "start":
 		if Input.is_action_just_pressed("move_left"):
 			hud.start_sel = 0
@@ -991,10 +994,15 @@ func _on_player_died(cause: String) -> void:
 	if rng.randf() < 0.2:
 		caption = tr("CAP_ANY_%d" % rng.randi_range(1, CAPTIONS_ANY))
 	player.collapse_dead()
+	var place := GameState.record_score(hl_key)
 	await get_tree().create_timer(1.4).timeout
 	var photo: ImageTexture = await _take_death_photo()
 	hud.set_death_photo(photo, caption)
-	hud.show_card("dead", title, tr("SCORE") % GameState.score())
+	var sub := tr("SCORE") % GameState.score()
+	if place > 0:
+		sub += "  ·  " + tr("SCORE_PLACE") % place
+	hud.score_place = place
+	hud.show_card("dead", title, sub)
 
 
 ## A news photo of the scene from a different angle than the game camera
