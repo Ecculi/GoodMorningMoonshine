@@ -33,6 +33,14 @@ const KIOSK_OPTIONS := [
 const BAR_OPTIONS := [
 	{"kind": "pint", "price": 5, "alcohol": true},
 ]
+## Pharmacy: a plaster mends a little, a painkiller more and stops the
+## hangover shakes for a while.
+const PHARMACY_OPTIONS := [
+	{"kind": "plaster", "price": 2, "alcohol": false},
+	{"kind": "painkiller", "price": 4, "alcohol": false},
+]
+const PLASTER_HEALTH := 10.0
+const PAINKILLER_HEALTH := 20.0
 const TILT_SHIFT = preload("res://shaders/tilt_shift.gdshader")
 const CLOUD_SHADOW = preload("res://shaders/cloud_shadow.gdshader")
 ## Cloud drift in map coordinates (metres per second of active time).
@@ -676,7 +684,12 @@ func open_phone() -> void:
 
 
 func shop_options() -> Array:
-	return KIOSK_OPTIONS if shop_type == "kiosk" else BAR_OPTIONS
+	match shop_type:
+		"kiosk":
+			return KIOSK_OPTIONS
+		"pharmacy":
+			return PHARMACY_OPTIONS
+	return BAR_OPTIONS
 
 
 ## Phone: left/right browse, down + action closes; the battery drains in
@@ -743,6 +756,13 @@ func _buy(o: Dictionary) -> void:
 			player._pickup(spawn_item(Item.Kind.ENERGY, player.position))
 		"pint":
 			GameState.drink(0.5)
+		"plaster":
+			GameState.health = minf(100.0, GameState.health + PLASTER_HEALTH)
+			hud.show_head_heart()
+		"painkiller":
+			GameState.health = minf(100.0, GameState.health + PAINKILLER_HEALTH)
+			GameState.painkiller_t = GameState.PAINKILLER_TIME
+			hud.show_head_heart()
 		"charge":
 			# Charging is a trade: time jumps ahead, alcohol goes down.
 			GameState.battery = minf(100.0, GameState.battery + 15.0)

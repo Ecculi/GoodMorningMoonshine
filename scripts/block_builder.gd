@@ -233,7 +233,7 @@ static func _sea(root: Node3D) -> void:
 
 
 ## Shops in this block are listed in the root's "shops" meta:
-## [{"type": "kiosk" or "bar", "x": door x}].
+## [{"type": "kiosk", "bar" or "pharmacy", "x": door x}].
 static func _buildings(root: Node3D, rng: RandomNumberGenerator, home_x: float) -> void:
 	root.set_meta("shops", [])
 	var x := -BLOCK_HALF
@@ -241,6 +241,9 @@ static func _buildings(root: Node3D, rng: RandomNumberGenerator, home_x: float) 
 	var bar_idx := rng.randi() % 4 if rng.randf() < 0.4 else -1
 	if bar_idx == kiosk_idx:
 		bar_idx = -1
+	var pharm_idx := rng.randi() % 4 if rng.randf() < 0.3 else -1
+	if pharm_idx == kiosk_idx or pharm_idx == bar_idx:
+		pharm_idx = -1
 	var idx := 0
 	while x < BLOCK_HALF - 0.5:
 		var w := minf(rng.randf_range(5.0, 8.0), BLOCK_HALF - x)
@@ -250,6 +253,8 @@ static func _buildings(root: Node3D, rng: RandomNumberGenerator, home_x: float) 
 			shop = "kiosk"
 		elif idx == bar_idx:
 			shop = "bar"
+		elif idx == pharm_idx:
+			shop = "pharmacy"
 		# Never a shop door right next to the home door.
 		var door_x := x + w * 0.5 + w * 0.3
 		if home_x != INF and absf(door_x - home_x) < 2.5:
@@ -280,9 +285,18 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 	_box(root, Vector3(base.x + w * 0.3, 1.1, base.z + 0.04), Vector3(1.1, 2.2, 0.1), Color(0.35, 0.22, 0.15))
 	if shop != "":
 		var door_x := base.x + w * 0.3
-		var sign_col := Color(0.85, 0.15, 0.15) if shop == "kiosk" else Color(0.35, 0.12, 0.4)
+		var sign_col: Color = SHOP_COLORS[shop]
 		_box(root, Vector3(base.x - w * 0.15, 2.8, base.z + 0.08), Vector3(w * 0.55, 0.6, 0.1), sign_col)
-		var key := "SIGN_KIOSK" if shop == "kiosk" else "SIGN_BAR"
+		var key: String = SHOP_SIGNS[shop]
+		if shop == "pharmacy":
+			# A glowing green cross next to the door.
+			var cx := door_x + 0.95
+			for sz in [Vector3(0.5, 0.16, 0.06), Vector3(0.16, 0.5, 0.06)]:
+				var cr := _box(root, Vector3(cx, 2.8, base.z + 0.3), sz, Color(0.2, 0.85, 0.35))
+				var cm: StandardMaterial3D = cr.material_override
+				cm.emission_enabled = true
+				cm.emission = Color(0.2, 0.9, 0.35)
+				cm.emission_energy_multiplier = 1.2
 		var shop_text := TranslationServer.translate(key)
 		var l := _label(shop_text, 72, 0.006)
 		l.position = Vector3(base.x - w * 0.15, 2.8, base.z + 0.15)
@@ -311,6 +325,12 @@ const AWNING_Y := 2.4
 ## on top of an awning (y, z).
 const TREE_ITEM := Vector2(2.35, -6.45)
 const AWNING_ITEM := Vector2(AWNING_Y + 0.08, -7.1)
+
+
+## Shop sign colours and texts.
+const SHOP_COLORS := {"kiosk": Color(0.85, 0.15, 0.15), "bar": Color(0.35, 0.12, 0.4),
+	"pharmacy": Color(0.1, 0.5, 0.3)}
+const SHOP_SIGNS := {"kiosk": "SIGN_KIOSK", "bar": "SIGN_BAR", "pharmacy": "SIGN_PHARMACY"}
 
 
 ## Home door. Flat: green door, doormat, warm lamp. Basement: low grey

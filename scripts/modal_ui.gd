@@ -4,6 +4,7 @@ extends Control
 
 const LostItems = preload("res://scripts/lost_items.gd")
 const CityMap = preload("res://scripts/city_map.gd")
+const BlockBuilder = preload("res://scripts/block_builder.gd")
 
 var main
 
@@ -290,10 +291,10 @@ func _draw_shop(vs: Vector2) -> void:
 	var cell := 130.0
 	var w := opts.size() * cell + 40.0
 	var r := Rect2(Vector2((vs.x - w) * 0.5, vs.y * 0.35), Vector2(w, 190))
-	var top := Color(0.85, 0.15, 0.15) if main.shop_type == "kiosk" else Color(0.35, 0.12, 0.4)
+	var top: Color = BlockBuilder.SHOP_COLORS.get(main.shop_type, Color(0.35, 0.12, 0.4))
 	draw_rect(r, Color(0.97, 0.95, 0.88))
 	draw_rect(Rect2(r.position, Vector2(w, 34)), top)
-	var key := "SIGN_KIOSK" if main.shop_type == "kiosk" else "SIGN_BAR"
+	var key: String = BlockBuilder.SHOP_SIGNS.get(main.shop_type, "SIGN_BAR")
 	draw_string(font, r.position + Vector2(0, 25), tr(key), HORIZONTAL_ALIGNMENT_CENTER, w, 22, Color.WHITE)
 	for i in opts.size():
 		var o: Dictionary = opts[i]
@@ -344,6 +345,23 @@ func _draw_product(kind: String, c: Vector2, s: float) -> void:
 				c + Vector2(0, s * 0.05)]), Color(0.95, 0.75, 0.1))
 		"pint":
 			_draw_beer_icon(c, s)
+		"plaster":
+			# A plaster, slightly tilted, with the pad in the middle.
+			var ax := Vector2(cos(-0.5), sin(-0.5))
+			var ay := ax.orthogonal()
+			var pts := PackedVector2Array()
+			for v in [Vector2(-0.45, -0.15), Vector2(0.45, -0.15), Vector2(0.45, 0.15), Vector2(-0.45, 0.15)]:
+				pts.append(c + (ax * v.x + ay * v.y) * s)
+			draw_colored_polygon(pts, Color(0.93, 0.78, 0.62))
+			var pad := PackedVector2Array()
+			for v in [Vector2(-0.14, -0.12), Vector2(0.14, -0.12), Vector2(0.14, 0.12), Vector2(-0.14, 0.12)]:
+				pad.append(c + (ax * v.x + ay * v.y) * s)
+			draw_colored_polygon(pad, Color(0.98, 0.95, 0.9))
+		"painkiller":
+			# A medicine box: green with a white cross.
+			draw_rect(Rect2(c + Vector2(-s * 0.35, -s * 0.25), Vector2(s * 0.7, s * 0.5)), Color(0.2, 0.6, 0.4))
+			draw_rect(Rect2(c + Vector2(-s * 0.06, -s * 0.18), Vector2(s * 0.12, s * 0.36)), Color.WHITE)
+			draw_rect(Rect2(c + Vector2(-s * 0.18, -s * 0.06), Vector2(s * 0.36, s * 0.12)), Color.WHITE)
 		"energy":
 			draw_rect(Rect2(c + Vector2(-s * 0.16, -s * 0.4), Vector2(s * 0.32, s * 0.8)), Color(0.1, 0.1, 0.12))
 			draw_rect(Rect2(c + Vector2(-s * 0.16, -s * 0.1), Vector2(s * 0.32, s * 0.22)), Color(0.4, 0.95, 0.2))

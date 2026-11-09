@@ -337,6 +337,7 @@ func _tick_body(dt: float, is_running: bool) -> void:
 	jitter_t = maxf(0.0, jitter_t - dt)
 	focus_t = maxf(0.0, focus_t - dt)
 	trip_t = maxf(0.0, trip_t - dt)
+	painkiller_t = maxf(0.0, painkiller_t - dt)
 
 
 ## How fast the character gets colder (per second of activity; negative =
@@ -367,10 +368,16 @@ func player_time_scale() -> float:
 	return CHARGE_TIME_SCALE if charging and focus_t <= 0.0 else 1.0
 
 
+## A painkiller from the pharmacy: no hangover shakes for this long
+## (seconds of game time).
+const PAINKILLER_TIME := 120.0
+var painkiller_t := 0.0
+
+
 ## Hangover shakes 0..1: only below the hangover limit, stronger the
 ## bigger yesterday's peak was and the soberer you are now.
 func hangover_shake() -> float:
-	if promille >= PROMILLE_HANGOVER:
+	if promille >= PROMILLE_HANGOVER or painkiller_t > 0.0:
 		return 0.0
 	var peak := clampf((yesterday_max - 0.8) / 2.4, 0.15, 1.0)
 	var sober := clampf((PROMILLE_HANGOVER - promille) / PROMILLE_HANGOVER, 0.0, 1.0)
@@ -663,6 +670,7 @@ func new_day() -> void:
 	jitter_t = 0.0
 	focus_t = 0.0
 	trip_t = 0.0
+	painkiller_t = 0.0
 	doze_t = -1.0
 	strain = 0.0
 	exhausted = false
