@@ -153,6 +153,10 @@ func _draw_messages(r: Rect2) -> void:
 		var ic := Vector2(r.position.x + 66, y + row_h * 0.5)
 		if icon == "":
 			_draw_beer_icon(ic, 30.0)
+		elif icon == "task_food":
+			_draw_product("food", ic, 40.0)
+		elif icon == "task_bottle":
+			_draw_product("bottle", ic, 40.0)
 		else:
 			LostItems.draw_icon(self, icon, ic, 34.0, "own")
 		var start := street.substr(0, mini(street.length(), 7)) + "…"
@@ -264,6 +268,15 @@ func _draw_map(r: Rect2) -> void:
 		var cm: Vector2 = (ca + cb) * 0.5
 		draw_line(cm + Vector2(-6, -6), cm + Vector2(6, 6), Color(0.8, 0.05, 0.05), 3.0)
 		draw_line(cm + Vector2(-6, 6), cm + Vector2(6, -6), Color(0.8, 0.05, 0.05), 3.0)
+	# The pal's task: a little speech bubble on their block.
+	var tk: Dictionary = GameState.task
+	if not tk.is_empty() and not tk["done"]:
+		var ts: Vector3i = tk["seg"]
+		var tf := clampf((float(tk["x"]) + 16.0) / 32.0, 0.0, 1.0)
+		var tc: Vector2 = to_screen.call(ts.z + tf, float(ts.y)) if ts.x == 0 else to_screen.call(float(ts.y), ts.z + tf)
+		draw_circle(tc + Vector2(0, -12), 9.0, Color(1, 1, 1, 0.95))
+		draw_colored_polygon(PackedVector2Array([tc + Vector2(-3, -5), tc + Vector2(3, -5), tc]), Color(1, 1, 1, 0.95))
+		draw_circle(tc + Vector2(0, -12), 4.0, Color(0.78, 0.32, 0.25) if tk["want"] == "food" else Color(0.2, 0.5, 0.25))
 	# Breath test checkpoint: a blinking blue dot in the middle of the block.
 	for ks in GameState.checkpoint_segs:
 		var kc: Vector2 = to_screen.call(ks.z + 0.5, float(ks.y)) if ks.x == 0 else to_screen.call(float(ks.y), ks.z + 0.5)

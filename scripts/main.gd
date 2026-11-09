@@ -453,6 +453,13 @@ func _populate_block() -> void:
 				var bo = _spawn_npc(false, "bouncer")
 				bo.position = Vector3(sh["x"] + 1.0, 0, -7.3)
 				bo.post = bo.position
+	# The little task of the day: the pal waits here.
+	var tk: Dictionary = GameState.task
+	if not tk.is_empty() and tk["seg"] == segment and not tk["done"]:
+		var pal = _spawn_npc(false, "pal")
+		pal.position = Vector3(tk["x"], 0, -6.6)
+		pal.dir = 1 if player.position.x > tk["x"] else -1
+		pal.set_want(tk["want"])
 	if level.has_meta("checkpoint"):
 		# Two officers at the breath test, one on each sidewalk.
 		for z in [-6.2, 3.8]:

@@ -639,6 +639,7 @@ func new_game() -> void:
 	_lose_items()
 	_place_lost_items()
 	_make_phone_hints()
+	task = {}
 	modal = ""
 	over = false
 
@@ -714,6 +715,7 @@ func new_day() -> void:
 	_lose_items()
 	_place_lost_items()
 	_make_phone_hints()
+	_roll_task(wake_seg)
 	modal = ""
 	over = false
 
@@ -763,6 +765,31 @@ func _roll_special() -> void:
 			special_day = k
 			return
 		r -= SPECIAL_CHANCE[k]
+
+
+## Little task of the day (0 or 1, from TASK_FROM_DAY): a pal somewhere
+## near wants something brought to them: "food" (a sausage) or "bottle".
+## {"want", "seg", "x", "done"} or {}. Shown as a picture in the pal's
+## thought bubble and as a phone message with the street; bring it and
+## press the button next to them: money and bonus points.
+const TASK_FROM_DAY := 2
+const TASK_CHANCE := 0.6
+const TASK_BONUS := 300
+var task := {}
+
+
+func _roll_task(start: Vector3i) -> void:
+	task = {}
+	if day < TASK_FROM_DAY or rng.randf() > TASK_CHANCE:
+		return
+	for attempt in 100:
+		var cand := CityMap.random_segment(rng)
+		var d := seg_distance(cand, start)
+		if d >= 1.0 and d <= 3.0 and not CityMap.closed.has(cand):
+			task = {"want": "food" if rng.randf() < 0.5 else "bottle", "seg": cand,
+				"x": rng.randf_range(-12.0, 12.0), "done": false}
+			phone_msgs.push_front({"icon": "task_" + task["want"], "street": CityMap.street_name(cand)})
+			return
 
 
 ## Breath test checkpoint: from CHECKPOINT_FROM_DAY, some mornings the
@@ -1010,7 +1037,7 @@ const SAVE_KEYS := [
 	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
 	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
 	"placements", "dog_items", "carried_items", "high_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
-	"weather", "storm", "frost", "special_day", "booth_segs", "checkpoint_segs", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
+	"weather", "storm", "frost", "special_day", "booth_segs", "checkpoint_segs", "task", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
 ]
 
 

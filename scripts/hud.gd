@@ -908,6 +908,11 @@ func _draw_trade_hint() -> void:
 	if n.role == "politician":
 		_hint_action(sp + Vector2(22, 0), "ACT_DRINK", 1.0)  # free coffee
 		return
+	if n.role == "pal":
+		# What they want -> a coin.
+		_hint_action(sp + Vector2(14, 0), "ACT_EAT" if n.want_kind == "food" else "ACT_DRINK", 1.0)
+		draw_circle(sp + Vector2(40, 0), 9.0, Color(0.95, 0.75, 0.2))
+		return
 	# A coin.
 	var cc := sp + Vector2(14, 0)
 	draw_circle(cc, 9.0, Color(0.95, 0.75, 0.2))
