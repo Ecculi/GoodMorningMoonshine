@@ -144,6 +144,16 @@ Uudet hahmot päivä kerrallaan:
 
 - **Päivä 7:** **poliisiparit**.
 
+**Päivä 10: exä (ideoita, issue #78, ei vielä päätetty).** Entinen tyttöystävä on tunnistettava hahmo (aina sama asu koko pelin ajan, esim. punainen takki, ponnari ja aurinkolasit), joka kulkee päivästä 10 alkaen satunnaisesti jossain korttelissa. Vaihtoehtoja, joita voi yhdistellä:
+
+- **Tavara exällä:** yksi hukatuista tavaroista on exällä ("jäi mun luo"), esimerkiksi avaimet tai takki. Sen saa takaisin vain puhumalla hänelle (toimintonappi) **kohtuullisessa kunnossa** (alle 1,0 ‰), tai antamalla lahjan (makkara, kahvi tai kukka kioskilta). Liian humalaisena hän tuhahtaa "#!?" ja lähtee. Vihjeet (kartta, lämpömittari) toimivat kuten muillakin tavaroilla.
+- **Uusi kumppani:** exän vieressä kävelee iso, salilla käyvä uusi kumppani. Jos exä suuttuu (pelaaja lyö, heittää tai on liian humalassa), kumppani käy kimppuun (heavy-tyyli). Kumppanin tyrmääminen tuo exältä lööppimäisen "#!?"-reaktion eikä tavaraa saa enää sinä päivänä.
+- **Välttely:** jos tavaraa ei ole exällä, hänet kannattaa välttää. Kun hän huomaa pelaajan (alle 8 m, näkökeila kuten poliisilla), hän tulee "juttelemaan": pelaaja jää paikalleen, kello hyppää 30 minuuttia ja ajatuskuplassa on särkynyt sydän; krapula voi pahentua (promillet −0,2). Piiloon pääsee kääntymällä kadun toiselle puolelle, juoksemalla toiseen kortteliin tai hiippailemalla.
+- **Puhelin:** yli 2,5 ‰ humalassa puhelimeen voi tulla houkutus "soita exälle" (viesti hänen kuvallaan). Soittaminen kuluttaa akkua ja antaa saavutuksen "Älä soita exälle", mutta seuraavana päivänä exä on vihainen.
+- **Lööpit ja saavutukset:** kuolinlööppi, jos exän kumppani tappaa ("Exän uusi mies: 'Hän aloitti'"), ja saavutus "Ei ikinä enää" (selviä päivästä 10 tapaamatta exää).
+
+Suositus: aloitetaan yhdistelmällä **tavara exällä + uusi kumppani** (selkeä tavoite, käyttää valmiita mekaniikkoja), ja välttely ja puhelin lisätään myöhemmin.
+
 Vaikeammat hukatut tavarat myöhempinä päivinä:
 
 - tavara on **jonkun hallussa** (ostettava, vaihdettava tai napattava)
