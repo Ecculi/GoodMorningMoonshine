@@ -148,6 +148,11 @@ func _ready() -> void:
 	var music = Music.new()
 	music.main = self
 	add_child(music)
+	# CI: `-- --smoke` drives the game through late days and special days.
+	if OS.get_cmdline_user_args().has("--smoke"):
+		var smoke = load("res://scripts/smoke_test.gd").new()
+		smoke.main = self
+		add_child(smoke)
 	_build_environment()
 	_build_physics_ground()
 	_build_clouds()
