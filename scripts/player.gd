@@ -429,6 +429,17 @@ func hit_by_rider(dir: int, spd: float) -> void:
 	_maybe_fall_asleep()
 
 
+## Walked into the street sweeper: knocked over.
+func hit_by_sweeper(dir: int) -> void:
+	running = false
+	_press_time = -1.0
+	GameState.fell_down()
+	_go_ragdoll(Vector3(dir * 2.5, 1.4, randf_range(-0.6, 0.6)), 1.4)
+	GameState.damage(10.0, "car")
+	main.hud.flash_hurt()
+	main.popup("!", position + Vector3(0, 2.2, 0), Color(1, 0.6, 0.2))
+
+
 func run_over(car_dir: int) -> void:
 	_car_flings(car_dir)
 	_car_survive = "RUN_OVER_SURVIVE"

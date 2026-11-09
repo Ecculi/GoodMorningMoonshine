@@ -20,6 +20,7 @@ const LostItemNode = preload("res://scripts/lost_item_node.gd")
 const ModalUI = preload("res://scripts/modal_ui.gd")
 const DebugTools = preload("res://scripts/debug_tools.gd")
 const Car = preload("res://scripts/car.gd")
+const Sweeper = preload("res://scripts/sweeper.gd")
 
 ## Battery use per second while the phone is open, by page.
 ## Battery per second of use, by page. Drains only while the phone is open.
@@ -89,6 +90,9 @@ var _next_gang := 0
 var items: Array = []
 var lost_nodes: Array = []
 var cars: Array = []
+## Street cleaning day: the sweeper in this block (at most one at a time).
+var sweepers: Array = []
+var _sweeper_timer := 2.0
 var _car_timer := 3.0
 var rng := RandomNumberGenerator.new()
 
@@ -362,6 +366,10 @@ func _clear_block_content() -> void:
 	for c in cars:
 		c.queue_free()
 	cars.clear()
+	for sw in sweepers:
+		sw.queue_free()
+	sweepers.clear()
+	_sweeper_timer = rng.randf_range(1.0, 6.0)
 	_car_timer = rng.randf_range(2.0, 8.0)
 	for ln in lost_nodes:
 		ln.queue_free()
@@ -1763,6 +1771,34 @@ func food_on_ground_near(pos: Vector3, r: float):
 	return null
 
 
+func remove_sweeper(sw) -> void:
+	sweepers.erase(sw)
+	sw.queue_free()
+
+
+## The sweeper sucked up one of the player's lost things: it ends up dumped
+## in some block two to four blocks away (the phone map follows it).
+func lost_swept(ln) -> void:
+	var id: String = ln.id
+	lost_nodes.erase(ln)
+	ln.queue_free()
+	popup("slurp", ln.position + Vector3(0, 1.2, 0), Color(1, 0.6, 0.4), 1.2)
+	hud.think([id])
+	if not GameState.placements.has(id):
+		return
+	var seg := segment
+	for attempt in 100:
+		var cand := CityMap.random_segment(rng)
+		var d := GameState.seg_distance(cand, segment)
+		if d >= 2.0 and d <= 4.0 and CityMap.is_open(cand):
+			seg = cand
+			break
+	GameState.placements[id] = [seg, Vector3(rng.randf_range(-12.0, 12.0), 0.0, _random_z())]
+	for h in GameState.phone_map_hints:
+		if h["id"] == id:
+			h["seg"] = seg
+
+
 ## Someone hit the politician: the aides go for the player and the police
 ## always come.
 func politician_attacked(pos: Vector3) -> void:
@@ -1852,6 +1888,18 @@ func _update_traffic() -> void:
 			rd.setup(rng, rdir)
 			add_child(rd)
 			riders.append(rd)
+	# Street cleaning day: a sweeper comes through every block now and then
+	# (also along the pedestrian street).
+	if GameState.special_day == "cleanup" and sweepers.is_empty():
+		_sweeper_timer -= dt
+		if _sweeper_timer <= 0.0:
+			_sweeper_timer = rng.randf_range(15.0, 30.0)
+			var sd := 1 if rng.randf() < 0.5 else -1
+			var sw = Sweeper.new()
+			sw.main = self
+			sw.setup(rng, sd)
+			add_child(sw)
+			sweepers.append(sw)
 	if _is_pedestrian_street():
 		return
 	_car_timer -= dt
