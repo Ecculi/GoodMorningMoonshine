@@ -807,10 +807,19 @@ func _heavy_breathing() -> void:
 		model.scale = Vector3.ONE
 
 
+## Barefoot and not running: sneaking. Quiet: the police and guards
+## notice only from close by, pickpocketing works better and a punch from
+## behind hits even harder.
+func is_sneaking() -> bool:
+	return GameState.is_lost("shoes") and not running and not is_helpless()
+
+
 func _hunger_signs() -> void:
 	var hungry := GameState.hunger >= GameState.HUNGER_EMPTY_STOMACH
+	# Sneaking: crouched forward, hands up (see PersonModel.crouch).
+	model.crouch = move_toward(model.crouch, 1.0 if is_sneaking() else 0.0, get_process_delta_time() * 4.0)
 	# Hunger slumps forward; the silly walk leans back and bounces.
-	model.rotation.z = (-0.12 if hungry else 0.0) + model.silly_lean + _wind_lean
+	model.rotation.z = (-0.12 if hungry else 0.0) - 0.22 * model.crouch + model.silly_lean + _wind_lean
 	model.position.y = model.silly_bounce + (0.15 if _hic_jolt > 0.0 else 0.0)
 	# Cold and hangover shake differently:
 	# - cold: fast fine shivering, arms hugging the body, bluish face and
@@ -1026,7 +1035,7 @@ func _punch(target, charge: float, charged := false) -> void:
 	# From behind: the target doesn't see it coming (see npc.is_back_turned).
 	var surprise: bool = target.has_method("is_back_turned") and target.is_back_turned(position)
 	if surprise:
-		miss *= 0.5  # a still target is easier to hit
+		miss *= 0.0 if is_sneaking() else 0.5  # a still target is easier to hit
 	if randf() < miss:
 		main.popup("?", target.position + Vector3(0, 2.0, 0), Color(1, 1, 1))
 		return
@@ -1051,9 +1060,9 @@ func _punch(target, charge: float, charged := false) -> void:
 		knock += 1.5
 		main.popup("×3", target.position + Vector3(0, 2.4, 0), Color(1, 0.75, 0.25), 1.6)
 	if surprise:
-		# Double damage (even a hangover punch lands), and a fully charged
-		# one knocks out at once.
-		dmg = maxi(dmg, 1) * 2
+		# Double damage (even a hangover punch lands), triple when sneaking
+		# up barefoot, and a fully charged one knocks out at once.
+		dmg = maxi(dmg, 1) * (3 if is_sneaking() else 2)
 		main.popup("!", target.position + Vector3(0, 2.4, 0), Color(1, 0.35, 0.2), 2.2)
 		main.popup("*", target.position + Vector3(0, 1.4, 0), Color(1, 0.95, 0.5), 1.8)
 	elif counter:

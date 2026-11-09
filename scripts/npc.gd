@@ -1646,8 +1646,8 @@ func check_pickpocket(p: Node3D) -> void:
 		if n.role == "thief" and n.thief_mode == "prowl" and (n._tail_target == self \
 				or Vector2(n.position.x - position.x, n.position.z - position.z).length() < 2.5):
 			n.meet_colleague()
-	# Barefoot the player sneaks quietly, so pickpocketing works better.
-	var chance := 0.85 if GameState.is_lost("shoes") else PICKPOCKET_CHANCE
+	# Sneaking up barefoot, pickpocketing works better.
+	var chance := 0.85 if p.is_sneaking() else PICKPOCKET_CHANCE
 	# A hiccup right now gives the player away.
 	if p.hic_window > 0.0:
 		chance = 0.0

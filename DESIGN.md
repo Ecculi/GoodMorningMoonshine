@@ -181,6 +181,7 @@ Krapula ei kovene päivien mukaan.
   - **Vaatekappaleet:**
     - Jokainen puuttuva vaatekappale saa hahmon kylmettymään nopeammin, ja kylmä kasvattaa taas nälkää nopeammin.
     - **Kengät:** ilman niitä vauhti on hitaampaa, ja juokseminen on mahdollista mutta vaikeampaa. Hyötynäkin on: paljain jaloin pelaaja voi **hiippailla**. Hiippaillen voi ohittaa poliisit ja vartijat huomaamatta, yllättää ohikulkijan selän takaa ja **taskuvarastaa** helpommin.
+      - **Toteutus:** hiippailua on kulkeminen (tai seisominen) paljain jaloin juoksematta. Hahmo kumartuu eteenpäin, kädet nousevat koukussa rinnan eteen ja askeleet lyhenevät, ja paljaat jalat näkyvät ihonvärisinä varpaineen. Hiippaillessa poliisin keila ja vartijoiden huomausetäisyys ovat vain 7 m (juostessa normaalit), taskuvarkaus onnistuu 85 %:n todennäköisyydellä (muuten 60 %), ja yllätyslyönti selkään ei mene koskaan ohi ja tekee kolminkertaisen vahingon (muuten kaksinkertaisen).
     - **Takki ja housut:** suojaavat tappeluissa.
   - **Avaimet:** ilman niitä kotiovi on lukossa. Kotiin pääsee silti muilla keinoilla, joista jokainen maksaa jotain:
     - **Naapurin ovikello:** naapuri voi päästää sisään, haukkua tai soittaa poliisille (satunnaista).

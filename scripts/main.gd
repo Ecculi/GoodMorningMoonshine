@@ -1919,7 +1919,7 @@ var arrest := 0.0
 ## (hitting a priest).
 func report_crime(pos: Vector3, alarm: bool, animal := false, certain := false) -> void:
 	var noticed := false
-	var reach := SNEAK_NOTICE_DIST if GameState.is_lost("shoes") else INF
+	var reach := SNEAK_NOTICE_DIST if player.is_sneaking() else INF
 	# Drunk and loud: noticed from further away even when sneaking.
 	if GameState.promille > GameState.PROMILLE_DRUNK:
 		reach *= 2.0
@@ -1950,10 +1950,11 @@ func report_crime(pos: Vector3, alarm: bool, animal := false, certain := false) 
 ## player sneaks barefoot, longer when drunk and loud.
 func police_sight() -> float:
 	var r: float = Npc.VISION_RANGE
-	if GameState.is_lost("shoes"):
+	var sneak: bool = player.is_sneaking()
+	if sneak:
 		r = SNEAK_NOTICE_DIST
 	if GameState.promille > GameState.PROMILLE_DRUNK:
-		r *= 2.0 if GameState.is_lost("shoes") else 1.25
+		r *= 2.0 if sneak else 1.25
 	if GameState.viral:
 		r *= GameState.VIRAL_SIGHT
 	return r
