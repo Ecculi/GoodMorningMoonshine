@@ -1454,6 +1454,9 @@ func _spawn_street_folk() -> void:
 	# From day 6 an influencer films anything silly the player does.
 	if GameState.day >= 6 and rng.randf() < 0.3:
 		_spawn_npc(false, "influencer")
+	# From day 8 an extremist party's canvasser hands out leaflets.
+	if GameState.day >= 8 and rng.randf() < 0.3:
+		_spawn_npc(false, "canvasser")
 	# From day 6 a priest may help a cold or hungry player.
 	if GameState.day >= 6 and rng.randf() < 0.25:
 		_spawn_npc(false, "priest")

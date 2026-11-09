@@ -25,6 +25,10 @@ extends Node3D
 ## - "priest": (from day 6) black clothes and a white collar; gives a cold
 ##   or hungry player a bun or a coffee (once), tutting if they are drunk.
 ##   Hitting a priest always brings the police.
+## - "canvasser": (from day 8) an extremist party's man (which party is never
+##   said); follows the player about a metre behind and keeps pushing a
+##   leaflet into their hand (it pushes out whatever was there). Shake him
+##   off by running to another block, or hit him and he scurries off.
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -231,6 +235,22 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.96, 1.04))
 			_head_box(Vector3(0.11, 1.56, 0), Vector3(0.05, 0.05, 0.1), Color(0.97, 0.97, 0.97))  # white collar tab
 			speed = 1.0
+			telegraphs = true
+		"canvasser":
+			model = PersonModel.new(Color(0.3, 0.32, 0.36), Color(0.2, 0.2, 0.22), skin,
+				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.97, 1.04))
+			_head_box(Vector3(-0.02, 1.83, 0), Vector3(0.29, 0.03, 0.33), HAIRS[0])  # short back and sides
+			# A stack of leaflets in the hand.
+			var stack := MeshInstance3D.new()
+			var sbm := BoxMesh.new()
+			sbm.size = Vector3(0.16, 0.06, 0.22)
+			stack.mesh = sbm
+			var smat := StandardMaterial3D.new()
+			smat.albedo_color = Color(0.9, 0.9, 0.86)
+			stack.material_override = smat
+			stack.position = Vector3(0.04, -0.06, 0)
+			model.hand.add_child(stack)
+			speed = 1.2
 			telegraphs = true
 		"thief":
 			model = PersonModel.new(Color(0.16, 0.17, 0.2), Color(0.12, 0.14, 0.22), skin,
@@ -499,7 +519,7 @@ func provoke() -> void:
 		_mark.modulate = Color(1, 0.25, 0.2)
 		_mark.visible = true
 		return
-	if role == "priest":
+	if role == "priest" or role == "canvasser":
 		# Doesn't hit back: hurries off, shocked.
 		state = S.LEAVE
 		dir = 1 if position.x >= main.player.position.x else -1
@@ -813,6 +833,43 @@ func _carrier_wait(dt: float) -> bool:
 	if dx * dir <= 0.0 or absf(dx) > 1.8 or absf(p.position.z - position.z) > 0.9 or p.is_helpless():
 		return false
 	model.animate(0.0, dt)
+	return true
+
+
+## Canvasser: notices the player within CANVASS_NOTICE, then sticks about
+## a metre behind them (a bit faster than walking: only running shakes
+## him off) and every few seconds pushes a leaflet into their hand.
+const CANVASS_NOTICE := 6.0
+const CANVASS_SPEED := 2.9
+const CANVASS_EVERY := 4.0
+var _canvass_on := false
+var _flyer_t := 1.0
+
+
+func _canvass(dt: float) -> bool:
+	var p = main.player
+	var to := Vector2(p.position.x - position.x, p.position.z - position.z)
+	if not _canvass_on:
+		if to.length() < CANVASS_NOTICE and not p.is_helpless() and GameState.modal == "":
+			_canvass_on = true
+			main.popup("!", position + Vector3(0, 2.2, 0), Color(0.9, 0.9, 0.9))
+		else:
+			return false
+	dir = 1 if to.x >= 0.0 else -1
+	if to.length() > 1.1:
+		var step := to.normalized() * minf(CANVASS_SPEED * dt, to.length() - 1.0)
+		position.x += step.x
+		position.z += step.y
+		model.animate(1.0, dt, 1.6)
+	else:
+		model.animate(0.0, dt)
+	model.raise_arm(to.length() < 1.6)
+	_flyer_t -= dt
+	if _flyer_t <= 0.0 and to.length() < 1.4 and not p.is_helpless():
+		_flyer_t = CANVASS_EVERY
+		var it = main.spawn_item(Item.Kind.FLYER, p.position)
+		p._pickup(it)
+		main.popup("!", p.position + Vector3(0, 2.3, 0), Color(0.9, 0.9, 0.9))
 	return true
 
 
@@ -1135,7 +1192,7 @@ func _process(_delta: float) -> void:
 			model.animate(0.0, dt)
 			if _timer <= 0.0:
 				state = S.CHASE if role == "police" or role == "bouncer" else S.FIGHT
-				if role == "priest":
+				if role == "priest" or role == "canvasser":
 					state = S.LEAVE
 		S.KO:
 			_timer += dt
@@ -1281,6 +1338,8 @@ func _walk(dt: float) -> void:
 	if role == "priest" and _priest(dt):
 		return
 	if carry_id != "" and _carrier_wait(dt):
+		return
+	if role == "canvasser" and _canvass(dt):
 		return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
