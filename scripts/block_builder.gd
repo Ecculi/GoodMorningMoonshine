@@ -306,7 +306,7 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 
 
 ## Height of the top of a shop awning.
-const AWNING_Y := 2.6
+const AWNING_Y := 2.4
 ## Where a lost thing stuck up high sits: in the front of a tree top, or
 ## on top of an awning (y, z).
 const TREE_ITEM := Vector2(2.35, -6.45)
