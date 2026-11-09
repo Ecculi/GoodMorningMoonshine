@@ -1354,6 +1354,9 @@ func _spawn_street_folk() -> void:
 	# From day 6 an influencer films anything silly the player does.
 	if GameState.day >= 6 and rng.randf() < 0.3:
 		_spawn_npc(false, "influencer")
+	# From day 6 a priest may help a cold or hungry player.
+	if GameState.day >= 6 and rng.randf() < 0.25:
+		_spawn_npc(false, "priest")
 	# From day 5 a pickpocket prowls the streets.
 	if GameState.day >= 5 and rng.randf() < 0.3:
 		_spawn_npc(false, "thief")
@@ -1790,7 +1793,9 @@ var arrest := 0.0
 ## their vision cone (a shout they hear); guards in the block react to
 ## crimes against people. A shout can also bring a police officer running
 ## from the street end.
-func report_crime(pos: Vector3, alarm: bool, animal := false) -> void:
+## `certain`: with an alarm, the police always come at once if none saw it
+## (hitting a priest).
+func report_crime(pos: Vector3, alarm: bool, animal := false, certain := false) -> void:
 	var noticed := false
 	var reach := SNEAK_NOTICE_DIST if GameState.is_lost("shoes") else INF
 	# Drunk and loud: noticed from further away even when sneaking.
@@ -1812,7 +1817,7 @@ func report_crime(pos: Vector3, alarm: bool, animal := false) -> void:
 		if saw:
 			n.notice()
 			noticed = true
-	if alarm and not noticed and rng.randf() < 0.6:
+	if alarm and not noticed and (certain or rng.randf() < 0.6):
 		var cop = _spawn_npc(true, "police")
 		cop.position.x = Npc.EDGE_X * (-1.0 if pos.x < 0.0 else 1.0)
 		cop.position.z = clampf(pos.z, Z_MIN, Z_MAX)

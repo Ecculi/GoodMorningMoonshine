@@ -22,6 +22,9 @@ extends Node3D
 ##   him or knock him out to get it back.
 ## - "granny": (from day 5) slow little old lady with a handbag; annoy her
 ##   (hit, throw, pickpocket) and she swings the bag surprisingly hard.
+## - "priest": (from day 6) black clothes and a white collar; gives a cold
+##   or hungry player a bun or a coffee (once), tutting if they are drunk.
+##   Hitting a priest always brings the police.
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -222,6 +225,12 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			lens.position = Vector3(0.24, 1.3, 0)
 			model.add_child(lens)
 			speed = 0.9
+		"priest":
+			model = PersonModel.new(Color(0.07, 0.07, 0.08), Color(0.07, 0.07, 0.08), skin,
+				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.96, 1.04))
+			_head_box(Vector3(0.11, 1.56, 0), Vector3(0.05, 0.05, 0.1), Color(0.97, 0.97, 0.97))  # white collar tab
+			speed = 1.0
+			telegraphs = true
 		"thief":
 			model = PersonModel.new(Color(0.16, 0.17, 0.2), Color(0.12, 0.14, 0.22), skin,
 				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.95, 1.02))
@@ -320,7 +329,7 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 	add_child(model)
 	_pick_style(rng)
 	match role:
-		"police", "bouncer":
+		"police", "bouncer", "priest":
 			model.set_shoe_color(Color(0.05, 0.05, 0.06))
 		"guard":
 			model.set_shoe_color(Color(0.1, 0.1, 0.12))
@@ -429,6 +438,12 @@ func provoke() -> void:
 		_far_t = 0.0
 		_mark.modulate = Color(1, 0.25, 0.2)
 		_mark.visible = true
+		return
+	if role == "priest":
+		# Doesn't hit back: hurries off, shocked.
+		state = S.LEAVE
+		dir = 1 if position.x >= main.player.position.x else -1
+		main.popup("!", position + Vector3(0, 2.2, 0), Color(1, 0.9, 0.5))
 		return
 	if model.sitting:
 		model.sitting = false
@@ -712,6 +727,49 @@ func _bub_prism(pos: Vector3, size: Vector3, c: Color, apex: float) -> void:
 	_bubble.add_child(mi)
 
 
+## Priest: gives a cold or hungry player a bun (food) or a coffee, once.
+## Drunk, they get a disapproving shake of the head, but the gift anyway.
+const PRIEST_NOTICE := 2.4
+const PRIEST_HUNGRY := 50.0
+const PRIEST_GIVE_TIME := 1.4
+var _gift_given := false
+var _gift_t := 0.0
+
+
+func _priest(dt: float) -> bool:
+	var p = main.player
+	if _gift_t > 0.0:
+		_gift_t -= dt
+		dir = 1 if p.position.x >= position.x else -1
+		model.animate(0.0, dt)
+		if _gift_t <= 0.0:
+			model.raise_arm(false)
+		return true
+	if _gift_given:
+		return false
+	var d := Vector2(p.position.x - position.x, p.position.z - position.z).length()
+	if d > PRIEST_NOTICE or p.is_helpless() or GameState.modal != "":
+		return false
+	var hungry := GameState.hunger >= PRIEST_HUNGRY
+	var cold := GameState.cold >= GameState.COLD_SHIVER
+	if not hungry and not cold:
+		return false
+	_gift_given = true
+	_gift_t = PRIEST_GIVE_TIME
+	model.raise_arm(true)
+	var kind: int = Item.Kind.FOOD
+	if cold and (not hungry or main.rng.randf() < 0.5):
+		kind = Item.Kind.COFFEE
+	var it = main.spawn_item(kind, p.position)
+	p._pickup(it)
+	var top := position + Vector3(0, 2.3, 0)
+	if GameState.promille > GameState.PROMILLE_DRUNK:
+		main.popup("tsk tsk", top + Vector3(0, 0.4, 0), Color(0.85, 0.85, 0.9), 0.8)
+	main.popup_icon(main.heart_texture(), top)
+	GameState.busy_time = maxf(GameState.busy_time, 0.6)
+	return true
+
+
 ## Pickpocket: "prowl" (walks about, tails a passer-by, sidles up to the
 ## player), "flee" (got something: runs for the end of the block) or
 ## "done" (finished; just walks on).
@@ -986,6 +1044,8 @@ func _process(_delta: float) -> void:
 			model.animate(0.0, dt)
 			if _timer <= 0.0:
 				state = S.CHASE if role == "police" or role == "bouncer" else S.FIGHT
+				if role == "priest":
+					state = S.LEAVE
 		S.KO:
 			_timer += dt
 			if _ragdoll != null:
@@ -1086,7 +1146,7 @@ var _pointing := false
 
 
 func _point_at_player(dt: float) -> bool:
-	var want: bool = (role == "civ" or role == "granny" or role == "tourist") and not stationary \
+	var want: bool = (role == "civ" or role == "granny" or role == "tourist" or role == "priest") and not stationary \
 		and main.police_hunting_in_view()
 	if want != _pointing:
 		_pointing = want
@@ -1127,6 +1187,8 @@ func _walk(dt: float) -> void:
 		return
 	if role == "tourist" and _tourist(dt):
 		return
+	if role == "priest" and _priest(dt):
+		return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
 	# The way on is fenced off: turn back.
@@ -1147,6 +1209,9 @@ func _hit_by_player() -> void:
 		tour_mode = "done"
 	if role == "bouncer":
 		return  # hitting the bouncer himself: thrown out as before
+	if role == "priest":
+		# Hitting a priest: someone always calls the police, at once.
+		main.report_crime(position, true, false, true)
 	if not player_started and not attacked_player:
 		var hostile := state == S.FIGHT or state == S.CHASE or state == S.STUNNED
 		player_started = not hostile

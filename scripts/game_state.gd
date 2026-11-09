@@ -85,6 +85,8 @@ const COLD_PUNCH_WARM := 3.0
 
 const TIRED_RATE := 0.5
 const COFFEE_AWAKE := 35.0
+## Hot coffee warms a little too.
+const COFFEE_WARMTH := 12.0
 const ENERGY_AWAKE := 45.0
 const CAFFEINE_LIMIT := 1.5
 const JITTER_TIME := 20.0

@@ -964,6 +964,8 @@ func _short_action() -> void:
 		if hand_item.kind == Item.Kind.COFFEE or hand_item.kind == Item.Kind.ENERGY:
 			var coffee: bool = hand_item.kind == Item.Kind.COFFEE
 			GameState.caffeinate(GameState.COFFEE_AWAKE if coffee else GameState.ENERGY_AWAKE)
+			if coffee:
+				GameState.warm_up(GameState.COFFEE_WARMTH)  # hot coffee
 			main.popup("!", position + Vector3(0, 2.1, 0), Color(0.6, 1.0, 0.4))
 			_consume_hand_item()
 			return
