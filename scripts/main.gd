@@ -1835,7 +1835,8 @@ func lost_swept(ln) -> void:
 	for attempt in 100:
 		var cand := CityMap.random_segment(rng)
 		var d := GameState.seg_distance(cand, segment)
-		if d >= 2.0 and d <= 4.0 and CityMap.is_open(cand):
+		var far := 3.0 if id == "shoes" else 4.0
+		if d >= 2.0 and d <= far and CityMap.is_open(cand):
 			seg = cand
 			break
 	GameState.placements[id] = [seg, Vector3(rng.randf_range(-12.0, 12.0), 0.0, _random_z())]

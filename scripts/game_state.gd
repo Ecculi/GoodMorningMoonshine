@@ -925,6 +925,9 @@ func _lose_items() -> void:
 		lost.append(pool[i])
 
 
+const SHOES_MAX_DIST := 3.0
+
+
 ## Lost items lie in blocks near home; the area grows day by day.
 ## They are placed anew every morning.
 func _place_lost_items() -> void:
@@ -951,6 +954,10 @@ func _place_lost_items() -> void:
 				ok = absf(c.x - start_c.x) + absf(c.y - start_c.y) <= 1.0 and cand != home_seg
 			else:
 				ok = absf(c.x - home_c.x) + absf(c.y - home_c.y) <= radius and cand != home_seg
+				# Shoes are never more than SHOES_MAX_DIST blocks from where the
+				# day starts: walking barefoot far is no fun.
+				if id == "shoes" and absf(c.x - start_c.x) + absf(c.y - start_c.y) > SHOES_MAX_DIST:
+					ok = false
 			if ok:
 				seg = cand
 				break
