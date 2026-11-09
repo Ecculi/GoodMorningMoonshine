@@ -22,6 +22,7 @@ const DebugTools = preload("res://scripts/debug_tools.gd")
 const Car = preload("res://scripts/car.gd")
 const Sweeper = preload("res://scripts/sweeper.gd")
 const Sfx = preload("res://scripts/sfx.gd")
+const Music = preload("res://scripts/music.gd")
 
 ## Battery use per second while the phone is open, by page.
 ## Battery per second of use, by page. Drains only while the phone is open.
@@ -144,6 +145,9 @@ func _ready() -> void:
 	sfx = Sfx.new()
 	sfx.main = self
 	add_child(sfx)
+	var music = Music.new()
+	music.main = self
+	add_child(music)
 	_build_environment()
 	_build_physics_ground()
 	_build_clouds()
