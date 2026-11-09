@@ -14,7 +14,9 @@ const BUBBLE_WALK := 5.0
 ## for day changes and death (newspaper headline).
 
 var main
-var mode := ""  # "", "day" or "dead"
+var mode := ""  # "", "day", "dead" or "start"
+## Start menu (a saved morning exists): 0 = continue, 1 = new game.
+var start_sel := 0
 var card_title := ""
 var card_sub := ""
 var card_time := 0.0
@@ -325,7 +327,7 @@ func _draw_phone_icon(vs: Vector2, font: Font) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if main == null or mode != "" or GameState.modal != "" or GameState.over:
+	if main == null:
 		return
 	var pos := Vector2(-1, -1)
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -333,6 +335,16 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventScreenTouch and event.pressed:
 		pos = event.position
 	else:
+		return
+	if mode == "start":
+		var rects := start_button_rects(get_viewport_rect().size)
+		for i in rects.size():
+			if rects[i].has_point(pos):
+				start_sel = i
+				main.start_choice(i)
+				get_viewport().set_input_as_handled()
+		return
+	if mode != "" or GameState.modal != "" or GameState.over:
 		return
 	if _phone_icon_rect(get_viewport_rect().size).has_point(pos):
 		main.open_phone()
@@ -421,6 +433,48 @@ func _draw() -> void:
 		draw_string(font, Vector2(0, vs.y * 0.45 + 60), card_sub, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 28, Color(0.8, 0.8, 0.8))
 	elif mode == "dead":
 		_draw_headline(vs, font)
+	elif mode == "start":
+		_draw_start_menu(vs, font)
+
+
+## Start menu buttons: continue (left) and new game (right).
+func start_button_rects(vs: Vector2) -> Array:
+	var r := minf(vs.y * 0.12, 70.0)
+	var c := vs * Vector2(0.5, 0.5)
+	return [Rect2(c + Vector2(-r * 2.6, -r), Vector2(r, r) * 2.0),
+		Rect2(c + Vector2(r * 0.6, -r), Vector2(r, r) * 2.0)]
+
+
+## Opening the app with a saved morning: continue that day (play arrow,
+## day number below) or start a new game (a sun rising: a fresh start).
+func _draw_start_menu(vs: Vector2, font: Font) -> void:
+	draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, clampf(card_time * 2.0, 0.0, 0.7)))
+	var rects := start_button_rects(vs)
+	for i in rects.size():
+		var rc: Rect2 = rects[i]
+		var c := rc.get_center()
+		var rad := rc.size.x * 0.5
+		var sel := i == start_sel
+		if sel:
+			rad *= 1.0 + 0.05 * sin(Time.get_ticks_msec() / 160.0)
+			draw_circle(c, rad + 6.0, Color.WHITE)
+		draw_circle(c, rad, Color(0.85, 0.1, 0.12) if i == 0 else Color(0.25, 0.45, 0.7))
+		var k := rad / 24.0
+		if i == 0:
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-7, -11) * k, c + Vector2(12, 0) * k,
+				c + Vector2(-7, 11) * k]), Color.WHITE)
+			draw_string(font, Vector2(rc.position.x - 40, rc.end.y + 36), card_sub, HORIZONTAL_ALIGNMENT_CENTER,
+				rc.size.x + 80, 26, Color(1, 1, 1, 0.95 if sel else 0.6))
+		else:
+			# A sun rising over the horizon.
+			var hz := c + Vector2(0, 5) * k
+			draw_circle(hz, 8.0 * k, Color(1, 0.85, 0.3))
+			draw_rect(Rect2(hz + Vector2(-rad * 0.8, 0), Vector2(rad * 1.6, 9.0 * k)), Color(0.25, 0.45, 0.7))
+			for j in 5:
+				var a := PI + PI * (float(j) + 0.5) / 5.0
+				var d := Vector2(cos(a), sin(a))
+				draw_line(hz + d * 11.0 * k, hz + d * 15.0 * k, Color(1, 0.85, 0.3), 2.5 * k, true)
+			draw_line(hz + Vector2(-rad * 0.7, 0), hz + Vector2(rad * 0.7, 0), Color.WHITE, 2.5 * k, true)
 
 
 func _heart_points(center: Vector2, size: float) -> PackedVector2Array:

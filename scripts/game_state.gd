@@ -839,7 +839,77 @@ func format_promille(p: float) -> String:
 
 func _die(cause: String) -> void:
 	over = true
+	delete_save()
 	player_died.emit(cause)
+
+
+# --- Morning save -----------------------------------------------------------------
+
+## The game saves itself every morning at the start of the day. Closing the
+## app mid-day and opening it again goes back to that morning; there is no
+## saving during the day. Death deletes the save.
+const SAVE_FILE := "user://save.cfg"
+## GameState variables kept in the save. New ones can be added here: an
+## older save without them just keeps the default.
+const SAVE_KEYS := [
+	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
+	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
+	"placements", "dog_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
+	"weather", "storm", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
+]
+
+
+func has_save() -> bool:
+	return FileAccess.file_exists(SAVE_FILE)
+
+
+## Saves the morning. `extra` holds what main.gd needs to rebuild the
+## morning (where the character starts, what is in the hand).
+func save_morning(extra: Dictionary) -> void:
+	var cf := ConfigFile.new()
+	for k in SAVE_KEYS:
+		cf.set_value("state", k, get(k))
+	cf.set_value("state", "city", CityMap.city)
+	cf.set_value("state", "closed", CityMap.closed.duplicate())
+	for k in extra:
+		cf.set_value("extra", k, extra[k])
+	cf.save(SAVE_FILE)
+
+
+## Loads the morning save into the game state. Returns the `extra` part
+## given to save_morning, or {} when there is no usable save.
+func load_save() -> Dictionary:
+	var cf := ConfigFile.new()
+	if cf.load(SAVE_FILE) != OK or not cf.has_section("state"):
+		return {}
+	CityMap.set_city(cf.get_value("state", "city", 0))
+	for k in SAVE_KEYS:
+		if cf.has_section_key("state", k):
+			set(k, cf.get_value("state", k))
+	CityMap.closed = cf.get_value("state", "closed", []).duplicate()
+	_doses.clear()
+	_reset_day_counters()
+	strain = 0.0
+	exhausted = false
+	caffeine = 0.0
+	jitter_t = 0.0
+	focus_t = 0.0
+	trip_t = 0.0
+	doze_t = -1.0
+	busy_time = 0.0
+	hit_stop_t = 0.0
+	charging = false
+	modal = ""
+	var extra := {}
+	if cf.has_section("extra"):
+		for k in cf.get_section_keys("extra"):
+			extra[k] = cf.get_value("extra", k)
+	return extra
+
+
+func delete_save() -> void:
+	if has_save():
+		DirAccess.remove_absolute(SAVE_FILE)
 
 
 ## Debug (F11): the next new game is in this city instead of a random one.

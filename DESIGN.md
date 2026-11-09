@@ -516,6 +516,7 @@ Hahmoideat:
 - Peli **tallentuu automaattisesti joka aamu** päivän alussa.
 - Jos sovellus suljetaan kesken päivän, jatketaan **saman päivän alusta**.
 - Kesken päivän ei voi tallentaa, joten huijaaminen ei onnistu.
+- **Toteutus:** aamun tila (päivä, promillet, health, raha, nälkä, kylmä, väsymys, koti, hukatut tavarat ja niiden paikat, sää, puhelimen vihjeet, kaupunki, tietyöt, aloituspaikka ja käden esine) tallentuu tiedostoon `user://save.cfg`. Kun sovellus avataan ja tallennus on olemassa, näytetään kaksi isoa nappia ilman tekstiä: punainen play-nappi (alla "Päivä N") jatkaa tallennettua aamua ja sininen nappi, jossa aurinko nousee, aloittaa uuden pelin. Valinta nuolilla ja toimintonapilla tai napauttamalla. **Kuolema poistaa tallennuksen.**
 
 ## Tekniikka
 

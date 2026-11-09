@@ -154,7 +154,12 @@ func _ready() -> void:
 	GameState.silly_moment.connect(_on_silly_moment)
 	GameState.achievement_unlocked.connect(func(id): hud.show_achievement(id))
 	GameState.player_died.connect(_on_player_died)
-	_new_game()
+	# A morning save: ask whether to continue it or start a new game.
+	if GameState.has_save() and _continue_game():
+		GameState.over = true
+		hud.show_card("start", "", tr("DAY_N") % GameState.day)
+	else:
+		_new_game()
 
 
 func _process(delta: float) -> void:
@@ -177,6 +182,13 @@ func _process(delta: float) -> void:
 	if hud.mode == "dead" and hud.card_time > 1.0 and Input.is_action_just_pressed("action"):
 		_new_game()
 		hud.hide_card()
+	if hud.mode == "start":
+		if Input.is_action_just_pressed("move_left"):
+			hud.start_sel = 0
+		elif Input.is_action_just_pressed("move_right"):
+			hud.start_sel = 1
+		if hud.card_time > 0.3 and Input.is_action_just_pressed("action"):
+			start_choice(hud.start_sel)
 
 
 # --- Moving around the map ------------------------------------------------------
@@ -863,6 +875,53 @@ func _new_game() -> void:
 	_enter_block(GameState.home_seg, _home_door_pos(), 1)
 	hud.show_pocket_check()
 	hud.show_city(CityMap.city_name())
+	_save_morning(GameState.home_seg, _home_door_pos(), 1)
+
+
+## The morning is saved as the day starts (see GameState.save_morning).
+func _save_morning(seg: Vector3i, pos: Vector3, facing: int) -> void:
+	var hand: Array = []
+	var h = player.hand_item
+	if h != null and is_instance_valid(h):
+		hand = [h.kind, h.value, h.drink]
+	GameState.save_morning({"seg": seg, "pos": pos, "facing": facing, "hand": hand})
+
+
+## Rebuilds the saved morning. False when the save could not be read.
+func _continue_game() -> bool:
+	var s := GameState.load_save()
+	if s.is_empty():
+		return false
+	_searched_bins.clear()
+	_lock_hits = 0
+	_friend_refused = false
+	_block_items.clear()
+	_block_glass.clear()
+	_pending_followers.clear()
+	arrest = 0.0
+	player.reset(Vector3.ZERO)
+	player.wake_up()
+	_enter_block(s.get("seg", GameState.home_seg), s.get("pos", _home_door_pos()), s.get("facing", 1))
+	var hand: Array = s.get("hand", [])
+	if hand.size() == 3:
+		var it = spawn_item(hand[0], player.position, hand[1], hand[2])
+		player._pickup(it)
+	hud.show_pocket_check()
+	return true
+
+
+## Start menu after opening the app with a save: 0 = continue the saved
+## morning, 1 = new game.
+func start_choice(i: int) -> void:
+	if hud.mode != "start":
+		return
+	hud.hide_card()
+	if i == 0:
+		GameState.over = false
+		player.wake_up()
+		hud.show_city(CityMap.city_name())
+	else:
+		_new_game()
 
 
 ## From day 2 on the character wakes up somewhere other than home (they
@@ -875,8 +934,10 @@ func _new_day() -> void:
 	_friend_refused = false
 	arrest = 0.0
 	player.wake_up()
-	_enter_block(GameState.wake_seg, GameState.wake_pos, 1 if rng.randf() < 0.5 else -1)
+	var facing := 1 if rng.randf() < 0.5 else -1
+	_enter_block(GameState.wake_seg, GameState.wake_pos, facing)
 	hud.show_pocket_check()
+	_save_morning(GameState.wake_seg, GameState.wake_pos, facing)
 	if GameState.sleep_place == "jail":
 		_cellmate()
 
