@@ -436,6 +436,7 @@ func _gull(dt: float) -> void:
 func _go_for_food() -> void:
 	state = A.FLY_TO
 	_join_t = -1.0
+	main.sfx.play("gull", position + Vector3(0, 0.5, 0))
 	var a := _rng.randf_range(0.0, TAU)
 	_swoop = Vector3(cos(a) * 1.8, _rng.randf_range(0.3, 1.2), sin(a) * 1.2) if GameState.day >= FLOCK_FROM_DAY \
 		else Vector3.ZERO

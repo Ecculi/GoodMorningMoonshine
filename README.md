@@ -5,6 +5,8 @@ Suunnitelma ja päätökset: [DESIGN.md](DESIGN.md)
 
 **Pelaa selaimessa:** https://ecculi.github.io/GoodMorningMoonshine/ (päivittyy automaattisesti, kun main-haaraan tulee muutoksia). Versionumero ja buildin aika näkyvät keskellä ruutua pelin käynnistyessä (häviävät, kun hahmo liikkuu) ja F1-ohjeessa; versio on `project.godot`-tiedoston `config/version` + buildin juokseva numero.
 
+Äänet syntetisoidaan koodissa (`scripts/sfx.gd`), joten pelissä ei ole ulkopuolisia äänitiedostoja.
+
 ## Prototyypin ajaminen
 
 1. Asenna [Godot 4.7](https://godotengine.org/download) (tavallinen versio, ei .NET).

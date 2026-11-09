@@ -567,6 +567,7 @@ func _knock_out(dmg: float, push: Vector3) -> void:
 
 
 func _go_ragdoll(push: Vector3, time: float) -> void:
+	main.sfx.play("fall", position + Vector3(0, 0.5, 0))
 	_fall_t = time
 	running = false
 	_press_time = -1.0
@@ -1148,6 +1149,7 @@ func _punch(target, charge: float, charged := false) -> void:
 	if dmg > 0:
 		GameState.hit_stop(0.04 + 0.025 * mini(dmg, 4))
 		main.shake(0.04 + 0.03 * mini(dmg, 4))
+		main.sfx.play("punch", target.position + Vector3(0, 1.4, 0), 0.0, 1.15 - 0.08 * mini(dmg, 4))
 	target.take_hit(dmg, self, knock, surprise, full)
 	GameState.silly_moment.emit()
 	if charged and charge >= 1.0 and target.is_down() and target.times_hit == 1:
@@ -1375,6 +1377,7 @@ func take_hit(dmg: float, from_x: float, source := "fight") -> void:
 		return
 	_knock = Vector3(signf(position.x - from_x) * 4.0, 0.0, 0.0)
 	main.hud.flash_hurt()
+	main.sfx.play("hit", position + Vector3(0, 1.4, 0))
 	# A bag with things in it may tear in a fight.
 	if hand_item != null and hand_item.kind == Item.Kind.BAG and not hand_item.contents.is_empty() \
 			and randf() < BAG_TEAR_CHANCE:

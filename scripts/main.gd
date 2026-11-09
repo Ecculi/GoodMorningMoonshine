@@ -21,6 +21,7 @@ const ModalUI = preload("res://scripts/modal_ui.gd")
 const DebugTools = preload("res://scripts/debug_tools.gd")
 const Car = preload("res://scripts/car.gd")
 const Sweeper = preload("res://scripts/sweeper.gd")
+const Sfx = preload("res://scripts/sfx.gd")
 
 ## Battery use per second while the phone is open, by page.
 ## Battery per second of use, by page. Drains only while the phone is open.
@@ -63,6 +64,8 @@ const EDGE_LIMIT_X := 21.0
 
 var player
 var hud
+## Sound effects (see sfx.gd).
+var sfx
 var camera: Camera3D
 var sun: DirectionalLight3D
 var env: Environment
@@ -138,6 +141,8 @@ var _focus_y := 0.58
 
 func _ready() -> void:
 	rng.randomize()
+	sfx = Sfx.new()
+	add_child(sfx)
 	_build_environment()
 	_build_physics_ground()
 	_build_clouds()
@@ -1329,7 +1334,16 @@ func _update_shake(delta: float) -> void:
 	camera.v_offset = randf_range(-1.0, 1.0) * _shake * 0.6
 
 
+## Popups that are sounds too ("glug", a bark, a bell...).
+const POPUP_SOUNDS := {"glug": "glug", "Hau!": "bark", "Vuh!": "bark", "Vink!": "whimper", "kling!": "bell",
+	"piip!": "horn", "SPLASH!": "splash", "slurp": "slurp", "rits!": "tear", "KOPS!": "hit", "Kärpät!": "cheer"}
+
+
 func popup(text: String, pos: Vector3, color: Color, size := 1.0) -> void:
+	if POPUP_SOUNDS.has(text):
+		sfx.play(POPUP_SOUNDS[text], pos)
+	elif text == "Grr":
+		sfx.play("bark", pos, -4.0, 0.6)
 	var l := Label3D.new()
 	l.text = text
 	l.font_size = 64

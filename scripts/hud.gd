@@ -209,6 +209,8 @@ var _found_t := 0.0
 
 
 func show_found(id: String) -> void:
+	if main != null:
+		main.sfx.play("found")
 	_found_id = id
 	_found_t = FOUND_TIME
 
@@ -266,6 +268,8 @@ var _ach_t := 0.0
 
 
 func show_achievement(id: String) -> void:
+	if main != null:
+		main.sfx.play("achievement")
 	_ach_queue.append(id)
 
 

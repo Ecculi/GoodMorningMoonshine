@@ -28,6 +28,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 - **Hahmon ääntelyt:** ähkimistä, hikkaa ja mahan kurinaa.
 - **Hiljainen taustamusiikki** soi koko ajan, ja se **horjuu humalatilan mukaan**.
 - Sisätiloissa soi paikan oma musiikki, esimerkiksi baarissa ja kauppakeskuksessa.
+- **Toteutus, tehosteet:** kaikki äänet syntetisoidaan koodissa pelin käynnistyessä (`scripts/sfx.gd`: siniäänet, liu'ut ja suodatettu kohina verhokäyrillä), joten äänitiedostoja tai lisenssejä ei ole. Maailman äänet soivat 3D-äänenä tapahtumapaikalta (hiljenevät kauempana), ja ne pysähtyvät, kun aika on pysähdyksissä. Äänet: lyönti ja osuma (myös mummon laukku), juominen ("glug"), pullon särkyminen, koiran haukku, murina ja vinkaisu, lokin kirkuna (kun lokki lähtee ruoan perään), auton jarrut ja töytäisy, pyörän kello ja potkulaudan tööttäys, kaatuminen, roiske veteen, pussin repeäminen, lakaisukoneen imu, juhlijan "Kärpät!"-huuto, sekä käyttöliittymässä löytö (nouseva kolmisointu) ja saavutus (pidempi fanfaari). Jokaisella toistolla sävelkorkeus vaihtelee vähän.
 
 ## Ajan kulku
 

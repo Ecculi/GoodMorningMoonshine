@@ -313,6 +313,7 @@ func _break() -> void:
 		return
 	state = St.GROUND
 	main.popup("*", global_position + Vector3(0, 0.4, 0), Color(0.6, 0.9, 0.6))
+	main.sfx.play("break", global_position)
 	main.spawn_glass(global_position, DRINK_COLOR[drink])
 	if _body != null and is_instance_valid(_body):
 		_body.queue_free()
