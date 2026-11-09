@@ -1,7 +1,7 @@
 extends Node3D
 ## An item on the street, in the player's hand, or flying after a throw.
 
-enum Kind { BOTTLE, CAN, FOOD, COIN, COFFEE, ENERGY, PILLS }
+enum Kind { BOTTLE, CAN, FOOD, COIN, COFFEE, ENERGY, PILLS, BAG }
 enum St { GROUND, HELD, FLYING }
 
 
@@ -13,6 +13,14 @@ var state: St = St.GROUND
 ## picked up again straight away.
 var wait_far := false
 var flight_time := 0.5
+## Plastic bag: what is inside, as [kind, value, drink] entries. Holding a
+## bag, picked-up things go into it (see player._pickup); too many and it
+## tears (BAG_MAX). A full bag is heavy to throw.
+var contents: Array = []
+const BAG_MAX := 5
+## A bag with this many things in it hits like a bottle.
+const BAG_HEAVY := 3
+var _bag_body: MeshInstance3D
 
 var _root: Node3D
 
@@ -49,6 +57,14 @@ func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:
 			_cyl(0.055, 0.14, Color(0.95, 0.95, 0.93), Vector3(0, 0.07, 0))
 			_cyl(0.05, 0.01, Color(0.35, 0.2, 0.1), Vector3(0, 0.142, 0))
 			_cyl(0.057, 0.04, Color(0.6, 0.4, 0.25), Vector3(0, 0.06, 0))
+		Kind.BAG:
+			var white := Color(0.95, 0.95, 0.93)
+			_bag_body = _cyl(0.1, 0.24, white, Vector3(0, 0.12, 0))
+			_bag_body.scale = Vector3(1.0, 1.0, 0.55)
+			_cyl(0.102, 0.05, Color(0.2, 0.45, 0.85), Vector3(0, 0.15, 0)).scale = Vector3(1.0, 1.0, 0.56)
+			for sx in [-0.05, 0.05]:
+				var hd := _cyl(0.012, 0.09, white, Vector3(sx, 0.27, 0))
+				hd.rotation.z = -sx * 6.0
 		Kind.ENERGY:
 			_cyl(0.05, 0.19, Color(0.1, 0.1, 0.12), Vector3(0, 0.095, 0))
 			_cyl(0.052, 0.06, Color(0.4, 0.95, 0.2), Vector3(0, 0.1, 0))
@@ -81,6 +97,22 @@ func can_be_eaten() -> bool:
 	return kind == Kind.FOOD and state == St.GROUND
 
 
+## Bag: bulges with what is inside.
+func update_bag_look() -> void:
+	if _bag_body == null:
+		return
+	var n := float(contents.size())
+	_bag_body.scale = Vector3(1.0 + n * 0.07, 1.0 + n * 0.1, 0.55 + n * 0.08)
+
+
+## What a thrown thing counts as when it hits someone: a heavy bag hits
+## like a bottle (and can knock them out), a light one like a can.
+func hit_kind() -> int:
+	if kind == Kind.BAG:
+		return Kind.BOTTLE if contents.size() >= BAG_HEAVY else Kind.CAN
+	return kind
+
+
 func can_pickup() -> bool:
 	return state == St.GROUND and not wait_far
 
@@ -107,6 +139,7 @@ const SHAPES := {
 	Kind.ENERGY: ["cyl", 0.052, 0.19, 0.095],
 	Kind.FOOD: ["capsule", 0.05, 0.3, 0.05],
 	Kind.PILLS: ["box", 0.12, 0.04, 0.02],
+	Kind.BAG: ["box", 0.2, 0.26, 0.13],
 }
 const MASS := {Kind.BOTTLE: 0.8, Kind.CAN: 0.15, Kind.COFFEE: 0.3, Kind.ENERGY: 0.35, Kind.FOOD: 0.2, Kind.PILLS: 0.05}
 ## Items fly on their own collision layer and hit the world only.
@@ -125,7 +158,7 @@ var _saved_av := Vector3.ZERO
 func _make_body(start: Vector3) -> RigidBody3D:
 	var rb := RigidBody3D.new()
 	rb.top_level = true
-	rb.mass = MASS.get(kind, 0.3)
+	rb.mass = MASS.get(kind, 0.3) if kind != Kind.BAG else 0.1 + 0.3 * contents.size()
 	rb.collision_layer = ITEM_LAYER
 	rb.collision_mask = WORLD_LAYER
 	rb.freeze_mode = RigidBody3D.FREEZE_MODE_STATIC
@@ -200,7 +233,7 @@ func _fly(delta: float) -> void:
 		var animal = main.animal_at(centre, 0.5)
 		if npc != null and centre.y < 2.2:
 			_hit_done = true
-			npc.hit_by_item(kind)
+			npc.hit_by_item(hit_kind())
 			_bounce_off()
 			if kind == Kind.BOTTLE and _shatters():
 				_break()
@@ -208,7 +241,7 @@ func _fly(delta: float) -> void:
 		elif animal != null and centre.y < 1.2 and kind != Kind.FOOD:
 			# Food is left to land (a dog goes for it); anything else hits.
 			_hit_done = true
-			animal.hit_by_item(kind)
+			animal.hit_by_item(hit_kind())
 			_bounce_off()
 			if kind == Kind.BOTTLE and _shatters():
 				_break()

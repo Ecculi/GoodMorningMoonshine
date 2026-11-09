@@ -979,6 +979,8 @@ func _short_action() -> void:
 			main.popup("?!", position + Vector3(0, 2.1, 0), Color(1.0, 0.45, 0.85))
 			_consume_hand_item()
 			return
+		if hand_item.kind == Item.Kind.BAG and _use_from_bag():
+			return
 	_punch(target, 0.0)
 
 
@@ -1175,6 +1177,16 @@ func _pickup(it) -> void:
 		main.popup("+%d €" % it.value, it.global_position + Vector3(0, 1.0, 0), Color(1, 0.85, 0.3))
 		main.remove_item(it)
 		return
+	# A bag in the hand: things go into the bag (the bag stays in the hand).
+	if hand_item != null and hand_item.kind == Item.Kind.BAG and it.kind != Item.Kind.BAG:
+		_bag_add(it)
+		return
+	# Picking up a bag: whatever was in the hand goes into it.
+	if it.kind == Item.Kind.BAG and hand_item != null and hand_item.kind != Item.Kind.BAG:
+		var old = hand_item
+		it.contents.append([old.kind, old.value, old.drink])
+		it.update_bag_look()
+		_consume_hand_item()
 	# The hand holds one thing: touching a new item swaps it.
 	if hand_item != null:
 		var old = hand_item
@@ -1183,6 +1195,67 @@ func _pickup(it) -> void:
 	it.hold(model.hand)
 	hand_item = it
 	hand_hint_t = HAND_HINT_TIME
+
+
+func _bag_add(it) -> void:
+	var bag = hand_item
+	bag.contents.append([it.kind, it.value, it.drink])
+	main.remove_item(it)
+	bag.update_bag_look()
+	main.popup("+", position + Vector3(0, 1.6, 0), Color(0.9, 0.95, 1.0), 0.8)
+	if bag.contents.size() > Item.BAG_MAX:
+		tear_bag()
+
+
+## The bag tears (too full, or in a fight): everything spills on the street.
+func tear_bag() -> void:
+	if hand_item == null or hand_item.kind != Item.Kind.BAG:
+		return
+	var bag = hand_item
+	var from: Vector3 = model.hand.global_position
+	for e in bag.contents:
+		var spilt = main.spawn_item(e[0], from, e[1], e[2])
+		spilt.launch(from, Vector3(randf_range(-2.0, 2.0), randf_range(1.0, 2.5), randf_range(-1.2, 1.2)))
+	bag.contents.clear()
+	_consume_hand_item()
+	main.popup("rits!", position + Vector3(0, 2.2, 0), Color(0.9, 0.95, 1.0))
+	GameState.busy_time = maxf(GameState.busy_time, 1.0)
+
+
+## Short press with a bag: use the last thing in it that can be drunk or
+## eaten (like holding it). False when there is nothing like that.
+func _use_from_bag() -> bool:
+	var bag = hand_item
+	for i in range(bag.contents.size() - 1, -1, -1):
+		var e: Array = bag.contents[i]
+		var top := position + Vector3(0, 2.1, 0)
+		match e[0]:
+			Item.Kind.BOTTLE:
+				GameState.drink(Item.DRINK_PROMILLE[e[2]])
+				GameState.warm_up(Item.DRINK_WARMTH[e[2]])
+				main.popup("glug", top, Color(1, 0.8, 0.3))
+			Item.Kind.COFFEE, Item.Kind.ENERGY:
+				var coffee: bool = e[0] == Item.Kind.COFFEE
+				GameState.caffeinate(GameState.COFFEE_AWAKE if coffee else GameState.ENERGY_AWAKE)
+				if coffee:
+					GameState.warm_up(GameState.COFFEE_WARMTH)
+				main.popup("!", top, Color(0.6, 1.0, 0.4))
+			Item.Kind.FOOD:
+				GameState.eat()
+				main.popup("+", top, Color(1, 0.35, 0.35))
+			Item.Kind.PILLS:
+				GameState.take_pills()
+				main.popup("?!", top, Color(1.0, 0.45, 0.85))
+			_:
+				continue
+		bag.contents.remove_at(i)
+		bag.update_bag_look()
+		return true
+	return false
+
+
+## Chance that a blow tears a bag that has something in it.
+const BAG_TEAR_CHANCE := 0.4
 
 
 ## After picking something up, a hint above the head tells what the
@@ -1202,6 +1275,13 @@ func hand_short_action_key() -> String:
 			return "ACT_DRINK"
 		Item.Kind.FOOD, Item.Kind.PILLS:
 			return "ACT_EAT"
+		Item.Kind.BAG:
+			for i in range(hand_item.contents.size() - 1, -1, -1):
+				match hand_item.contents[i][0]:
+					Item.Kind.BOTTLE, Item.Kind.COFFEE, Item.Kind.ENERGY:
+						return "ACT_DRINK"
+					Item.Kind.FOOD, Item.Kind.PILLS:
+						return "ACT_EAT"
 	return "ACT_PUNCH"
 
 
@@ -1210,6 +1290,10 @@ func take_hit(dmg: float, from_x: float, source := "fight") -> void:
 		return
 	_knock = Vector3(signf(position.x - from_x) * 4.0, 0.0, 0.0)
 	main.hud.flash_hurt()
+	# A bag with things in it may tear in a fight.
+	if hand_item != null and hand_item.kind == Item.Kind.BAG and not hand_item.contents.is_empty() \
+			and randf() < BAG_TEAR_CHANCE:
+		tear_bag()
 	_combo = 0
 	# The jacket softens blows.
 	if GameState.is_lost("jacket"):

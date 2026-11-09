@@ -201,6 +201,7 @@ Krapula ei kovene päivien mukaan.
 - Kun pussi on kädessä, uudet tavarat **menevät pussiin**, eikä pussi vaihdu. Pussiin mahtuu muutama tavara, esimerkiksi tölkkejä pullonpalautukseen.
 - Pussi voi **revetä**, jos siihen laittaa liikaa tai pelaaja tappelee. Silloin tavarat leviävät kadulle.
 - **Kaikkia tavaroita voi heittää**, myös pussin tavaroineen.
+- **Toteutus:** noin joka kolmannessa korttelissa on valkoinen muovipussi. Jos kädessä on jotain, kun pussin poimii, se menee pussiin. Pussiin mahtuu viisi tavaraa; kuudes repäisee sen ("rits!"), ja tavarat lentävät kadulle. Lyönnin ottaminen repäisee pussin, jossa on jotain, 40 %:n todennäköisyydellä. Pussi pullistuu sitä mukaa kuin se täyttyy. **Lyhyt painallus** pussi kädessä käyttää pussin viimeisimmän juotavan tai syötävän (pullo, kahvi, energiajuoma, makkara tai pillerit), joten pussi toimii pienenä varastona. Heitetty pussi, jossa on vähintään kolme tavaraa, osuu kuin pullo (voi tainnuttaa); kevyempi kuin tölkki. Pussin sisältö säilyy, kun pussi jää korttelin kadulle tai on kädessä aamulla.
 
 ### Kontrollit
 

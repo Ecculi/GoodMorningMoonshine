@@ -389,7 +389,7 @@ func _save_block_items() -> void:
 	var saved := []
 	for it in items:
 		if is_instance_valid(it) and it != player.hand_item and it.state == Item.St.GROUND:
-			saved.append([it.kind, it.global_position, it.value, it.drink])
+			saved.append([it.kind, it.global_position, it.value, it.drink, it.contents.duplicate(true)])
 	_block_items[_key(segment)] = saved
 	var shards := []
 	for g in glass:
@@ -403,7 +403,10 @@ func _populate_block() -> void:
 		spawn_glass(entry[0], entry[1])
 	if _block_items.has(key):
 		for entry in _block_items[key]:
-			spawn_item(entry[0], entry[1], entry[2], entry[3])
+			var it = spawn_item(entry[0], entry[1], entry[2], entry[3])
+			if entry.size() > 4:
+				it.contents = entry[4]
+				it.update_bag_look()
 	else:
 		for i in rng.randi_range(2, 5):
 			var r := rng.randf()
@@ -419,6 +422,9 @@ func _populate_block() -> void:
 			elif r < 0.75:
 				kind = Item.Kind.COIN
 			spawn_item(kind, Vector3(rng.randf_range(-15.0, 15.0), 0, _random_z()), rng.randi_range(1, 3))
+		# Now and then a plastic bag blowing about.
+		if rng.randf() < 0.35:
+			spawn_item(Item.Kind.BAG, Vector3(rng.randf_range(-15.0, 15.0), 0, _random_z()))
 	for i in rng.randi_range(2, 5):
 		_spawn_npc(false)
 	# Police patrol some blocks (more of them later in the game); guards
@@ -969,7 +975,7 @@ func _save_morning(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	var hand: Array = []
 	var h = player.hand_item
 	if h != null and is_instance_valid(h):
-		hand = [h.kind, h.value, h.drink]
+		hand = [h.kind, h.value, h.drink, h.contents.duplicate(true)]
 	GameState.save_morning({"seg": seg, "pos": pos, "facing": facing, "hand": hand})
 
 
@@ -989,8 +995,11 @@ func _continue_game() -> bool:
 	player.wake_up()
 	_enter_block(s.get("seg", GameState.home_seg), s.get("pos", _home_door_pos()), s.get("facing", 1))
 	var hand: Array = s.get("hand", [])
-	if hand.size() == 3:
+	if hand.size() >= 3:
 		var it = spawn_item(hand[0], player.position, hand[1], hand[2])
+		if hand.size() > 3:
+			it.contents = hand[3]
+			it.update_bag_look()
 		player._pickup(it)
 	hud.show_pocket_check()
 	return true
