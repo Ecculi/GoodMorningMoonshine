@@ -868,6 +868,9 @@ func _draw_trade_hint() -> void:
 	draw_rect(Rect2(sp - Vector2(58, 15), Vector2(116, 30)), Color(0, 0, 0, 0.4))
 	_hint_button(sp + Vector2(-38, 0), false, 1.0)
 	_hint_arrow(sp + Vector2(-8, 0), 1.0)
+	if n.role == "politician":
+		_hint_action(sp + Vector2(22, 0), "ACT_DRINK", 1.0)  # free coffee
+		return
 	# A coin.
 	var cc := sp + Vector2(14, 0)
 	draw_circle(cc, 9.0, Color(0.95, 0.75, 0.2))

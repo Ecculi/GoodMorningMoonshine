@@ -342,7 +342,8 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	if level != null:
 		level.queue_free()
 	_cloud_sun_set = false
-	level = BlockBuilder.build(seg, GameState.home_x if seg == GameState.home_seg else INF, GameState.home_type)
+	level = BlockBuilder.build(seg, GameState.home_x if seg == GameState.home_seg else INF, GameState.home_type,
+		GameState.booth_segs.has(seg))
 	add_child(level)
 	# Wind-blown leaves on the street.
 	var leaves = Leaves.new()
@@ -443,6 +444,15 @@ func _populate_block() -> void:
 				var bo = _spawn_npc(false, "bouncer")
 				bo.position = Vector3(sh["x"] + 1.0, 0, -7.3)
 				bo.post = bo.position
+	if level.has_meta("booth"):
+		# The politician behind the table, two aides in front of it.
+		var bx: float = level.get_meta("booth")
+		var pol = _spawn_npc(false, "politician")
+		pol.position = Vector3(bx, 0, -7.25)
+		pol.post = pol.position
+		for s in [-1.0, 1.0]:
+			var aide = _spawn_npc(false, "aide")
+			aide.position = Vector3(bx + s * 1.5, 0, -6.2)
 	_spawn_street_folk()
 	for id in GameState.placements:
 		var pl: Array = GameState.placements[id]
@@ -1725,6 +1735,15 @@ func food_on_ground_near(pos: Vector3, r: float):
 			if Vector2(it.global_position.x - pos.x, it.global_position.z - pos.z).length() < r:
 				return it
 	return null
+
+
+## Someone hit the politician: the aides go for the player and the police
+## always come.
+func politician_attacked(pos: Vector3) -> void:
+	for n in npcs:
+		if n.role == "aide" and not n.is_down():
+			n.provoke()
+	report_crime(pos, true, false, true)
 
 
 ## A passer-by gave up (or lost) the lost thing they carried.

@@ -29,6 +29,9 @@ extends Node3D
 ##   said); follows the player about a metre behind and keeps pushing a
 ##   leaflet into their hand (it pushes out whatever was there). Shake him
 ##   off by running to another block, or hit him and he scurries off.
+## - "politician": (from day 8) stands behind an election stall, smiles
+##   and offers a handshake and a free coffee (once). Hit him and his two
+##   aides ("aide", blue vests) go for you, and the police always come.
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -236,6 +239,17 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			_head_box(Vector3(0.11, 1.56, 0), Vector3(0.05, 0.05, 0.1), Color(0.97, 0.97, 0.97))  # white collar tab
 			speed = 1.0
 			telegraphs = true
+		"politician":
+			model = PersonModel.new(Color(0.15, 0.2, 0.35), Color(0.15, 0.2, 0.35), skin,
+				HAIRS[rng.randi() % HAIRS.size()], 1.0)
+			_head_box(Vector3(0.11, 1.42, 0), Vector3(0.04, 0.3, 0.07), Color(0.15, 0.4, 0.8))  # tie
+			_head_box(Vector3(0.11, 1.55, 0), Vector3(0.05, 0.06, 0.18), Color(0.97, 0.97, 0.97))  # collar
+			stationary = true
+			trades_left = 1
+		"aide":
+			model = PersonModel.new(Color(0.15, 0.4, 0.8), Color(0.2, 0.2, 0.25), skin,
+				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.97, 1.05))
+			stationary = true
 		"canvasser":
 			model = PersonModel.new(Color(0.3, 0.32, 0.36), Color(0.2, 0.2, 0.22), skin,
 				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.97, 1.04))
@@ -426,7 +440,7 @@ func is_lawman() -> bool:
 ## Beggar, street drunk or someone carrying a lost thing: the action
 ## button trades instead of punching.
 func is_trader() -> bool:
-	return (role == "beggar" or role == "drunk" or carry_id != "") and state == S.WALK
+	return (role == "beggar" or role == "drunk" or role == "politician" or carry_id != "") and state == S.WALK
 
 
 ## Carrying one of the player's lost things (a passer-by who picked it
@@ -519,7 +533,7 @@ func provoke() -> void:
 		_mark.modulate = Color(1, 0.25, 0.2)
 		_mark.visible = true
 		return
-	if role == "priest" or role == "canvasser":
+	if role == "priest" or role == "canvasser" or role == "politician":
 		# Doesn't hit back: hurries off, shocked.
 		state = S.LEAVE
 		dir = 1 if position.x >= main.player.position.x else -1
@@ -560,6 +574,13 @@ func offer_trade(p: Node3D) -> bool:
 		GameState.busy_time = maxf(GameState.busy_time, 0.6)
 		return true
 	match role:
+		"politician":
+			# A handshake, a big smile and a free coffee.
+			model.punch()
+			p.model.punch()
+			trades_left -= 1
+			main.popup("☺", top, Color(1, 0.9, 0.4), 1.3)
+			p._pickup(main.spawn_item(Item.Kind.COFFEE, p.position))
 		"beggar":
 			if GameState.money < 2:
 				main.popup("€?", top, Color(1, 0.85, 0.3))
@@ -1192,7 +1213,7 @@ func _process(_delta: float) -> void:
 			model.animate(0.0, dt)
 			if _timer <= 0.0:
 				state = S.CHASE if role == "police" or role == "bouncer" else S.FIGHT
-				if role == "priest" or role == "canvasser":
+				if role == "priest" or role == "canvasser" or role == "politician":
 					state = S.LEAVE
 		S.KO:
 			_timer += dt
@@ -1281,7 +1302,7 @@ func _turn(moved: Vector3, dt: float) -> void:
 	elif state == S.FIGHT or state == S.CHASE or _pointing:
 		var p = main.player
 		target = atan2(-(p.position.z - position.z), p.position.x - position.x)
-	elif model.sitting or (role == "bouncer" and stationary):
+	elif model.sitting or ((role == "bouncer" or role == "politician") and stationary):
 		target = -PI * 0.5  # back to the wall, facing the street
 	else:
 		target = 0.0 if dir > 0 else PI
@@ -1320,6 +1341,10 @@ func _walk(dt: float) -> void:
 		return
 	if stationary:
 		model.animate(0.0, dt)
+		if role == "politician":
+			# Smiles and holds out a hand when the player comes by.
+			var pd := Vector2(main.player.position.x - position.x, main.player.position.z - position.z).length()
+			model.raise_arm(pd < 3.0 and trades_left > 0)
 		if role == "drunk":
 			# Sways on the spot, now and then a swig.
 			_sway_t += dt
@@ -1364,6 +1389,8 @@ func _hit_by_player() -> void:
 	if role == "priest":
 		# Hitting a priest: someone always calls the police, at once.
 		main.report_crime(position, true, false, true)
+	if role == "politician":
+		main.politician_attacked(position)
 	if not player_started and not attacked_player:
 		var hostile := state == S.FIGHT or state == S.CHASE or state == S.STUNNED
 		player_started = not hostile

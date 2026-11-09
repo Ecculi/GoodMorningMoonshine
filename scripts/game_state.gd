@@ -621,6 +621,7 @@ func new_game() -> void:
 	lost.clear()
 	_roll_weather()
 	_roll_roadworks()
+	_roll_booths()
 	_lose_items()
 	_place_lost_items()
 	_make_phone_hints()
@@ -685,6 +686,7 @@ func new_day() -> void:
 	busy_time = 0.0
 	_roll_weather()
 	_roll_roadworks()
+	_roll_booths()
 	_choose_wake_place()
 	if sleep_place == "jail":
 		# Released at the police station door; without an ID card they keep
@@ -722,6 +724,22 @@ func _choose_wake_place() -> void:
 	wake_seg = best
 	var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
 	wake_pos = Vector3(rng.randf_range(-12.0, 12.0), 0.0, z)
+
+
+## Election booths: from BOOTH_FROM_DAY a politician hands out free coffee
+## at a stall in one or two blocks (rolled every morning).
+const BOOTH_FROM_DAY := 8
+var booth_segs: Array = []
+
+
+func _roll_booths() -> void:
+	booth_segs.clear()
+	if day < BOOTH_FROM_DAY:
+		return
+	for i in rng.randi_range(1, 2):
+		var cand := CityMap.random_segment(rng)
+		if not CityMap.far_side_is_sea(cand) and not booth_segs.has(cand) and cand != CityMap.police_station():
+			booth_segs.append(cand)
 
 
 ## Roadworks: from ROADWORKS_FROM_DAY on, some mornings one or two
@@ -924,7 +942,7 @@ const SAVE_KEYS := [
 	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
 	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
 	"placements", "dog_items", "carried_items", "high_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
-	"weather", "storm", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
+	"weather", "storm", "booth_segs", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
 ]
 
 
