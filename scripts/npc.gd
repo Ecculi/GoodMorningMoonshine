@@ -51,6 +51,8 @@ const Ragdoll = preload("res://scripts/ragdoll.gd")
 enum S { WALK, FIGHT, STUNNED, KO, LEAVE, CHASE, RETURN }
 
 const EDGE_X := 25.0
+## Middle of the crossing street at either end of the block.
+const SIDE_STREET_X := 19.5
 ## Faster than the player walks (2.6), slower than running (6.4): walking
 ## away is no escape, running is.
 const CHASE_SPEED := 3.2
@@ -1478,11 +1480,21 @@ func _walk(dt: float) -> void:
 		return
 	if role == "fan" and _fan(dt):
 		return
+	# The way on is fenced off: off along the side street before the fence
+	# (up or down, whichever is open), or back if there is none.
+	if absf(position.x) > 18.5 and position.x * dir > 0.0 and not main.end_open(dir):
+		var t: int = main.shut_end_turn(dir)
+		if t == 2:
+			dir = -dir
+		else:
+			position.x = move_toward(position.x, dir * SIDE_STREET_X, speed * dt)
+			position.z += t * speed * dt
+			model.animate(1.0, dt, speed / 1.3)
+			if position.z < -13.0 or position.z > 10.0:
+				main.respawn_npc(self)
+			return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
-	# The way on is fenced off: turn back.
-	if absf(position.x) > 20.5 and position.x * dir > 0.0 and not main.end_open(dir):
-		dir = -dir
 	if position.x > EDGE_X:
 		position.x = -EDGE_X
 	elif position.x < -EDGE_X:
