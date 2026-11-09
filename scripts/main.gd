@@ -142,6 +142,7 @@ var _focus_y := 0.58
 func _ready() -> void:
 	rng.randomize()
 	sfx = Sfx.new()
+	sfx.main = self
 	add_child(sfx)
 	_build_environment()
 	_build_physics_ground()

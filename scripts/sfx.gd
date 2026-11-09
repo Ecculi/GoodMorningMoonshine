@@ -5,6 +5,18 @@ extends Node
 ## play(name, pos): `pos` = where in the world it happens (heard from the
 ## camera, quieter further away); Vector3.INF = a UI sound (found thing,
 ## achievement). World sounds pause while the world is frozen.
+##
+## Background: looping city sounds (traffic, voices, rain, wind, the
+## sea) whose volumes follow the block and the weather, plus a gull now
+## and then. The character's own noises (hiccups, a growling stomach,
+## panting, groans) come from player.gd.
+
+const CityMap = preload("res://scripts/city_map.gd")
+
+var main
+## Loop name -> AudioStreamPlayer.
+var _amb := {}
+var _gull_t := 5.0
 
 const RATE := 22050
 const POOL_3D := 10
@@ -30,6 +42,13 @@ func _ready() -> void:
 		add_child(p)
 		_pool2.append(p)
 	_build()
+	for k in ["traffic", "crowd", "rain", "wind", "waves"]:
+		var ap := AudioStreamPlayer.new()
+		ap.stream = _streams["amb_" + k]
+		ap.volume_db = -80.0
+		add_child(ap)
+		ap.play()
+		_amb[k] = ap
 
 
 ## Plays sound `name` (see _build for the names).
@@ -60,6 +79,41 @@ func _process(_delta: float) -> void:
 	for p in _pool3:
 		if p.playing or p.stream_paused:
 			p.stream_paused = frozen
+	_update_ambience(_delta, frozen)
+
+
+## Background loops: louder or quieter by place and weather (dB targets).
+func _update_ambience(delta: float, frozen: bool) -> void:
+	if main == null or main.level == null:
+		return
+	var seg: Vector3i = main.segment
+	var pedestrian := CityMap.is_pedestrian(seg)
+	var target := {
+		"traffic": -80.0 if pedestrian else -17.0,
+		"crowd": -13.0 if pedestrian else -22.0,
+		"rain": -11.0 if GameState.weather == "rain" else -80.0,
+		"wind": -9.0 if GameState.storm else (-22.0 if GameState.frost else -80.0),
+		"waves": -13.0 if CityMap.far_side_is_sea(seg) else -80.0,
+	}
+	# Quieter at night, while time stands still, and on the cards.
+	var h := GameState.clock_min / 60.0
+	var down := 0.0
+	if h >= 21.0:
+		down += 5.0
+	if frozen:
+		down += 5.0
+	if GameState.over or GameState.modal == "shop":
+		down += 18.0
+	for k in _amb:
+		var ap: AudioStreamPlayer = _amb[k]
+		var want: float = target[k] - (down if target[k] > -70.0 else 0.0)
+		ap.volume_db = move_toward(ap.volume_db, want, delta * 30.0)
+	# A gull calls somewhere now and then.
+	if not frozen and not GameState.over and GameState.day >= 2:
+		_gull_t -= delta
+		if _gull_t <= 0.0:
+			_gull_t = _rng.randf_range(6.0, 16.0)
+			play("gull", Vector3.INF, -16.0, _rng.randf_range(0.85, 1.15))
 
 
 # --- Synthesis --------------------------------------------------------------
@@ -83,6 +137,26 @@ func _build() -> void:
 	_streams["slurp"] = _make(0.5, func(t, n): return _lowpass("slurp", n, 0.05 + 0.3 * t) * _env(t, 0.05, 0.45) * 1.3)
 	_streams["tear"] = _make(0.25, func(t, n): return n * (0.5 + 0.5 * signf(sin(t * 260.0))) * _env(t, 0.0, 0.24) * 0.6)
 	_streams["cheer"] = _make(0.6, _cheer)
+	# The character's own noises.
+	_streams["hiccup"] = _make(0.18, func(t, n): return sin(_phase("hic", 300.0 + 1800.0 * t)) * _env(t, 0.005, 0.1) * 0.6 + n * _env(t, 0.0, 0.02) * 0.3)
+	_streams["growl"] = _make(0.9, _growl)
+	_streams["pant"] = _make(0.4, func(t, n): return _lowpass("pant", n, 0.25) * _env(t, 0.08, 0.3) * 1.4)
+	_streams["groan"] = _make(0.5, _groan)
+	# Background loops.
+	_streams["amb_traffic"] = _loop(4.0, func(t, n): return _lowpass("tr", _lowpass("tr2", n, 0.03), 0.05) * (8.0 + 2.0 * sin(t * TAU * 0.5)))
+	_streams["amb_crowd"] = _loop(4.0, _crowd)
+	_streams["amb_rain"] = _loop(3.0, func(t, n): return (n - _lowpass("rain", n, 0.3)) * 0.5)
+	_streams["amb_wind"] = _loop(6.0, func(t, n): return _lowpass("wind", n, 0.04 + 0.03 * sin(t * TAU / 6.0)) * (3.0 + 1.5 * sin(t * TAU / 3.0)))
+	_streams["amb_waves"] = _loop(8.0, func(t, n): return _lowpass("wave", n, 0.08) * (1.2 + 1.0 * sin(t * TAU / 4.0)))
+
+
+## Like _make but loops forever (the loop is `length` seconds long).
+func _loop(length: float, gen: Callable) -> AudioStreamWAV:
+	var w := _make(length, gen)
+	w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	w.loop_begin = 0
+	w.loop_end = int(length * RATE)
+	return w
 
 
 ## Builds a mono 16-bit sound `length` seconds long from `gen(t, noise)`.
@@ -168,6 +242,25 @@ func _brake(t: float, n: float) -> float:
 func _cheer(t: float, n: float) -> float:
 	var hum := sin(_phase("cheer", 330.0 + 30.0 * sin(t * 9.0))) * 0.15
 	return (_lowpass("cheer", n, 0.2) * 0.8 + hum) * _env(t, 0.05, 0.55)
+
+
+func _growl(t: float, n: float) -> float:
+	var wob := 0.5 + 0.5 * sin(t * 23.0) * sin(t * 7.0)
+	return (_lowpass("growl", n, 0.03) * 6.0 + sin(_phase("growl", 70.0 + 20.0 * sin(t * 5.0))) * 0.3) \
+		* wob * _env(t, 0.1, 0.8)
+
+
+func _groan(t: float, n: float) -> float:
+	var f := lerpf(150.0, 105.0, t / 0.5)
+	var saw := fmod(_phase("groan", f) / TAU, 1.0) * 2.0 - 1.0
+	return (_lowpass("groan", saw, 0.12) * 2.0 + n * 0.05) * _env(t, 0.04, 0.45)
+
+
+## Voices: band-limited noise, chopped into syllables.
+func _crowd(t: float, n: float) -> float:
+	var band := _lowpass("cr1", n, 0.3) - _lowpass("cr2", n, 0.04)
+	var chat := 0.6 + 0.4 * sin(t * 17.0) * sin(t * 5.3 + 1.0)
+	return band * chat * 1.6
 
 
 func _glug(t: float, _n: float) -> float:

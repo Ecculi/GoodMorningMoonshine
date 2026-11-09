@@ -334,6 +334,7 @@ func _drunk_states(moving: bool) -> void:
 			_hic_jolt = 0.15
 			hic_window = 1.0
 			main.popup(tr("HICCUP"), position + Vector3(0.3 * facing, 1.9, 0.3), Color(1, 1, 1))
+			main.sfx.play("hiccup", position + Vector3(0, 1.7, 0))
 
 	# Singing out loud now and then.
 	if _sing_t > 0.0:
@@ -878,6 +879,7 @@ func _heavy_breathing() -> void:
 		model.rotation.z += 0.08 + 0.05 * heave
 		if fmod(_breath_t, 0.9) < dt:
 			main.popup_icon(main.breath_texture(), position + Vector3(0.35 * facing, 1.75, 0.3))
+			main.sfx.play("pant", position + Vector3(0, 1.7, 0), -4.0)
 	elif model.scale != Vector3.ONE:
 		model.scale = Vector3.ONE
 
@@ -956,6 +958,7 @@ func _hunger_signs() -> void:
 	if _growl_t > 4.0:
 		_growl_t = 0.0
 		main.popup_icon(main.stomach_texture(), position + Vector3(0.2 * facing, 1.3, 0.3))
+		main.sfx.play("growl", position + Vector3(0, 1.1, 0))
 
 
 func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
@@ -1378,6 +1381,8 @@ func take_hit(dmg: float, from_x: float, source := "fight") -> void:
 	_knock = Vector3(signf(position.x - from_x) * 4.0, 0.0, 0.0)
 	main.hud.flash_hurt()
 	main.sfx.play("hit", position + Vector3(0, 1.4, 0))
+	if randf() < 0.6:
+		main.sfx.play("groan", position + Vector3(0, 1.6, 0), -2.0)
 	# A bag with things in it may tear in a fight.
 	if hand_item != null and hand_item.kind == Item.Kind.BAG and not hand_item.contents.is_empty() \
 			and randf() < BAG_TEAR_CHANCE:
