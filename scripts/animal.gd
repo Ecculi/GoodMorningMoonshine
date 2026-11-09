@@ -3,7 +3,9 @@ extends Node3D
 ##
 ## Seagull ("gull"): stands about pecking, hops away when someone comes
 ## close. If the player holds food it flies over and snatches it, unless
-## the player swats it away first (punch).
+## the player swats it away first (punch). From day 7 they come as a
+## flock: when one goes for the food, the others nearby follow a moment
+## later, each swooping in from its own side.
 ##
 ## Dog ("dog"): one of several breeds; size, speed, temper and bite come
 ## from the breed, so dangerous ones can be told by their looks.
@@ -21,6 +23,14 @@ enum A { IDLE, WANDER, FLY_TO, FLEE, FOLLOW, LEAD, ATTACK, EAT, BOMB, KEEP }
 
 ## Gull revenge: after the player treads on a gull, the others circle
 ## above and drop on them for a while.
+## Flock (from FLOCK_FROM_DAY): gulls this close to the one that went for
+## the food follow it, each after a short delay.
+const FLOCK_FROM_DAY := 7
+const FLOCK_RANGE := 12.0
+## Seconds before a flock member joins in (-1 = not joining); the
+## sideways offset it swoops in from (shrinks to nothing on the way).
+var _join_t := -1.0
+var _swoop := Vector3.ZERO
 const BOMB_TIME := 12.0
 const BOMB_HEIGHT := 3.2
 
@@ -351,10 +361,16 @@ func _gull(dt: float) -> void:
 				dir = 1 if position.x >= main.player.position.x else -1
 				main.gull_trampled(self)
 				return
+			# Another gull of the flock went for it: follow after a moment.
+			if _join_t >= 0.0:
+				_join_t -= dt
+				if _join_t < 0.0 and _player_has_food():
+					_go_for_food()
+					return
 			# Food in the player's hand: here we go.
 			if _player_has_food() and _player_dist() < 7.0 and _cooldown <= 0.0:
-				state = A.FLY_TO
-				main.popup("!", position + Vector3(0, 0.6, 0), Color(1, 1, 1))
+				_go_for_food()
+				main.gull_flock_alert(self)
 				return
 			# Someone too close: hop away a bit.
 			if _player_dist() < 1.3 and main.player.running:
@@ -371,8 +387,11 @@ func _gull(dt: float) -> void:
 				state = A.FLEE
 				return
 			var hand: Vector3 = main.player.position + Vector3(0.3 * main.player.facing, 1.3, 0.2)
-			position.y = move_toward(position.y, hand.y, 3.0 * dt)
-			if _move_to(hand, 5.0, dt) or (position - hand).length() < 0.45:
+			# Swoops in from its own side (the offset shrinks on the way).
+			_swoop = _swoop.move_toward(Vector3.ZERO, 1.6 * dt)
+			var aim := hand + _swoop
+			position.y = move_toward(position.y, aim.y, 3.0 * dt)
+			if _move_to(aim, 5.0, dt) or (position - hand).length() < 0.45:
 				# Snatched!
 				main.player._consume_hand_item()
 				GameState.unlock("FOOD_STOLEN")
@@ -412,6 +431,22 @@ func _gull(dt: float) -> void:
 				var fall_t := sqrt(2.0 * drop_h / 9.8)
 				var aim := p + pv * fall_t
 				dr.vel = Vector3((aim.x - from.x) / fall_t, 0, (aim.z - from.z) / fall_t)
+
+
+func _go_for_food() -> void:
+	state = A.FLY_TO
+	_join_t = -1.0
+	var a := _rng.randf_range(0.0, TAU)
+	_swoop = Vector3(cos(a) * 1.8, _rng.randf_range(0.3, 1.2), sin(a) * 1.2) if GameState.day >= FLOCK_FROM_DAY \
+		else Vector3.ZERO
+	main.popup("!", position + Vector3(0, 0.6, 0), Color(1, 1, 1))
+
+
+## The flock: another gull went for the food; join in after `delay`.
+func join_flock(delay: float) -> void:
+	if kind != "gull" or state != A.IDLE or _join_t >= 0.0:
+		return
+	_join_t = delay
 
 
 ## Another gull was trodden on: come and get even (start a little later).

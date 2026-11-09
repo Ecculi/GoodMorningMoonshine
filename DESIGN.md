@@ -127,6 +127,8 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 | 5 | taskuvaras (tumma huppari, huppu päässä; noin joka kolmannessa korttelissa). Kävelee jonkun ohikulkijan perässä, mutta kun pelaaja on alle 7 metrin päässä, hän lipuu tämän luo, törmää ohimennen ja vie joko puolet rahoista tai tavaran taskusta (lompakko, puhelin, avaimet, henkkarit, silmälasit tai aurinkolasit). Viety tavara ilmestyy heti "Etsi:"-listaan ja ajatuskuplaan. Sitten varas juoksee (4,6 m/s) kauemmas pelaajasta korttelin päähän. Kiinni ottamalla (juokseva pelaaja on nopeampi) tai tyrmäämällä saalis palautuu: rahat suoraan ja tavara maahan. Jos varas pääsee korttelin päähän, rahat ovat menneet ja tavara heitetään johonkin seuraavan korttelin kadulle, josta sen voi etsiä. Varkaan lyöminen on itsepuolustusta. **Kollegakohtaus:** jos pelaaja yrittää taskuvarkautta samalle ohikulkijalle, jota varas seuraa (tai varkaan vieressä), kummankin päälle tulee "!?", varas toteaa "Kollega!" ja jättää pelaajan rauhaan. Saavutukset: Varas kiikissä ja Ammattikunta. |
 | 5 | mummo (noin joka kolmannessa korttelissa; lyhyt, harmaat hiukset, huivi, värillinen takki, käsilaukku kädessä). Kävelee hitaasti (0,65 m/s) ja juoksee perään hitaasti (2,1 m/s), mutta jos häntä lyö, heittää tai yrittää taskuvarastaa (aina tappelu, ei avunhuutoa), hän nostaa laukun näkyvästi (0,6 s) ja lyö sillä yllättävän kovaa: 16 vahinkoa ("KOPS!"). Mummo kestää vain kaksi osumaa. Mummon tappama pelaaja saa omat lööpit ("Mummo voitti"). |
 | 6 | some-vaikuttaja (noin joka kolmannessa korttelissa; pinkki paita, valkoiset housut, lippis, puhelin kädessä). Kun pelaaja tekee alle 12 metrin päässä jotain hölmöä (lyö jotakuta, kaatuu tai juo), vaikuttaja pysähtyy, kääntyy pelaajaan päin ja nostaa puhelimen. Pään päällä vilkkuu punainen "● REC". Jos kuvaus kestää 2,5 sekuntia, video leviää ("♥ 12k"): loppupäivän poliisin näkökeila ja poliisin ja vartijoiden huomausetäisyys ovat 1,6-kertaiset, ja puhelinkuvakkeen vieressä näkyy punainen play-merkki. Kuvauksen voi keskeyttää lyömällä tai heittämällä vaikuttajaa ("Hei!"); silloin puhelin on poissa eikä hän kuvaa enää. (Lyöminen on tietysti rikos, ja portsari voi puuttua.) Vaikuttaja kuvaa vain kerran. Saavutus: Viraalihitti. |
+| 6 | pappi (noin joka neljännessä korttelissa; musta asu ja valkoinen kaulus). Kun pelaaja on alle 2,4 metrin päässä ja kylmissään (kylmä vähintään 50) tai nälkäinen (nälkä vähintään 50), pappi pysähtyy ja antaa pelaajan käteen pullan (ruoka) tai kuuman kahvin (kahvi lämmittää vähän: kylmä −12). Kylmissään saa useammin kahvia ja nälkäisenä pullaa. Kerran per pappi. Humalaista (yli 1,3 ‰) hän paheksuu ("tsk tsk"), mutta antaa silti, ja pään yllä näkyy sydän. Pappi ei lyö takaisin, vaan kiiruhtaa pois. **Papin lyöminen hälyttää poliisin aina:** jos kukaan poliisi ei näe tekoa, korttelin päästä juoksee heti poliisi paikalle. |
+| 7 | lokkiparvet: joka korttelissa on 3–6 lokkia. Kun yksi lokki lähtee nappaamaan ruokaa pelaajan kädestä, muut alle 12 metrin päässä olevat lähtevät perään pienellä viiveellä (noin 0,2–0,6 s toisistaan), ja jokainen kaartaa sisään omasta suunnastaan (sivulta, ylhäältä, edestä tai takaa). Yhden huitaiseminen ei siis riitä; kun yksi nappaa ruoan, muut kääntyvät pois. |
 | 8 | turisti (noin joka kolmannessa korttelissa; kirkas paita, khakihousut, aurinkohattu, kamera kaulassa). Kun pelaaja tulee alle 3 metrin päähän, turisti pysähtyy ja kysyy tietä: pään päällä on ajatuskupla, jossa on pieni kuva nähtävyydestä ja "?" (ei tekstiä). Nähtävyydet ovat kaupungin tiedoissa (`landmarks` tiedostossa `city_map.gd`): Oulussa tori, tuomiokirkko ja rautatieasema, Raahessa kirkko, tori ja satama. Kysytään vain nähtävyyttä, joka on vähintään korttelin päässä. **Vastaaminen:** pelaaja menee turistin viereen (alle 1,6 m) ja kävelee sieltä vähintään 3 metriä siihen suuntaan, jossa nähtävyys on (vasemmalle tai oikealle katua pitkin, tai ylös tai alas kohti poikkikatuja). Suunta lasketaan kartan ruudukosta, ja se kelpaa, jos se osoittaa noin 70 asteen sisällä kohteeseen. Oikeasta neuvosta saa 2–5 € (♥), ja turisti lähtee näytettyyn suuntaan. Väärä neuvo suututtaa ("#!?"), ja turisti marssii pois vastakkaiseen suuntaan. Turisti odottaa 14 sekuntia (pelin aikaa), sitten hän luovuttaa. Lyöminen tai heittäminen peruu kysymyksen. Saavutus: Paikallisopas. |
 | myöhemmin | lisää ideoita alla (Tulevat haasteet) |
 
@@ -134,8 +136,7 @@ GoodMorningMoonshine on Godot 4:llä tehtävä huumoripitoinen roguelike-henkine
 
 Uudet hahmot päivä kerrallaan:
 
-- **Päivä 6:** **pappi** (auttaja: antaa pullaa tai kahvia kylmissään tai nälkäiselle).
-- **Päivä 7:** **lokkiparvet** (useampi lokki hyökkää ruoan perään yhtä aikaa) ja **poliisiparit**.
+- **Päivä 7:** **poliisiparit**.
 - **Päivä 8 ja myöhemmin:** **ääripuolueen edustaja** (tunkee lentolehtistä, ei pääse eroon) ja **poliitikko** (vaalikoju: ilmaista kahvia ja karkkia).
 
 Vaikeammat hukatut tavarat myöhempinä päivinä:
@@ -330,7 +331,7 @@ Humalan vaikutukset alkavat matalammalla kuin alussa suunniteltiin (kaikki rajat
 - **Ruoka:** syöminen palauttaa vähän.
 - **Hyvä humala korjaa:** 1,0–2,5 promillessa health palautuu itsestään hitaasti (0,4 / s liikkuessa). Selvempänä tai kovemmassa humalassa ei.
 - **Alkoholi:** juominen palauttaa healthia juoman vahvuuden mukaan (15 healthia promillea kohden: olut noin +4, pullo +6, tuoppi +8, viina +9, tuntematon aine +14; tyhjään mahaan enemmän).
-- **Apteekki:** laastaria tai särkylääkettä saa rahalla, mutta ne palauttavat vain vähän.
+- **Apteekki:** laastaria tai särkylääkettä saa rahalla, mutta ne palauttavat vain vähän. **Toteutus:** noin joka kolmannessa korttelissa on apteekki (vihreä APTEEKKI-kyltti ja hehkuva vihreä risti oven vieressä). Kauppanäkymä toimii kuten kioskissa: laastari 2 € (+10 healthia) ja särkylääke 4 € (+20 healthia ja krapulatärinä pois kahdeksi minuutiksi pelin aikaa). Ostaminen vaatii lompakon mutta ei henkkareita.
 - Päivän aikana health ei palaudu itsestään.
 
 ### Väsymyksen vähentäminen
@@ -477,6 +478,7 @@ Hahmoideat:
 - Kuolema esitetään **paikallislehden lööppinä**, jossa on hahmon kuva ja humoristinen otsikko kuolinsyystä, esimerkiksi "Lokki vei viimeisen makkaran – nälkä voitti". Lehden nimi on keksitty.
 - Sen jälkeen näytetään **pisteet ja ennätyslista**.
   - Ennätyslista on aluksi **vain omalla laitteella**. **Yhteinen maailmanlaajuinen lista** lisätään myöhemmin; se vaatii palvelimen ja huijauksen eston.
+  - **Toteutus:** kymmenen parasta (pisteet, päivä, jona kuoli, lööpin otsikko ja päivämäärä) tallentuu tiedostoon `user://scores.cfg`. Lööpin alalaidassa pisteiden perässä näkyy sijoitus ("3. sija"), jos pisteet riittivät listalle. Napin painallus lööpistä avaa ennätyslistan, jossa oma rivi vilkkuu keltaisena, ja seuraava painallus aloittaa uuden pelin. Pelin aikana lista aukeaa F3:lla (kun debug ei ole päällä).
 - Uusi peli alkaa **heti napin painalluksella**, jotta tahti pysyy nopeana.
 
 ## Pisteytys
@@ -516,6 +518,7 @@ Hahmoideat:
 - Peli **tallentuu automaattisesti joka aamu** päivän alussa.
 - Jos sovellus suljetaan kesken päivän, jatketaan **saman päivän alusta**.
 - Kesken päivän ei voi tallentaa, joten huijaaminen ei onnistu.
+- **Toteutus:** aamun tila (päivä, promillet, health, raha, nälkä, kylmä, väsymys, koti, hukatut tavarat ja niiden paikat, sää, puhelimen vihjeet, kaupunki, tietyöt, aloituspaikka ja käden esine) tallentuu tiedostoon `user://save.cfg`. Kun sovellus avataan ja tallennus on olemassa, näytetään kaksi isoa nappia ilman tekstiä: punainen play-nappi (alla "Päivä N") jatkaa tallennettua aamua ja sininen nappi, jossa aurinko nousee, aloittaa uuden pelin. Valinta nuolilla ja toimintonapilla tai napauttamalla. **Kuolema poistaa tallennuksen.**
 
 ## Tekniikka
 
@@ -560,6 +563,12 @@ Lisätty prototyyppiin:
     - **makkaralla:** kun makkara on kädessä, koira tulee luo ja vaihtaa tavaran makkaraan (♥). Maahan heitetty ruoka saa sen pudottamaan tavaran ja menemään syömään. Saavutus: Vaihtokauppa.
     - **kiinni juoksemalla:** juokseva pelaaja on koiraa nopeampi. Kun koiran saa kiinni, se pudottaa tavaran ja lähtee.
     - **lyömällä tai heittämällä:** koira säikähtää, pudottaa tavaran ja lähtee vinkuen.
+  - **Tavara jonkun hallussa (päivästä 4):** jokainen hukattu tavara (ei puhelin, ei koiran suussa oleva) on 25 %:n todennäköisyydellä ohikulkijan kädessä siinä korttelissa, johon se on arvottu. Ohikulkija kävelee korttelissa edestakaisin tavara näkyvästi kädessä, ja hänen päällään näkyy keltainen nuoli, kun pelaaja on lähellä. Lämpömittari, reunanuoli ja puhelimen kartta seuraavat häntä. Kun pelaaja tulee häntä vastaan edestä, hän pysähtyy, ja toimintonapin vihje näyttää kolikon ja tavaran. Tavaran saa takaisin:
+    - **ostamalla:** 5 € (jos rahaa ei ole tarpeeksi, "5 €?").
+    - **vaihtamalla:** pullo kädessä toimintonappi vaihtaa pullon tavaraan (♥).
+    - **taskuvarastamalla:** selän takaa; onnistuessa tavara jää pelaajan jalkoihin.
+    - **halaamalla** (humalainen halaus) tai **tyrmäämällä** (ladattu lyönti tai heitto): tavara putoaa maahan.
+  - **Tavara puussa tai katoksella (päivästä 5):** jokainen hukattu tavara (ei puhelin, ei koiralla tai ohikulkijalla) on 20 %:n todennäköisyydellä jumissa korkealla: lähimmän puun latvassa (noin 2,4 m) tai kioskin tai baarin oven raidallisen katoksen päällä (2,5 m). Ilman puita ja kauppoja olevassa korttelissa se on maassa. Tavaraa ei voi poimia ennen kuin sen pudottaa: **heitetty esine** (mikä tahansa) osuu siihen alle 0,8 metrin päästä, ja tavara putoaa pyörien maahan, josta sen poimii normaalisti. Kun heittää korkealla olevan tavaran suuntaan (noin 40 asteen sisällä ja heiton matkan päässä), heitto kaartaa automaattisesti ylös kohti tavaraa, koska tavallinen heitto nousee vain noin 1,7 metriin. Nuoli, lämpömittari ja reunanuoli toimivat normaalisti.
 
 - **Ilman puhelinta ei olla hukassa:**
   - Puhelin itse hukkuu aina lähelle päivän aloituspaikkaa (noin korttelin päähän), joten sen löytäminen on helppo alku.

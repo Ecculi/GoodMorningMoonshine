@@ -85,6 +85,8 @@ const COLD_PUNCH_WARM := 3.0
 
 const TIRED_RATE := 0.5
 const COFFEE_AWAKE := 35.0
+## Hot coffee warms a little too.
+const COFFEE_WARMTH := 12.0
 const ENERGY_AWAKE := 45.0
 const CAFFEINE_LIMIT := 1.5
 const JITTER_TIME := 20.0
@@ -158,6 +160,19 @@ var dog_items: Array = []
 ## mouth, with this chance each (never the phone).
 const DOG_ITEM_FROM_DAY := 3
 const DOG_ITEM_CHANCE := 0.25
+## Lost things someone (a passer-by) has picked up and carries about in
+## their hand today (ids). From CARRIED_FROM_DAY, with this chance each
+## (never the phone). Buy it back, swap a bottle for it, pickpocket it or
+## knock them out.
+var carried_items: Array = []
+const CARRIED_FROM_DAY := 4
+const CARRIED_CHANCE := 0.25
+## Lost things stuck up high today (ids): in a tree top or on a shop
+## awning in their block. Knock them down with a thrown thing. From
+## HIGH_FROM_DAY, with this chance each (never the phone).
+var high_items: Array = []
+const HIGH_FROM_DAY := 5
+const HIGH_CHANCE := 0.2
 ## Where the character slept: "home", "stairs" or "street".
 var sleep_place := "home"
 ## Wet and soiled trousers after a night on the street (brown at the back,
@@ -203,6 +218,7 @@ func _ready() -> void:
 	_setup_input()
 	TranslationServer.set_locale("fi")
 	_load_achievements()
+	_load_scores()
 
 
 func _process(delta: float) -> void:
@@ -321,6 +337,7 @@ func _tick_body(dt: float, is_running: bool) -> void:
 	jitter_t = maxf(0.0, jitter_t - dt)
 	focus_t = maxf(0.0, focus_t - dt)
 	trip_t = maxf(0.0, trip_t - dt)
+	painkiller_t = maxf(0.0, painkiller_t - dt)
 
 
 ## How fast the character gets colder (per second of activity; negative =
@@ -351,10 +368,16 @@ func player_time_scale() -> float:
 	return CHARGE_TIME_SCALE if charging and focus_t <= 0.0 else 1.0
 
 
+## A painkiller from the pharmacy: no hangover shakes for this long
+## (seconds of game time).
+const PAINKILLER_TIME := 120.0
+var painkiller_t := 0.0
+
+
 ## Hangover shakes 0..1: only below the hangover limit, stronger the
 ## bigger yesterday's peak was and the soberer you are now.
 func hangover_shake() -> float:
-	if promille >= PROMILLE_HANGOVER:
+	if promille >= PROMILLE_HANGOVER or painkiller_t > 0.0:
 		return 0.0
 	var peak := clampf((yesterday_max - 0.8) / 2.4, 0.15, 1.0)
 	var sober := clampf((PROMILLE_HANGOVER - promille) / PROMILLE_HANGOVER, 0.0, 1.0)
@@ -512,6 +535,8 @@ func find_item(id: String) -> void:
 	lost.erase(id)
 	placements.erase(id)
 	dog_items.erase(id)
+	carried_items.erase(id)
+	high_items.erase(id)
 	found_today.append(id)
 	# Everything found, the phone last (so without its map and hints).
 	if lost.is_empty() and id == "phone" and found_today.size() >= 2:
@@ -645,6 +670,7 @@ func new_day() -> void:
 	jitter_t = 0.0
 	focus_t = 0.0
 	trip_t = 0.0
+	painkiller_t = 0.0
 	doze_t = -1.0
 	strain = 0.0
 	exhausted = false
@@ -753,6 +779,8 @@ func _lose_items() -> void:
 func _place_lost_items() -> void:
 	placements.clear()
 	dog_items.clear()
+	carried_items.clear()
+	high_items.clear()
 	var radius := search_radius()
 	var home_c := _seg_center(home_seg)
 	# Where the day starts (home on the first day).
@@ -780,6 +808,10 @@ func _place_lost_items() -> void:
 		if id != "phone" and day >= DOG_ITEM_FROM_DAY and rng.randf() < DOG_ITEM_CHANCE:
 			dog_items.append(id)
 			placements[id][1].z = rng.randf_range(-4.0, 1.5)  # the dog trots about the street
+		elif id != "phone" and day >= CARRIED_FROM_DAY and rng.randf() < CARRIED_CHANCE:
+			carried_items.append(id)
+		elif id != "phone" and day >= HIGH_FROM_DAY and rng.randf() < HIGH_CHANCE:
+			high_items.append(id)
 
 
 ## Each morning the phone has a little battery and maybe some hints about
@@ -839,7 +871,114 @@ func format_promille(p: float) -> String:
 
 func _die(cause: String) -> void:
 	over = true
+	delete_save()
 	player_died.emit(cause)
+
+
+# --- High scores --------------------------------------------------------------
+
+## The best games on this device: [{"score", "day", "headline", "date"}],
+## best first. "headline" is the translation key of the death headline.
+const SCORES_FILE := "user://scores.cfg"
+const SCORES_MAX := 10
+var scores: Array = []
+
+
+func _load_scores() -> void:
+	var cf := ConfigFile.new()
+	if cf.load(SCORES_FILE) != OK:
+		return
+	scores = cf.get_value("scores", "list", [])
+
+
+## Puts this game in the list. Returns its place (1 = best), or 0 if it
+## didn't make the top ten.
+func record_score(headline: String) -> int:
+	var d := Time.get_date_dict_from_system()
+	var entry := {"score": score(), "day": day, "headline": headline,
+		"date": "%d.%d.%d" % [d["day"], d["month"], d["year"]]}
+	var place := scores.size()
+	for i in scores.size():
+		if entry["score"] > scores[i]["score"]:
+			place = i
+			break
+	if place >= SCORES_MAX:
+		return 0
+	scores.insert(place, entry)
+	scores.resize(mini(scores.size(), SCORES_MAX))
+	var cf := ConfigFile.new()
+	cf.set_value("scores", "list", scores)
+	cf.save(SCORES_FILE)
+	return place + 1
+
+
+# --- Morning save -----------------------------------------------------------------
+
+## The game saves itself every morning at the start of the day. Closing the
+## app mid-day and opening it again goes back to that morning; there is no
+## saving during the day. Death deletes the save.
+const SAVE_FILE := "user://save.cfg"
+## GameState variables kept in the save. New ones can be added here: an
+## older save without them just keeps the default.
+const SAVE_KEYS := [
+	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
+	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
+	"placements", "dog_items", "carried_items", "high_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
+	"weather", "storm", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
+]
+
+
+func has_save() -> bool:
+	return FileAccess.file_exists(SAVE_FILE)
+
+
+## Saves the morning. `extra` holds what main.gd needs to rebuild the
+## morning (where the character starts, what is in the hand).
+func save_morning(extra: Dictionary) -> void:
+	var cf := ConfigFile.new()
+	for k in SAVE_KEYS:
+		cf.set_value("state", k, get(k))
+	cf.set_value("state", "city", CityMap.city)
+	cf.set_value("state", "closed", CityMap.closed.duplicate())
+	for k in extra:
+		cf.set_value("extra", k, extra[k])
+	cf.save(SAVE_FILE)
+
+
+## Loads the morning save into the game state. Returns the `extra` part
+## given to save_morning, or {} when there is no usable save.
+func load_save() -> Dictionary:
+	var cf := ConfigFile.new()
+	if cf.load(SAVE_FILE) != OK or not cf.has_section("state"):
+		return {}
+	CityMap.set_city(cf.get_value("state", "city", 0))
+	for k in SAVE_KEYS:
+		if cf.has_section_key("state", k):
+			set(k, cf.get_value("state", k))
+	CityMap.closed = cf.get_value("state", "closed", []).duplicate()
+	_doses.clear()
+	_reset_day_counters()
+	strain = 0.0
+	exhausted = false
+	caffeine = 0.0
+	jitter_t = 0.0
+	focus_t = 0.0
+	trip_t = 0.0
+	doze_t = -1.0
+	busy_time = 0.0
+	hit_stop_t = 0.0
+	charging = false
+	modal = ""
+	var extra := {}
+	if cf.has_section("extra"):
+		for k in cf.get_section_keys("extra"):
+			extra[k] = cf.get_value("extra", k)
+	return extra
+
+
+func delete_save() -> void:
+	if has_save():
+		DirAccess.remove_absolute(SAVE_FILE)
 
 
 ## Debug (F11): the next new game is in this city instead of a random one.

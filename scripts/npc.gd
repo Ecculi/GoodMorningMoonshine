@@ -22,12 +22,16 @@ extends Node3D
 ##   him or knock him out to get it back.
 ## - "granny": (from day 5) slow little old lady with a handbag; annoy her
 ##   (hit, throw, pickpocket) and she swings the bag surprisingly hard.
+## - "priest": (from day 6) black clothes and a white collar; gives a cold
+##   or hungry player a bun or a coffee (once), tutting if they are drunk.
+##   Hitting a priest always brings the police.
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
 ##   left alone, they may offer a can of beer
 
 const PersonModel = preload("res://scripts/person_model.gd")
+const LostItems = preload("res://scripts/lost_items.gd")
 const Item = preload("res://scripts/item.gd")
 const Ragdoll = preload("res://scripts/ragdoll.gd")
 
@@ -222,6 +226,12 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			lens.position = Vector3(0.24, 1.3, 0)
 			model.add_child(lens)
 			speed = 0.9
+		"priest":
+			model = PersonModel.new(Color(0.07, 0.07, 0.08), Color(0.07, 0.07, 0.08), skin,
+				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.96, 1.04))
+			_head_box(Vector3(0.11, 1.56, 0), Vector3(0.05, 0.05, 0.1), Color(0.97, 0.97, 0.97))  # white collar tab
+			speed = 1.0
+			telegraphs = true
 		"thief":
 			model = PersonModel.new(Color(0.16, 0.17, 0.2), Color(0.12, 0.14, 0.22), skin,
 				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.95, 1.02))
@@ -320,7 +330,7 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 	add_child(model)
 	_pick_style(rng)
 	match role:
-		"police", "bouncer":
+		"police", "bouncer", "priest":
 			model.set_shoe_color(Color(0.05, 0.05, 0.06))
 		"guard":
 			model.set_shoe_color(Color(0.1, 0.1, 0.12))
@@ -393,9 +403,68 @@ func is_lawman() -> bool:
 	return role == "police" or role == "guard"
 
 
-## Beggar or street drunk: the action button trades instead of punching.
+## Beggar, street drunk or someone carrying a lost thing: the action
+## button trades instead of punching.
 func is_trader() -> bool:
-	return (role == "beggar" or role == "drunk") and state == S.WALK
+	return (role == "beggar" or role == "drunk" or carry_id != "") and state == S.WALK
+
+
+## Carrying one of the player's lost things (a passer-by who picked it
+## up): it shows in the hand, with a yellow arrow above when close.
+## Get it back by paying, swapping a bottle, pickpocketing or a knockout.
+const CARRY_PRICE := 5
+var carry_id := ""
+var _carry_model: Node3D
+var _carry_arrow: Label3D
+
+
+func carry_lost(id: String) -> void:
+	carry_id = id
+	trades_left = 1
+	speed = minf(speed, 1.15)
+	_carry_model = LostItems.build_mesh(id)
+	_carry_model.scale = Vector3.ONE * 1.2
+	_carry_model.position = Vector3(0.05, -0.1, 0)
+	model.hand.add_child(_carry_model)
+	_carry_arrow = Label3D.new()
+	_carry_arrow.text = "▼"
+	_carry_arrow.font_size = 96
+	_carry_arrow.pixel_size = 0.005
+	_carry_arrow.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_carry_arrow.no_depth_test = true
+	_carry_arrow.modulate = Color(1, 0.85, 0.2)
+	_carry_arrow.outline_size = 18
+	_carry_arrow.visible = false
+	add_child(_carry_arrow)
+
+
+## Lets go of the lost thing: it drops to the ground at `at`.
+func _drop_carried(at: Vector3) -> void:
+	if carry_id == "":
+		return
+	var id := carry_id
+	carry_id = ""
+	if _carry_model != null:
+		_carry_model.queue_free()
+		_carry_model = null
+	if _carry_arrow != null:
+		_carry_arrow.queue_free()
+		_carry_arrow = null
+	main.carrier_dropped(id, at)
+
+
+## Keeps the hint position up to date (hot/cold, the edge arrow) and shows
+## the arrow when close enough to recognise the thing.
+func _update_carry() -> void:
+	if not GameState.placements.has(carry_id):
+		_drop_carried(position)
+		return
+	GameState.placements[carry_id][1] = Vector3(position.x, 0.0, position.z)
+	var p: Vector3 = main.player.position
+	var d := Vector2(p.x - position.x, p.z - position.z).length()
+	var reach := LostItems.REVEAL_DIST_NO_GLASSES if GameState.is_lost("glasses") else LostItems.REVEAL_DIST
+	_carry_arrow.visible = d < reach + 3.0
+	_carry_arrow.position = Vector3(0, 2.35 + absf(sin(Time.get_ticks_msec() / 250.0)) * 0.15, 0)
 
 
 func _head_box(pos: Vector3, size: Vector3, col: Color) -> void:
@@ -430,6 +499,12 @@ func provoke() -> void:
 		_mark.modulate = Color(1, 0.25, 0.2)
 		_mark.visible = true
 		return
+	if role == "priest":
+		# Doesn't hit back: hurries off, shocked.
+		state = S.LEAVE
+		dir = 1 if position.x >= main.player.position.x else -1
+		main.popup("!", position + Vector3(0, 2.2, 0), Color(1, 0.9, 0.5))
+		return
 	if model.sitting:
 		model.sitting = false
 	stationary = false
@@ -445,6 +520,24 @@ func offer_trade(p: Node3D) -> bool:
 	var top := position + Vector3(0, 1.4 if model.sitting else 2.2, 0)
 	if trades_left <= 0:
 		main.popup("…", top, Color(0.85, 0.85, 0.85))
+		return true
+	if carry_id != "":
+		# Swap a bottle for it, or buy it back.
+		if p.hand_item != null and p.hand_item.kind == Item.Kind.BOTTLE:
+			var b = p.hand_item
+			p.hand_item = null
+			main.remove_item(b)
+			main.popup("♥", top, Color(1, 0.5, 0.6))
+		elif GameState.money >= CARRY_PRICE:
+			GameState.money -= CARRY_PRICE
+			main.popup("-%d €" % CARRY_PRICE, top, Color(1, 0.85, 0.3))
+		else:
+			main.popup("%d €?" % CARRY_PRICE, top, Color(1, 0.85, 0.3))
+			return true
+		trades_left = 0
+		model.punch()
+		_drop_carried(Vector3(p.position.x, 0.0, p.position.z))
+		GameState.busy_time = maxf(GameState.busy_time, 0.6)
 		return true
 	match role:
 		"beggar":
@@ -712,6 +805,60 @@ func _bub_prism(pos: Vector3, size: Vector3, c: Color, apex: float) -> void:
 	_bubble.add_child(mi)
 
 
+## Someone carrying a lost thing stops when the player comes up from the
+## front (to trade). From behind they don't notice: a pickpocket chance.
+func _carrier_wait(dt: float) -> bool:
+	var p = main.player
+	var dx: float = p.position.x - position.x
+	if dx * dir <= 0.0 or absf(dx) > 1.8 or absf(p.position.z - position.z) > 0.9 or p.is_helpless():
+		return false
+	model.animate(0.0, dt)
+	return true
+
+
+## Priest: gives a cold or hungry player a bun (food) or a coffee, once.
+## Drunk, they get a disapproving shake of the head, but the gift anyway.
+const PRIEST_NOTICE := 2.4
+const PRIEST_HUNGRY := 50.0
+const PRIEST_GIVE_TIME := 1.4
+var _gift_given := false
+var _gift_t := 0.0
+
+
+func _priest(dt: float) -> bool:
+	var p = main.player
+	if _gift_t > 0.0:
+		_gift_t -= dt
+		dir = 1 if p.position.x >= position.x else -1
+		model.animate(0.0, dt)
+		if _gift_t <= 0.0:
+			model.raise_arm(false)
+		return true
+	if _gift_given:
+		return false
+	var d := Vector2(p.position.x - position.x, p.position.z - position.z).length()
+	if d > PRIEST_NOTICE or p.is_helpless() or GameState.modal != "":
+		return false
+	var hungry := GameState.hunger >= PRIEST_HUNGRY
+	var cold := GameState.cold >= GameState.COLD_SHIVER
+	if not hungry and not cold:
+		return false
+	_gift_given = true
+	_gift_t = PRIEST_GIVE_TIME
+	model.raise_arm(true)
+	var kind: int = Item.Kind.FOOD
+	if cold and (not hungry or main.rng.randf() < 0.5):
+		kind = Item.Kind.COFFEE
+	var it = main.spawn_item(kind, p.position)
+	p._pickup(it)
+	var top := position + Vector3(0, 2.3, 0)
+	if GameState.promille > GameState.PROMILLE_DRUNK:
+		main.popup("tsk tsk", top + Vector3(0, 0.4, 0), Color(0.85, 0.85, 0.9), 0.8)
+	main.popup_icon(main.heart_texture(), top)
+	GameState.busy_time = maxf(GameState.busy_time, 0.6)
+	return true
+
+
 ## Pickpocket: "prowl" (walks about, tails a passer-by, sidles up to the
 ## player), "flee" (got something: runs for the end of the block) or
 ## "done" (finished; just walks on).
@@ -957,6 +1104,8 @@ func _process(_delta: float) -> void:
 		_rise_t -= dt
 		return
 	var start_pos := position
+	if carry_id != "":
+		_update_carry()
 	_open_t = maxf(0.0, _open_t - dt)
 	if _pointing and state != S.WALK:
 		_pointing = false
@@ -986,6 +1135,8 @@ func _process(_delta: float) -> void:
 			model.animate(0.0, dt)
 			if _timer <= 0.0:
 				state = S.CHASE if role == "police" or role == "bouncer" else S.FIGHT
+				if role == "priest":
+					state = S.LEAVE
 		S.KO:
 			_timer += dt
 			if _ragdoll != null:
@@ -1086,7 +1237,7 @@ var _pointing := false
 
 
 func _point_at_player(dt: float) -> bool:
-	var want: bool = (role == "civ" or role == "granny" or role == "tourist") and not stationary \
+	var want: bool = (role == "civ" or role == "granny" or role == "tourist" or role == "priest") and not stationary \
 		and main.police_hunting_in_view()
 	if want != _pointing:
 		_pointing = want
@@ -1127,6 +1278,10 @@ func _walk(dt: float) -> void:
 		return
 	if role == "tourist" and _tourist(dt):
 		return
+	if role == "priest" and _priest(dt):
+		return
+	if carry_id != "" and _carrier_wait(dt):
+		return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
 	# The way on is fenced off: turn back.
@@ -1147,6 +1302,9 @@ func _hit_by_player() -> void:
 		tour_mode = "done"
 	if role == "bouncer":
 		return  # hitting the bouncer himself: thrown out as before
+	if role == "priest":
+		# Hitting a priest: someone always calls the police, at once.
+		main.report_crime(position, true, false, true)
 	if not player_started and not attacked_player:
 		var hostile := state == S.FIGHT or state == S.CHASE or state == S.STUNNED
 		player_started = not hostile
@@ -1465,7 +1623,9 @@ func hug(p: Node3D) -> void:
 	p.get_tree().create_timer(1.0).timeout.connect(func(): p.model.raise_arm(false))
 	GameState.busy_time = maxf(GameState.busy_time, 1.0)
 	main.popup_icon(main.heart_texture(), (position + p.position) * 0.5 + Vector3(0, 2.1, 0.3))
-	if main.rng.randf() < 0.9:
+	if carry_id != "":
+		_drop_carried(Vector3(p.position.x, 0.0, p.position.z))
+	elif main.rng.randf() < 0.9:
 		var amount: int = main.rng.randi_range(1, 6)
 		GameState.money += amount
 		main.popup("+%d €" % amount, position + Vector3(0, 2.4, 0), Color(1, 0.85, 0.3))
@@ -1492,6 +1652,10 @@ func check_pickpocket(p: Node3D) -> void:
 	if p.hic_window > 0.0:
 		chance = 0.0
 	if main.rng.randf() < chance:
+		if carry_id != "":
+			# Slips the lost thing out of their hand.
+			_drop_carried(Vector3(p.position.x, 0.0, p.position.z))
+			return
 		var amount: int = main.rng.randi_range(1, 6)
 		GameState.money += amount
 		main.popup("+%d €" % amount, position + Vector3(0, 2.0, 0), Color(1, 0.85, 0.3))
@@ -1535,6 +1699,7 @@ func _end_ragdoll() -> void:
 ## face_down: a direction to topple the rag doll over forwards (fall on
 ## the face); zero = the usual random tumble.
 func _knock_out(push := Vector3(0, 1.5, 0), face_down := Vector3.ZERO) -> void:
+	_drop_carried(Vector3(position.x + 0.4 * float(dir), 0.0, position.z))
 	if role == "thief" and (loot_id != "" or loot_money > 0):
 		_give_back()
 		GameState.unlock("THIEF_CAUGHT")

@@ -33,6 +33,14 @@ const KIOSK_OPTIONS := [
 const BAR_OPTIONS := [
 	{"kind": "pint", "price": 5, "alcohol": true},
 ]
+## Pharmacy: a plaster mends a little, a painkiller more and stops the
+## hangover shakes for a while.
+const PHARMACY_OPTIONS := [
+	{"kind": "plaster", "price": 2, "alcohol": false},
+	{"kind": "painkiller", "price": 4, "alcohol": false},
+]
+const PLASTER_HEALTH := 10.0
+const PAINKILLER_HEALTH := 20.0
 const TILT_SHIFT = preload("res://shaders/tilt_shift.gdshader")
 const CLOUD_SHADOW = preload("res://shaders/cloud_shadow.gdshader")
 ## Cloud drift in map coordinates (metres per second of active time).
@@ -154,7 +162,12 @@ func _ready() -> void:
 	GameState.silly_moment.connect(_on_silly_moment)
 	GameState.achievement_unlocked.connect(func(id): hud.show_achievement(id))
 	GameState.player_died.connect(_on_player_died)
-	_new_game()
+	# A morning save: ask whether to continue it or start a new game.
+	if GameState.has_save() and _continue_game():
+		GameState.over = true
+		hud.show_card("start", "", tr("DAY_N") % GameState.day)
+	else:
+		_new_game()
 
 
 func _process(delta: float) -> void:
@@ -174,9 +187,19 @@ func _process(delta: float) -> void:
 	_check_arrest()
 	_check_choke()
 	_update_signs()
-	if hud.mode == "dead" and hud.card_time > 1.0 and Input.is_action_just_pressed("action"):
+	# Death: the headline, then the high scores, then a new game.
+	if hud.mode == "scores" and hud.card_time > 0.6 and Input.is_action_just_pressed("action"):
 		_new_game()
 		hud.hide_card()
+	if hud.mode == "dead" and hud.card_time > 1.0 and Input.is_action_just_pressed("action"):
+		hud.show_card("scores", tr("HISCORES"), "")
+	if hud.mode == "start":
+		if Input.is_action_just_pressed("move_left"):
+			hud.start_sel = 0
+		elif Input.is_action_just_pressed("move_right"):
+			hud.start_sel = 1
+		if hud.card_time > 0.3 and Input.is_action_just_pressed("action"):
+			start_choice(hud.start_sel)
 
 
 # --- Moving around the map ------------------------------------------------------
@@ -421,6 +444,11 @@ func _populate_block() -> void:
 			# In a stray dog's mouth.
 			var dg = _spawn_animal("dog", pl[1])
 			dg.carry(id)
+		elif pl[0] == segment and GameState.carried_items.has(id):
+			# In a passer-by's hand.
+			var cn = _spawn_npc(false)
+			cn.position = Vector3(pl[1].x, 0.0, pl[1].z)
+			cn.carry_lost(id)
 		elif pl[0] == segment:
 			var ln = LostItemNode.new()
 			ln.main = self
@@ -428,7 +456,63 @@ func _populate_block() -> void:
 			add_child(ln)
 			ln.position = pl[1]
 			lost_nodes.append(ln)
+			if GameState.high_items.has(id):
+				_put_up_high(ln)
 
+
+## A lost thing stuck up high: in the tree top or on the shop awning
+## nearest to where it was placed (the same one every time). A block with
+## neither keeps it on the ground.
+func _put_up_high(ln) -> void:
+	var best := INF
+	var spot := Vector3.INF
+	var h := 0.0
+	for tx in level.get_meta("trees", []):
+		if absf(tx - ln.position.x) < best:
+			best = absf(tx - ln.position.x)
+			spot = Vector3(tx, 0.0, BlockBuilder.TREE_ITEM.y)
+			h = BlockBuilder.TREE_ITEM.x
+	for sh in level.get_meta("shops", []):
+		if absf(sh["x"] - ln.position.x) < best:
+			best = absf(sh["x"] - ln.position.x)
+			spot = Vector3(sh["x"], 0.0, BlockBuilder.AWNING_ITEM.y)
+			h = BlockBuilder.AWNING_ITEM.x
+	if spot == Vector3.INF:
+		GameState.high_items.erase(ln.id)
+		return
+	ln.position = spot
+	ln.high = h - ln._ground_y()
+	GameState.placements[ln.id][1] = spot
+
+
+## A lost thing up high in the direction of a throw from `start` (for
+## aiming the throw at it), or null.
+func high_lost_target(start: Vector3, dir: Vector3, reach: float):
+	var best = null
+	var best_d := INF
+	for ln in lost_nodes:
+		if ln.high <= 0.0 or ln._falling:
+			continue
+		var to: Vector3 = ln.top() - start
+		var flat := Vector2(to.x, to.z)
+		var d := flat.length()
+		if d < 0.5 or d > reach + 2.0:
+			continue
+		if absf(flat.angle_to(Vector2(dir.x, dir.z))) > deg_to_rad(40.0):
+			continue
+		if d < best_d:
+			best_d = d
+			best = ln
+	return best
+
+
+## A flying thing at `pos`: knocks down a lost thing stuck up high there.
+func knock_high_lost(pos: Vector3) -> bool:
+	for ln in lost_nodes:
+		if ln.high > 0.0 and not ln._falling and pos.distance_to(ln.top()) < 0.8:
+			ln.knock_down()
+			return true
+	return false
 
 ## Walking over one of your own lost things puts it straight back in place.
 func _check_lost_pickups() -> void:
@@ -437,6 +521,8 @@ func _check_lost_pickups() -> void:
 	for ln in lost_nodes.duplicate():
 		if ln.has_meta("flying"):
 			continue
+		if ln.high > 0.0:
+			continue  # up a tree or on an awning: knock it down first
 		# Someone else's shoes: only taken if the player's own are missing.
 		if ln.has_meta("spare") and not GameState.is_lost("shoes"):
 			continue
@@ -598,7 +684,12 @@ func open_phone() -> void:
 
 
 func shop_options() -> Array:
-	return KIOSK_OPTIONS if shop_type == "kiosk" else BAR_OPTIONS
+	match shop_type:
+		"kiosk":
+			return KIOSK_OPTIONS
+		"pharmacy":
+			return PHARMACY_OPTIONS
+	return BAR_OPTIONS
 
 
 ## Phone: left/right browse, down + action closes; the battery drains in
@@ -665,6 +756,13 @@ func _buy(o: Dictionary) -> void:
 			player._pickup(spawn_item(Item.Kind.ENERGY, player.position))
 		"pint":
 			GameState.drink(0.5)
+		"plaster":
+			GameState.health = minf(100.0, GameState.health + PLASTER_HEALTH)
+			hud.show_head_heart()
+		"painkiller":
+			GameState.health = minf(100.0, GameState.health + PAINKILLER_HEALTH)
+			GameState.painkiller_t = GameState.PAINKILLER_TIME
+			hud.show_head_heart()
 		"charge":
 			# Charging is a trade: time jumps ahead, alcohol goes down.
 			GameState.battery = minf(100.0, GameState.battery + 15.0)
@@ -863,6 +961,53 @@ func _new_game() -> void:
 	_enter_block(GameState.home_seg, _home_door_pos(), 1)
 	hud.show_pocket_check()
 	hud.show_city(CityMap.city_name())
+	_save_morning(GameState.home_seg, _home_door_pos(), 1)
+
+
+## The morning is saved as the day starts (see GameState.save_morning).
+func _save_morning(seg: Vector3i, pos: Vector3, facing: int) -> void:
+	var hand: Array = []
+	var h = player.hand_item
+	if h != null and is_instance_valid(h):
+		hand = [h.kind, h.value, h.drink]
+	GameState.save_morning({"seg": seg, "pos": pos, "facing": facing, "hand": hand})
+
+
+## Rebuilds the saved morning. False when the save could not be read.
+func _continue_game() -> bool:
+	var s := GameState.load_save()
+	if s.is_empty():
+		return false
+	_searched_bins.clear()
+	_lock_hits = 0
+	_friend_refused = false
+	_block_items.clear()
+	_block_glass.clear()
+	_pending_followers.clear()
+	arrest = 0.0
+	player.reset(Vector3.ZERO)
+	player.wake_up()
+	_enter_block(s.get("seg", GameState.home_seg), s.get("pos", _home_door_pos()), s.get("facing", 1))
+	var hand: Array = s.get("hand", [])
+	if hand.size() == 3:
+		var it = spawn_item(hand[0], player.position, hand[1], hand[2])
+		player._pickup(it)
+	hud.show_pocket_check()
+	return true
+
+
+## Start menu after opening the app with a save: 0 = continue the saved
+## morning, 1 = new game.
+func start_choice(i: int) -> void:
+	if hud.mode != "start":
+		return
+	hud.hide_card()
+	if i == 0:
+		GameState.over = false
+		player.wake_up()
+		hud.show_city(CityMap.city_name())
+	else:
+		_new_game()
 
 
 ## From day 2 on the character wakes up somewhere other than home (they
@@ -875,8 +1020,10 @@ func _new_day() -> void:
 	_friend_refused = false
 	arrest = 0.0
 	player.wake_up()
-	_enter_block(GameState.wake_seg, GameState.wake_pos, 1 if rng.randf() < 0.5 else -1)
+	var facing := 1 if rng.randf() < 0.5 else -1
+	_enter_block(GameState.wake_seg, GameState.wake_pos, facing)
 	hud.show_pocket_check()
+	_save_morning(GameState.wake_seg, GameState.wake_pos, facing)
 	if GameState.sleep_place == "jail":
 		_cellmate()
 
@@ -930,10 +1077,15 @@ func _on_player_died(cause: String) -> void:
 	if rng.randf() < 0.2:
 		caption = tr("CAP_ANY_%d" % rng.randi_range(1, CAPTIONS_ANY))
 	player.collapse_dead()
+	var place := GameState.record_score(hl_key)
 	await get_tree().create_timer(1.4).timeout
 	var photo: ImageTexture = await _take_death_photo()
 	hud.set_death_photo(photo, caption)
-	hud.show_card("dead", title, tr("SCORE") % GameState.score())
+	var sub := tr("SCORE") % GameState.score()
+	if place > 0:
+		sub += "  ·  " + tr("SCORE_PLACE") % place
+	hud.score_place = place
+	hud.show_card("dead", title, sub)
 
 
 ## A news photo of the scene from a different angle than the game camera
@@ -1293,6 +1445,9 @@ func _spawn_street_folk() -> void:
 	# From day 6 an influencer films anything silly the player does.
 	if GameState.day >= 6 and rng.randf() < 0.3:
 		_spawn_npc(false, "influencer")
+	# From day 6 a priest may help a cold or hungry player.
+	if GameState.day >= 6 and rng.randf() < 0.25:
+		_spawn_npc(false, "priest")
 	# From day 5 a pickpocket prowls the streets.
 	if GameState.day >= 5 and rng.randf() < 0.3:
 		_spawn_npc(false, "thief")
@@ -1302,6 +1457,9 @@ func _spawn_street_folk() -> void:
 	# New things keep turning up as the days go by: gulls from day 2,
 	# dogs (helpers or enemies) from day 3.
 	var gulls := rng.randi_range(1, 3) if GameState.day >= 2 and rng.randf() < 0.55 else 0
+	# From day 7 they come in flocks: more of them, in every block.
+	if GameState.day >= Animal.FLOCK_FROM_DAY:
+		gulls = rng.randi_range(3, 6)
 	for i in gulls:
 		var z := rng.randf_range(-7.4, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.0, 5.2)
 		_spawn_animal("gull", Vector3(rng.randf_range(-14.0, 14.0), 0, z))
@@ -1375,6 +1533,19 @@ func _spawn_animal(kind: String, pos: Vector3):
 
 ## A gull was trodden on: the other gulls come over and bomb the player
 ## for a while. If there are hardly any, a couple fly in from the side.
+## From day 7 gulls hunt food as a flock: the others nearby follow the
+## first one, each a little later.
+func gull_flock_alert(first) -> void:
+	if GameState.day < Animal.FLOCK_FROM_DAY:
+		return
+	var k := 0
+	for a in animals:
+		if a != first and a.kind == "gull" \
+				and Vector2(a.position.x - first.position.x, a.position.z - first.position.z).length() < Animal.FLOCK_RANGE:
+			k += 1
+			a.join_flock(0.15 + 0.25 * k + rng.randf_range(0.0, 0.3))
+
+
 func gull_trampled(victim) -> void:
 	GameState.unlock("GULL_STEP")
 	var others: Array = []
@@ -1542,6 +1713,12 @@ func food_on_ground_near(pos: Vector3, r: float):
 			if Vector2(it.global_position.x - pos.x, it.global_position.z - pos.z).length() < r:
 				return it
 	return null
+
+
+## A passer-by gave up (or lost) the lost thing they carried.
+func carrier_dropped(id: String, pos: Vector3) -> void:
+	GameState.carried_items.erase(id)
+	drop_lost(id, pos)
 
 
 ## A dog let go of a lost thing: it lies on the ground there now.
@@ -1729,7 +1906,9 @@ var arrest := 0.0
 ## their vision cone (a shout they hear); guards in the block react to
 ## crimes against people. A shout can also bring a police officer running
 ## from the street end.
-func report_crime(pos: Vector3, alarm: bool, animal := false) -> void:
+## `certain`: with an alarm, the police always come at once if none saw it
+## (hitting a priest).
+func report_crime(pos: Vector3, alarm: bool, animal := false, certain := false) -> void:
 	var noticed := false
 	var reach := SNEAK_NOTICE_DIST if GameState.is_lost("shoes") else INF
 	# Drunk and loud: noticed from further away even when sneaking.
@@ -1751,7 +1930,7 @@ func report_crime(pos: Vector3, alarm: bool, animal := false) -> void:
 		if saw:
 			n.notice()
 			noticed = true
-	if alarm and not noticed and rng.randf() < 0.6:
+	if alarm and not noticed and (certain or rng.randf() < 0.6):
 		var cop = _spawn_npc(true, "police")
 		cop.position.x = Npc.EDGE_X * (-1.0 if pos.x < 0.0 else 1.0)
 		cop.position.z = clampf(pos.z, Z_MIN, Z_MAX)
