@@ -1366,6 +1366,9 @@ func _spawn_street_folk() -> void:
 	# New things keep turning up as the days go by: gulls from day 2,
 	# dogs (helpers or enemies) from day 3.
 	var gulls := rng.randi_range(1, 3) if GameState.day >= 2 and rng.randf() < 0.55 else 0
+	# From day 7 they come in flocks: more of them, in every block.
+	if GameState.day >= Animal.FLOCK_FROM_DAY:
+		gulls = rng.randi_range(3, 6)
 	for i in gulls:
 		var z := rng.randf_range(-7.4, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.0, 5.2)
 		_spawn_animal("gull", Vector3(rng.randf_range(-14.0, 14.0), 0, z))
@@ -1439,6 +1442,19 @@ func _spawn_animal(kind: String, pos: Vector3):
 
 ## A gull was trodden on: the other gulls come over and bomb the player
 ## for a while. If there are hardly any, a couple fly in from the side.
+## From day 7 gulls hunt food as a flock: the others nearby follow the
+## first one, each a little later.
+func gull_flock_alert(first) -> void:
+	if GameState.day < Animal.FLOCK_FROM_DAY:
+		return
+	var k := 0
+	for a in animals:
+		if a != first and a.kind == "gull" \
+				and Vector2(a.position.x - first.position.x, a.position.z - first.position.z).length() < Animal.FLOCK_RANGE:
+			k += 1
+			a.join_flock(0.15 + 0.25 * k + rng.randf_range(0.0, 0.3))
+
+
 func gull_trampled(victim) -> void:
 	GameState.unlock("GULL_STEP")
 	var others: Array = []
