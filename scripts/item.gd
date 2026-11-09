@@ -192,6 +192,9 @@ func _fly(delta: float) -> void:
 		lv.z += (wind.z - lv.z) * k * 0.6 * delta
 		_body.linear_velocity = lv
 	var centre := _body.global_position + _body.global_transform.basis.y * 0.15
+	if not _hit_done and main.knock_high_lost(centre):
+		_hit_done = true
+		_bounce_off()
 	if not _hit_done:
 		var npc = main.npc_at(centre, 0.6)
 		var animal = main.animal_at(centre, 0.5)
@@ -312,7 +315,9 @@ func drop_at(pos: Vector3) -> void:
 
 ## Thrown: a physics body with a start velocity aimed to come down about
 ## `dist` metres away, spinning; it bounces and rolls from there.
-func throw_from(start: Vector3, dir: Vector3, dist: float) -> void:
+## `via`: a point the throw must pass through (a lost thing up a tree);
+## Vector3.INF = an ordinary throw that lands `dist` away.
+func throw_from(start: Vector3, dir: Vector3, dist: float, via := Vector3.INF) -> void:
 	_to_world()
 	state = St.FLYING
 	_hit_done = false
@@ -325,6 +330,13 @@ func throw_from(start: Vector3, dir: Vector3, dist: float) -> void:
 	var t := clampf(flat.length() / 7.0, 0.3, 0.9)
 	var vy := (0.1 - start.y + 0.5 * 9.8 * t * t) / t
 	flight_time = t
+	if via != Vector3.INF:
+		# Lobbed up so that it passes through `via` after t seconds (and
+		# lands a moment later).
+		flat = Vector3(via.x - start.x, 0.0, via.z - start.z)
+		t = clampf(flat.length() / 6.0, 0.4, 1.0)
+		vy = (via.y - start.y + 0.5 * 9.8 * t * t) / t
+		flight_time = t * 1.6
 	global_position = start
 	_body = _make_body(start)
 	_body.linear_velocity = flat / t + Vector3(0, vy, 0)

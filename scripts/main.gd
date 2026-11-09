@@ -448,7 +448,63 @@ func _populate_block() -> void:
 			add_child(ln)
 			ln.position = pl[1]
 			lost_nodes.append(ln)
+			if GameState.high_items.has(id):
+				_put_up_high(ln)
 
+
+## A lost thing stuck up high: in the tree top or on the shop awning
+## nearest to where it was placed (the same one every time). A block with
+## neither keeps it on the ground.
+func _put_up_high(ln) -> void:
+	var best := INF
+	var spot := Vector3.INF
+	var h := 0.0
+	for tx in level.get_meta("trees", []):
+		if absf(tx - ln.position.x) < best:
+			best = absf(tx - ln.position.x)
+			spot = Vector3(tx, 0.0, BlockBuilder.TREE_ITEM.y)
+			h = BlockBuilder.TREE_ITEM.x
+	for sh in level.get_meta("shops", []):
+		if absf(sh["x"] - ln.position.x) < best:
+			best = absf(sh["x"] - ln.position.x)
+			spot = Vector3(sh["x"], 0.0, BlockBuilder.AWNING_ITEM.y)
+			h = BlockBuilder.AWNING_ITEM.x
+	if spot == Vector3.INF:
+		GameState.high_items.erase(ln.id)
+		return
+	ln.position = spot
+	ln.high = h - ln._ground_y()
+	GameState.placements[ln.id][1] = spot
+
+
+## A lost thing up high in the direction of a throw from `start` (for
+## aiming the throw at it), or null.
+func high_lost_target(start: Vector3, dir: Vector3, reach: float):
+	var best = null
+	var best_d := INF
+	for ln in lost_nodes:
+		if ln.high <= 0.0 or ln._falling:
+			continue
+		var to: Vector3 = ln.top() - start
+		var flat := Vector2(to.x, to.z)
+		var d := flat.length()
+		if d < 0.5 or d > reach + 2.0:
+			continue
+		if absf(flat.angle_to(Vector2(dir.x, dir.z))) > deg_to_rad(40.0):
+			continue
+		if d < best_d:
+			best_d = d
+			best = ln
+	return best
+
+
+## A flying thing at `pos`: knocks down a lost thing stuck up high there.
+func knock_high_lost(pos: Vector3) -> bool:
+	for ln in lost_nodes:
+		if ln.high > 0.0 and not ln._falling and pos.distance_to(ln.top()) < 0.8:
+			ln.knock_down()
+			return true
+	return false
 
 ## Walking over one of your own lost things puts it straight back in place.
 func _check_lost_pickups() -> void:
@@ -457,6 +513,8 @@ func _check_lost_pickups() -> void:
 	for ln in lost_nodes.duplicate():
 		if ln.has_meta("flying"):
 			continue
+		if ln.high > 0.0:
+			continue  # up a tree or on an awning: knock it down first
 		# Someone else's shoes: only taken if the player's own are missing.
 		if ln.has_meta("spare") and not GameState.is_lost("shoes"):
 			continue

@@ -14,6 +14,25 @@ var _revealed := false
 var _ring: MeshInstance3D
 var _arrow: Label3D
 var _t := 0.0
+## Stuck up high (metres above the ground: a tree top or an awning); 0 =
+## on the ground. A thrown thing knocks it down (see knock_down).
+var high := 0.0
+var _fall_v := 0.0
+var _falling := false
+
+
+## Hit by a thrown thing: drops to the ground.
+func knock_down() -> void:
+	if high <= 0.0 or _falling:
+		return
+	_falling = true
+	_fall_v = 1.5
+	main.popup("!", global_position + Vector3(0, high + 0.6, 0), Color(1, 0.85, 0.3))
+
+
+## Where it is, for a throw to hit (the middle of the thing).
+func top() -> Vector3:
+	return global_position + Vector3(0, high + 0.1, 0)
 
 
 func setup(item_id: String) -> void:
@@ -60,6 +79,16 @@ func _ground_y() -> float:
 
 
 func _process(_delta: float) -> void:
+	if _falling:
+		var dt: float = GameState.world_dt
+		_fall_v -= 9.8 * dt
+		high = maxf(0.0, high + _fall_v * dt)
+		_model.rotation.z += dt * 8.0
+		if high <= 0.0:
+			_falling = false
+			_model.rotation.z = 0.0
+			GameState.high_items.erase(id)
+			main.popup("+", global_position + Vector3(0, 1.0, 0), Color(1, 0.85, 0.3))
 	var p: Vector3 = main.player.position
 	var d := Vector2(p.x - position.x, p.z - position.z).length()
 	var reach := LostItems.REVEAL_DIST_NO_GLASSES if GameState.is_lost("glasses") else LostItems.REVEAL_DIST
@@ -69,11 +98,13 @@ func _process(_delta: float) -> void:
 	if _revealed:
 		_t += _delta
 		_model.rotation.y += _delta * 1.5
-		_model.position.y = _ground_y() + 0.1 + absf(sin(_t * 3.0)) * 0.12
+		_model.position.y = _ground_y() + high + 0.1 + (absf(sin(_t * 3.0)) * 0.12 if high <= 0.0 else 0.0)
 		var k := 1.0 + 0.15 * sin(_t * 5.0)
 		_ring.scale = Vector3(k, 1.0, k)
 		_ring.position.y = _ground_y() + 0.02
-		_arrow.position = Vector3(0, 1.25 + absf(sin(_t * 4.0)) * 0.2, 0)
+		_arrow.position = Vector3(0, high + 1.25 + absf(sin(_t * 4.0)) * 0.2, 0)
+	elif _falling:
+		_model.position.y = _ground_y() + high
 
 
 func _set_revealed(on: bool) -> void:
@@ -81,7 +112,7 @@ func _set_revealed(on: bool) -> void:
 	_ring.visible = on
 	_arrow.visible = on
 	if not on:
-		_model.position.y = _ground_y()
+		_model.position.y = _ground_y() + high
 	for c in _model.get_children():
 		if c is MeshInstance3D:
 			c.material_overlay = null

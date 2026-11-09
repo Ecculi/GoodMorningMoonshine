@@ -296,9 +296,21 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 		lm.emission_enabled = true
 		lm.emission = Color(0.9, 0.7, 0.35)
 		lm.emission_energy_multiplier = 0.6
+		# Striped awning over the door (things can get stuck on top).
+		for k in 4:
+			_box(root, Vector3(door_x - 0.75 + k * 0.5, AWNING_Y - 0.1 * (k % 2), -7.35),
+				Vector3(0.5, 0.08, 1.1), sign_col if k % 2 == 0 else Color(0.95, 0.95, 0.92))
 		# (The bar's bouncer is a character spawned by main.gd.)
 		var shops: Array = root.get_meta("shops")
 		shops.append({"type": shop, "x": door_x})
+
+
+## Height of the top of a shop awning.
+const AWNING_Y := 2.6
+## Where a lost thing stuck up high sits: in the front of a tree top, or
+## on top of an awning (y, z).
+const TREE_ITEM := Vector2(2.35, -6.45)
+const AWNING_ITEM := Vector2(AWNING_Y + 0.08, -7.1)
 
 
 ## Home door. Flat: green door, doormat, warm lamp. Basement: low grey
@@ -391,6 +403,9 @@ static func _props(root: Node3D, rng: RandomNumberGenerator, sea: bool) -> void:
 			_cyl(root, Vector3(tx, 1.2, -7.3), 0.15, 2.4, Color(0.35, 0.25, 0.18))
 			_obstacle(root, tx, -7.3, 0.25)
 			_sphere(root, Vector3(tx, 3.3, -7.3), 1.3, Color(0.25, 0.5, 0.24))
+			var trees: Array = root.get_meta("trees", [])
+			trees.append(tx)
+			root.set_meta("trees", trees)
 	for hx in [-30.0, -20.0, -4.0, 4.0, 20.0, 30.0]:
 		_box(root, Vector3(hx, 0.35, 7.0), Vector3(3.0, 0.7, 0.8), Color(0.22, 0.45, 0.22))
 	for i in rng.randi_range(0, 2):

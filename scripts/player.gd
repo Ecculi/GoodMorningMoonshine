@@ -1128,7 +1128,9 @@ func _throw(t: float) -> void:
 	hand_item = null
 	var d3 := Vector3(aim.x, 0.0, aim.y)
 	var start := global_position + d3 * 0.4 + Vector3(0, 1.1, 0.25)
-	it.throw_from(start, d3, dist)
+	# A lost thing up a tree (or on an awning) that way: aim up at it.
+	var high = main.high_lost_target(start, d3, dist)
+	it.throw_from(start, d3, dist, high.top() if high != null else Vector3.INF)
 	model.punch()
 	# Keep time running a little past the landing so it can bounce and roll.
 	GameState.busy_time = maxf(GameState.busy_time, it.flight_time + 0.7)
