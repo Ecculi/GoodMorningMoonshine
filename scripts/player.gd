@@ -499,7 +499,7 @@ func hit_by_sweeper(dir: int) -> void:
 	_press_time = -1.0
 	GameState.fell_down()
 	_go_ragdoll(Vector3(dir * 2.5, 1.4, randf_range(-0.6, 0.6)), 1.4)
-	GameState.damage(10.0, "car")
+	GameState.damage(10.0, "sweeper")
 	main.hud.flash_hurt()
 	main.popup("!", position + Vector3(0, 2.2, 0), Color(1, 0.6, 0.2))
 

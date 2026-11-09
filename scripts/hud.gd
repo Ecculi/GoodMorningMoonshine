@@ -937,6 +937,12 @@ func _draw_trade_hint() -> void:
 	if n.role == "politician":
 		_hint_action(sp + Vector2(22, 0), "ACT_DRINK", 1.0)  # free coffee
 		return
+	if n.role == "ex":
+		# Talk to her: a heart (and the lost thing if she has it).
+		draw_colored_polygon(_heart_points(sp + Vector2(16, 0), 22.0), Color(1, 0.35, 0.5))
+		if n.carry_id != "":
+			LostItems.draw_icon(self, n.carry_id, sp + Vector2(44, 0), 24.0, "own")
+		return
 	if n.role == "pal":
 		# What they want -> a coin.
 		_hint_action(sp + Vector2(14, 0), "ACT_EAT" if n.want_kind == "food" else "ACT_DRINK", 1.0)

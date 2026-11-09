@@ -31,6 +31,7 @@ const KIOSK_OPTIONS := [
 	{"kind": "bottle", "price": 3, "alcohol": true},
 	{"kind": "food", "price": 2, "alcohol": false},
 	{"kind": "energy", "price": 3, "alcohol": false},
+	{"kind": "flower", "price": 3, "alcohol": false},
 	{"kind": "charge", "price": 0, "alcohol": false},
 ]
 const BAR_OPTIONS := [
@@ -468,6 +469,19 @@ func _populate_block() -> void:
 				var bo = _spawn_npc(false, "bouncer")
 				bo.position = Vector3(sh["x"] + 1.0, 0, -7.3)
 				bo.post = bo.position
+	# The ex (from day 10) and her new boyfriend.
+	if GameState.ex_segs.has(segment) and not GameState.ex_gone:
+		var ex = _spawn_npc(false, "ex")
+		var exid: String = GameState.ex_item
+		if exid != "" and GameState.placements.has(exid) and GameState.placements[exid][0] == segment:
+			var pp: Vector3 = GameState.placements[exid][1]
+			ex.position = Vector3(pp.x, 0.0, pp.z)
+			ex.carry_lost(exid)
+		var bf = _spawn_npc(false, "exbf")
+		bf.position = ex.position + Vector3(-ex.dir * 0.7, 0, 0.45)
+		bf.dir = ex.dir
+		ex.partner = bf
+		bf.partner = ex
 	# The little task of the day: the pal waits here.
 	var tk: Dictionary = GameState.task
 	if not tk.is_empty() and tk["seg"] == segment and not tk["done"]:
@@ -766,6 +780,10 @@ func _process_modal(delta: float) -> void:
 			elif Input.is_action_just_pressed("move_right"):
 				phone_page = (phone_page + 1) % 3
 			GameState.battery = maxf(0.0, GameState.battery - PHONE_DRAIN[phone_page] * delta)
+			# Very drunk: the button calls the ex (top of the messages).
+			if phone_page == 0 and ex_call_available() and Input.is_action_just_pressed("action"):
+				_call_ex()
+				return
 			# Close with the phone button again.
 			var close := Input.is_action_just_pressed("phone")
 			if close:
@@ -813,6 +831,8 @@ func _buy(o: Dictionary) -> void:
 			player._pickup(spawn_item(Item.Kind.FOOD, player.position))
 		"energy":
 			player._pickup(spawn_item(Item.Kind.ENERGY, player.position))
+		"flower":
+			player._pickup(spawn_item(Item.Kind.FLOWER, player.position))
 		"pint":
 			GameState.drink(0.5)
 		"plaster":
@@ -1137,15 +1157,52 @@ func _on_day_ended(cause: String) -> void:
 	hud.hide_card()
 
 
-## How many headlines and captions there are per cause (keys HL_<CAUSE>_n
-## and CAP_<CAUSE>_n in the translations).
-const HEADLINES := {"SOBER": [8, 3], "FIGHT": [9, 3], "CAR": [9, 6], "DOG": [6, 3], "BOUNCER": [5, 2],
-	"FALL": [6, 2], "COLD": [6, 2], "HUNGER": [4, 2], "HANGOVER": [6, 2], "EXHAUST": [4, 2],
-	"BIKE": [3, 2], "GLASS": [3, 2], "GRANNY": [4, 2]}
+## Headlines and captions per cause are HL_<CAUSE>_n and CAP_<CAUSE>_n in
+## the translations (n = 1, 2, ...; just add more there). CAP_ANY_n fit any
+## death. Headlines not seen yet on this device come first; captions avoid
+## the last few used.
+var _recent_captions: Array = []
 
 
-## Captions that fit any death (CAP_ANY_n), used now and then.
-const CAPTIONS_ANY := 1
+## How many keys PREFIX_1, PREFIX_2, ... there are in the translations.
+func _count_keys(prefix: String) -> int:
+	var n := 0
+	while true:
+		var k := "%s_%d" % [prefix, n + 1]
+		if tr(k) == k:
+			return n
+		n += 1
+	return n
+
+
+func _pick_headline(fam: String) -> String:
+	var n := _count_keys("HL_" + fam)
+	var fresh: Array = []
+	for i in range(1, n + 1):
+		var k := "HL_%s_%d" % [fam, i]
+		if not GameState.headlines_seen.has(k):
+			fresh.append(k)
+	if not fresh.is_empty():
+		return fresh[rng.randi() % fresh.size()]
+	return "HL_%s_%d" % [fam, rng.randi_range(1, maxi(n, 1))]
+
+
+func _pick_caption(fam: String) -> String:
+	var pool: Array = []
+	for i in range(1, _count_keys("CAP_" + fam) + 1):
+		pool.append("CAP_%s_%d" % [fam, i])
+	# Captions that fit any death come up now and then too.
+	if rng.randf() < 0.35:
+		for i in range(1, _count_keys("CAP_ANY") + 1):
+			pool.append("CAP_ANY_%d" % i)
+	var choices: Array = pool.filter(func(k): return not _recent_captions.has(k))
+	if choices.is_empty():
+		choices = pool
+	var key: String = choices[rng.randi() % choices.size()]
+	_recent_captions.append(key)
+	if _recent_captions.size() > 6:
+		_recent_captions.pop_front()
+	return tr(key)
 
 
 ## Death: the character collapses, a moment later a "reader's photo" is
@@ -1153,16 +1210,12 @@ const CAPTIONS_ANY := 1
 ## and caption that fit what happened.
 func _on_player_died(cause: String) -> void:
 	var fam := "SOBER" if cause == "HEADLINE_SOBER" else GameState.last_hurt.to_upper()
-	if not HEADLINES.has(fam):
+	if _count_keys("HL_" + fam) == 0:
 		fam = "FIGHT"
-	var n: Array = HEADLINES[fam]
-	var hl_key := "HL_%s_%d" % [fam, rng.randi_range(1, n[0])]
+	var hl_key := _pick_headline(fam)
 	GameState.saw_headline(hl_key)
 	var title := tr(hl_key)
-	var caption := tr("CAP_%s_%d" % [fam, rng.randi_range(1, n[1])])
-	# Now and then a caption that fits any death.
-	if rng.randf() < 0.2:
-		caption = tr("CAP_ANY_%d" % rng.randi_range(1, CAPTIONS_ANY))
+	var caption := _pick_caption(fam)
 	player.collapse_dead()
 	var place := GameState.record_score(hl_key)
 	await get_tree().create_timer(1.4).timeout
@@ -1848,6 +1901,74 @@ func lost_swept(ln) -> void:
 	for h in GameState.phone_map_hints:
 		if h["id"] == id:
 			h["seg"] = seg
+
+
+## The ex caught the player for a chat: half an hour gone, the buzz
+## dampened, a broken heart.
+const EX_CHAT_MINUTES := 30.0
+const EX_CHAT_SOBERING := 0.2
+
+
+func ex_chat(ex) -> void:
+	GameState.ex_met = true
+	GameState.clock_min += EX_CHAT_MINUTES
+	GameState.promille = maxf(0.1, GameState.promille - EX_CHAT_SOBERING)
+	GameState.busy_time = maxf(GameState.busy_time, 1.5)
+	ex.model.punch()
+	popup("bla bla bla", ex.position + Vector3(0, 2.3, 0), Color(1, 0.8, 0.85))
+	popup("+30 min", player.position + Vector3(0, 2.6, 0), Color(0.85, 0.85, 0.9), 0.8)
+	popup_icon(broken_heart_texture(), player.position + Vector3(0, 2.2, 0.3))
+
+
+## The ex took offence (too drunk, cross, or hit): she storms off with
+## whatever lost thing she had (gone for today); `bf_attacks`: the new
+## boyfriend goes for the player.
+func ex_offended(ex, bf_attacks: bool) -> void:
+	if ex == null or not is_instance_valid(ex) or ex.role != "ex" or ex.state == Npc.S.LEAVE:
+		return
+	GameState.ex_met = true
+	GameState.ex_gone = true
+	var id: String = ex.carry_id
+	ex.ex_storm_off()
+	if id != "":
+		GameState.phone_map_hints = GameState.phone_map_hints.filter(func(h): return h["id"] != id)
+	var bf = ex.partner
+	if bf_attacks and bf != null and is_instance_valid(bf) and not bf.is_down():
+		bf.provoke()
+		popup("Hei!", bf.position + Vector3(0, 2.4, 0), Color(1, 0.35, 0.3), 1.3)
+
+
+## Very drunk, the phone tempts you to call the ex (top of the messages).
+func ex_call_available() -> bool:
+	return GameState.day >= GameState.EX_FROM_DAY and GameState.promille > GameState.EX_CALL_PROMILLE \
+		and GameState.ex_called_day != GameState.day and GameState.battery > 5.0
+
+
+func _call_ex() -> void:
+	GameState.ex_called_day = GameState.day
+	GameState.ex_mad_day = GameState.day + 1
+	GameState.battery = maxf(0.0, GameState.battery - 10.0)
+	GameState.unlock("DONT_CALL")
+	_close_modal()
+	popup("Haloo…?", player.position + Vector3(0, 2.4, 0), Color(1, 0.8, 0.85))
+	popup_icon(broken_heart_texture(), player.position + Vector3(0, 2.0, 0.3))
+
+
+var _broken_heart_tex: ImageTexture
+
+
+## A heart split down the middle with a zigzag.
+func broken_heart_texture() -> ImageTexture:
+	if _broken_heart_tex != null:
+		return _broken_heart_tex
+	var img: Image = heart_texture().get_image()
+	img.decompress()
+	for y in img.get_height():
+		var zig := 24 + (3 if (y / 5) % 2 == 0 else -3)
+		for x in range(zig - 2, zig + 2):
+			img.set_pixel(x, y, Color(0, 0, 0, 0))
+	_broken_heart_tex = ImageTexture.create_from_image(img)
+	return _broken_heart_tex
 
 
 ## Someone hit the politician: the aides go for the player and the police

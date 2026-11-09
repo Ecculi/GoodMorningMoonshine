@@ -55,6 +55,7 @@ func _ready() -> void:
 	_button("pakkanen", _frost)
 	_button("Kärpät", func(): _special("karpat"))
 	_button("siivous", func(): _special("cleanup"))
+	_button("exä", _ex)
 
 
 func _build_help() -> void:
@@ -349,6 +350,26 @@ func _special(kind: String) -> void:
 	GameState.special_day = "" if GameState.special_day == kind else kind
 	main._enter_block(main.segment, main.player.position, main.player.facing)
 	main.hud.show_special()
+
+
+## The ex in this block, with one of the lost things if any (rebuilt).
+func _ex() -> void:
+	var main = get_parent()
+	if main == null or not main.has_method("_enter_block"):
+		return
+	GameState.ex_segs = [main.segment]
+	GameState.ex_gone = false
+	GameState.ex_met = false
+	GameState.ex_item = ""
+	for id in GameState.lost:
+		if id != "phone":
+			GameState.ex_item = id
+			GameState.dog_items.erase(id)
+			GameState.carried_items.erase(id)
+			GameState.high_items.erase(id)
+			GameState.placements[id] = [main.segment, Vector3(main.player.position.x + 4.0, 0, -6.4)]
+			break
+	main._enter_block(main.segment, main.player.position, main.player.facing)
 
 
 ## Hard frost on / off (the street is rebuilt).

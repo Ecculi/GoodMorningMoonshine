@@ -38,6 +38,9 @@ extends Node3D
 ## - "pal": (the little task of the day) an acquaintance waiting in one
 ##   spot with a thought bubble of what they want (a sausage or a bottle);
 ##   bring it and press the button next to them for money and points.
+## - "ex": (from day 10) the ex-girlfriend, always in the same outfit in
+##   one game, with her new boyfriend ("exbf": big, tank top, cap the
+##   wrong way round) at her side. See GameState (the ex) and _ex().
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -294,6 +297,27 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 				HAIRS[rng.randi() % HAIRS.size()], 1.0)
 			_head_box(Vector3(0.0, 1.84, 0), Vector3(0.3, 0.1, 0.34), Color(0.75, 0.2, 0.2))  # beanie
 			stationary = true
+		"ex":
+			var looks := [
+				[Color(0.8, 0.1, 0.12), Color(0.12, 0.12, 0.15), Color(0.2, 0.12, 0.08), true],
+				[Color(0.55, 0.3, 0.65), Color(0.85, 0.85, 0.88), Color(0.95, 0.85, 0.5), false],
+				[Color(0.3, 0.45, 0.3), Color(0.25, 0.25, 0.35), Color(0.75, 0.3, 0.12), true],
+			]
+			var lk: Array = looks[GameState.ex_look % looks.size()]
+			model = PersonModel.new(lk[0], lk[1], skin, lk[2], 0.95)
+			_head_box(Vector3(-0.2, 1.68, 0), Vector3(0.1, 0.24, 0.1), lk[2])  # ponytail
+			if lk[3]:
+				_head_box(Vector3(0.16, 1.72, 0), Vector3(0.03, 0.06, 0.26), Color(0.05, 0.05, 0.06))  # sunglasses
+			speed = 1.2
+			telegraphs = true
+		"exbf":
+			model = PersonModel.new(Color(0.95, 0.95, 0.95), Color(0.2, 0.25, 0.4), skin,
+				Color(0.1, 0.08, 0.06), 1.15)
+			_head_box(Vector3(-0.06, 1.85, 0), Vector3(0.34, 0.08, 0.34), Color(0.1, 0.1, 0.12))  # cap
+			_head_box(Vector3(-0.22, 1.82, 0), Vector3(0.12, 0.03, 0.26), Color(0.1, 0.1, 0.12))  # peak at the back
+			hp = 6
+			hit_damage = EXBF_DAMAGE
+			chase_speed = CHASE_SPEED * 1.1
 		"canvasser":
 			model = PersonModel.new(Color(0.3, 0.32, 0.36), Color(0.2, 0.2, 0.22), skin,
 				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.97, 1.04))
@@ -436,7 +460,7 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 ## some come at you from the side.
 func _pick_style(rng: RandomNumberGenerator) -> void:
 	match role:
-		"guard", "bouncer":
+		"guard", "bouncer", "exbf":
 			style = "heavy"
 		"police":
 			style = "normal"
@@ -484,8 +508,8 @@ func is_lawman() -> bool:
 ## Beggar, street drunk or someone carrying a lost thing: the action
 ## button trades instead of punching.
 func is_trader() -> bool:
-	return (role == "beggar" or role == "drunk" or role == "politician" or role == "pal" or carry_id != "") \
-		and state == S.WALK
+	return (role == "beggar" or role == "drunk" or role == "politician" or role == "pal" or role == "ex"
+		or carry_id != "") and state == S.WALK
 
 
 ## Carrying one of the player's lost things (a passer-by who picked it
@@ -597,6 +621,10 @@ func offer_trade(p: Node3D) -> bool:
 	if not is_trader():
 		return false
 	var top := position + Vector3(0, 1.4 if model.sitting else 2.2, 0)
+	if role == "ex":
+		_ex_talk(p, top)
+		GameState.busy_time = maxf(GameState.busy_time, 0.6)
+		return true
 	if trades_left <= 0:
 		main.popup("…", top, Color(0.85, 0.85, 0.85))
 		return true
@@ -1003,6 +1031,112 @@ func _canvass(dt: float) -> bool:
 		var it = main.spawn_item(Item.Kind.FLYER, p.position)
 		p._pickup(it)
 		main.popup("!", p.position + Vector3(0, 2.3, 0), Color(0.9, 0.9, 0.9))
+	return true
+
+
+## The ex. `partner`: her new boyfriend (and his `partner` is her).
+const EX_NOTICE := 8.0
+const EX_WALK_UP := 2.2
+const EXBF_DAMAGE := 18.0
+var partner = null
+var _ex_seek := false
+
+
+## Without the lost thing she comes over for a chat when she spots the
+## player (sneaking, only from very close); running away works. With it,
+## she just walks about and waits for the player to come and ask.
+func _ex(dt: float) -> bool:
+	if carry_id != "" or GameState.ex_met or GameState.ex_is_mad():
+		return false
+	var p = main.player
+	var to := Vector2(p.position.x - position.x, p.position.z - position.z)
+	if not _ex_seek:
+		var reach := 2.0 if p.is_sneaking() else EX_NOTICE
+		if sees(p.position, reach) and not p.is_helpless() and GameState.modal == "":
+			_ex_seek = true
+			main.popup("Moi!", position + Vector3(0, 2.2, 0), Color(1, 0.7, 0.8))
+		else:
+			return false
+	if to.length() > 12.0:
+		_ex_seek = false  # got away
+		return false
+	dir = 1 if to.x >= 0.0 else -1
+	var step := to.normalized() * minf(EX_WALK_UP * dt, maxf(to.length() - 0.9, 0.0))
+	position.x += step.x
+	position.z += step.y
+	model.animate(1.0, dt, 1.5)
+	if to.length() < 1.0 and not p.is_helpless():
+		_ex_seek = false
+		main.ex_chat(self)
+	return true
+
+
+## The button next to her.
+func _ex_talk(p, top: Vector3) -> void:
+	var h = p.hand_item
+	var gift: bool = h != null and (h.kind == Item.Kind.FOOD or h.kind == Item.Kind.COFFEE or h.kind == Item.Kind.FLOWER)
+	if gift:
+		p._consume_hand_item()
+		main.popup_icon(main.heart_texture(), top)
+		GameState.ex_mad_day = -1
+		GameState.ex_met = true
+		if carry_id != "":
+			_ex_give_back(p)
+		else:
+			GameState.bonus += 200
+			main.popup("♥", top + Vector3(0, 0.4, 0), Color(1, 0.5, 0.6), 1.3)
+		return
+	if GameState.ex_is_mad() or GameState.promille > GameState.EX_SOBER:
+		# Too drunk (or still cross about last night's call).
+		main.ex_offended(self, GameState.promille > GameState.EX_SOBER + 1.0)
+		return
+	if carry_id != "":
+		GameState.ex_met = true
+		_ex_give_back(p)
+	else:
+		main.ex_chat(self)
+
+
+func _ex_give_back(p) -> void:
+	model.punch()
+	main.popup("…okei", position + Vector3(0, 2.3, 0), Color(1, 0.8, 0.85))
+	GameState.unlock("EX_BACK")
+	_drop_carried(Vector3(p.position.x, 0.0, p.position.z))
+
+
+## Stormed off: keeps the lost thing (gone for today) and walks away.
+func ex_storm_off() -> void:
+	if carry_id != "":
+		GameState.placements.erase(carry_id)
+		carry_id = ""
+		if _carry_model != null:
+			_carry_model.queue_free()
+			_carry_model = null
+		if _carry_arrow != null:
+			_carry_arrow.queue_free()
+			_carry_arrow = null
+	_ex_seek = false
+	stationary = false
+	state = S.LEAVE
+	dir = 1 if position.x >= main.player.position.x else -1
+	main.popup("#!?", position + Vector3(0, 2.3, 0), Color(1, 0.3, 0.25), 1.4)
+
+
+## The new boyfriend sticks right beside her (unless he is busy with the
+## player).
+func _exbf(dt: float) -> bool:
+	if partner == null or not is_instance_valid(partner) or partner.is_down():
+		return false
+	var want := Vector3(partner.position.x - partner.dir * 0.7, 0.0, clampf(partner.position.z + 0.45, -7.3, 5.1))
+	var to := Vector2(want.x - position.x, want.z - position.z)
+	if to.length() > 0.05:
+		var step := to.normalized() * minf(maxf(partner.speed, 2.6) * dt, to.length())
+		position.x += step.x
+		position.z += step.y
+		model.animate(1.0, dt, 1.3)
+	else:
+		model.animate(0.0, dt)
+	dir = partner.dir
 	return true
 
 
@@ -1474,6 +1608,10 @@ func _walk(dt: float) -> void:
 		return
 	if role == "priest" and _priest(dt):
 		return
+	if role == "ex" and _ex(dt):
+		return
+	if role == "exbf" and _exbf(dt):
+		return
 	if carry_id != "" and _carrier_wait(dt):
 		return
 	if role == "canvasser" and _canvass(dt):
@@ -1515,6 +1653,8 @@ func _hit_by_player() -> void:
 		main.report_crime(position, true, false, true)
 	if role == "politician":
 		main.politician_attacked(position)
+	if role == "ex":
+		main.ex_offended(self, true)
 	if not player_started and not attacked_player:
 		var hostile := state == S.FIGHT or state == S.CHASE or state == S.STUNNED
 		player_started = not hostile
@@ -1632,7 +1772,7 @@ func _fight(dt: float) -> void:
 			dx = p.position.x - position.x
 			dz = p.position.z - position.z
 			if dx * dir > -0.2 and absf(dx) < 1.5 and absf(dz) < 0.6:
-				p.take_hit(hit_damage, position.x, "granny" if role == "granny" else "fight")
+				p.take_hit(hit_damage, position.x, {"granny": "granny", "exbf": "ex"}.get(role, "fight"))
 				if role == "granny":
 					main.popup("KOPS!", p.position + Vector3(0, 2.3, 0), Color(1, 0.8, 0.3), 1.3)
 				if not player_started:
@@ -1684,6 +1824,8 @@ func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0, surprise := false, 
 		return
 	if attacker == main.player:
 		_hit_by_player()
+		if role == "ex":
+			return  # she isn't hurt; the boyfriend is
 	if filming:
 		_stop_filming(true)
 	times_hit += 1
@@ -1759,6 +1901,8 @@ func hit_by_item(kind: int) -> void:
 	if state == S.KO:
 		return
 	_hit_by_player()
+	if role == "ex":
+		return
 	if filming:
 		_stop_filming(true)
 	GameState.item_hit(self)
@@ -1861,7 +2005,14 @@ func check_pickpocket(p: Node3D) -> void:
 	# A hiccup right now gives the player away.
 	if p.hic_window > 0.0:
 		chance = 0.0
+	if role == "ex" or role == "exbf":
+		chance *= 0.5  # they keep an eye on each other
 	if main.rng.randf() < chance:
+		if role == "ex" and carry_id != "":
+			# Well, that's one way to get it back.
+			GameState.unlock("EX_BACK")
+			_drop_carried(Vector3(p.position.x, 0.0, p.position.z))
+			return
 		if not GameState.has_watch and role == "civ" and main.rng.randf() < GameState.WATCH_CHANCE:
 			# A wristwatch: from now on it shows the day of the week.
 			GameState.has_watch = true
@@ -1914,6 +2065,8 @@ func _end_ragdoll() -> void:
 ## face_down: a direction to topple the rag doll over forwards (fall on
 ## the face); zero = the usual random tumble.
 func _knock_out(push := Vector3(0, 1.5, 0), face_down := Vector3.ZERO) -> void:
+	if role == "exbf" and partner != null and is_instance_valid(partner):
+		main.ex_offended(partner, false)  # her man flattened: she's off
 	_drop_carried(Vector3(position.x + 0.4 * float(dir), 0.0, position.z))
 	if role == "thief" and (loot_id != "" or loot_money > 0):
 		_give_back()

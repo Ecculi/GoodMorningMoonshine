@@ -138,6 +138,21 @@ func _arrow(c: Vector2, dir: int) -> void:
 ## an avatar, an icon and the start of a street name.
 func _draw_messages(r: Rect2) -> void:
 	var font := get_theme_default_font()
+	if main.ex_call_available():
+		# The temptation: her picture, a pulsing call button and a heart.
+		var row := Rect2(r.position, Vector2(r.size.x, 58))
+		draw_rect(row, Color(1.0, 0.85, 0.88))
+		var av := Vector2(r.position.x + 22, r.position.y + 29)
+		draw_circle(av, 18.0, Color(0.8, 0.1, 0.12))
+		draw_circle(av + Vector2(0, -3), 9.0, Color(0.95, 0.8, 0.7))
+		draw_rect(Rect2(av + Vector2(-9, -14), Vector2(18, 6)), Color(0.2, 0.12, 0.08))
+		var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 150.0)
+		var cb := Vector2(r.end.x - 30, r.position.y + 29)
+		draw_circle(cb, 16.0 + 3.0 * pulse, Color(0.2, 0.75, 0.3))
+		draw_line(cb + Vector2(-6, -5), cb + Vector2(6, 5), Color.WHITE, 4.0)
+		draw_string(font, Vector2(r.position.x + 50, r.position.y + 37), "♥?", HORIZONTAL_ALIGNMENT_LEFT, -1, 22,
+			Color(0.8, 0.1, 0.2))
+		r = Rect2(r.position + Vector2(0, 62), r.size - Vector2(0, 62))
 	if GameState.phone_msgs.is_empty():
 		_draw_envelope(r.get_center(), 60.0, Color(0.7, 0.7, 0.75))
 		return
@@ -409,6 +424,11 @@ func _draw_product(kind: String, c: Vector2, s: float) -> void:
 				c + Vector2(0, s * 0.05)]), Color(0.95, 0.75, 0.1))
 		"pint":
 			_draw_beer_icon(c, s)
+		"flower":
+			draw_line(c + Vector2(0, s * 0.45), c + Vector2(0, -s * 0.1), Color(0.2, 0.55, 0.2), 4.0)
+			draw_circle(c + Vector2(-s * 0.1, s * 0.15), s * 0.08, Color(0.25, 0.6, 0.25))
+			draw_circle(c + Vector2(0, -s * 0.2), s * 0.17, Color(0.85, 0.08, 0.15))
+			draw_arc(c + Vector2(0, -s * 0.2), s * 0.09, 0, TAU, 12, Color(0.6, 0.02, 0.08), 2.0)
 		"plaster":
 			# A plaster, slightly tilted, with the pad in the middle.
 			var ax := Vector2(cos(-0.5), sin(-0.5))
