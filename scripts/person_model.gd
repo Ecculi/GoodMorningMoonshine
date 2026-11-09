@@ -41,6 +41,13 @@ func _init(shirt: Color, pants: Color, skin: Color, hair: Color, size := 1.0) ->
 	for leg in [leg_l, leg_r]:
 		_shoes.append(_patch(leg, Vector3(0.05, -0.855, 0), Vector3(0.27, 0.09, 0.15), Color(0.12, 0.1, 0.09)))
 		_shoes.append(_patch(leg, Vector3(0.17, -0.885, 0), Vector3(0.05, 0.03, 0.15), Color(0.85, 0.85, 0.82)))
+		# Bare feet with toes, shown when the shoes are off.
+		var foot := _patch(leg, Vector3(0.05, -0.865, 0), Vector3(0.24, 0.07, 0.13), skin)
+		foot.visible = false
+		_feet.append(foot)
+		var toes := _patch(leg, Vector3(0.18, -0.885, 0), Vector3(0.04, 0.035, 0.13), skin.darkened(0.12))
+		toes.visible = false
+		_feet.append(toes)
 	_box(Vector3(0, 1.22, 0), Vector3(0.28, 0.64, 0.46), shirt)
 	_head = _sphere(Vector3(0, 1.69, 0), 0.16, skin)
 	_head_parts.append(_head)
@@ -86,7 +93,7 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 	_walk_amount = lerpf(_walk_amount, walk_amount, clampf(dt * 10.0, 0.0, 1.0))
 	_walk_phase += dt * 9.0 * speed_mult * (1.0 - silly * 0.35)
 	var ph := _walk_phase
-	var s := sin(ph) * 0.55 * _walk_amount
+	var s := sin(ph) * 0.55 * _walk_amount * (1.0 - 0.45 * crouch)
 	var k := silly * _walk_amount
 	# One leg kicks high forward, the other does a little skip.
 	leg_l.rotation.z = lerpf(s, maxf(0.0, sin(ph)) * 1.8 - 0.25, k)
@@ -111,6 +118,13 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 		arm_l.rotation.z = lerpf(arm_l.rotation.z, 2.0, e)
 		arm_l.rotation.x = lerpf(arm_l.rotation.x, -0.35, e)
 		forearm_l.rotation.z = lerpf(forearm_l.rotation.z, 1.78, e)
+	# Sneaking: hands up in front of the chest, elbows bent.
+	if crouch > 0.01:
+		arm_l.rotation.z = lerpf(arm_l.rotation.z, 0.7, crouch)
+		forearm_l.rotation.z = lerpf(forearm_l.rotation.z, 1.4, crouch)
+		if _punch_t <= 0.0 and _windup < 0.0 and not _raised:
+			arm_r.rotation.z = lerpf(arm_r.rotation.z, 0.7, crouch)
+			forearm_r.rotation.z = lerpf(forearm_r.rotation.z, 1.4, crouch)
 	# Charging: the left hand comes up in front as a guard.
 	if _pull > 0.01:
 		arm_l.rotation.z = lerpf(arm_l.rotation.z, 1.0, _pull * 0.7)
@@ -189,6 +203,10 @@ func _animate_right_arm(dt: float, s: float, ph: float, k: float) -> void:
 
 
 var _shoes: Array = []
+var _feet: Array = []
+## 0..1: sneaking (barefoot, not running): leaning forward, arms bent up
+## in front, small careful steps.
+var crouch := 0.0
 
 
 ## Shoe colour (the white toe caps stay white).
@@ -202,6 +220,8 @@ func set_shoe_color(c: Color) -> void:
 func set_shoes(on: bool) -> void:
 	for s in _shoes:
 		s.visible = on
+	for f in _feet:
+		f.visible = not on
 
 
 ## Soiled trousers after a night on the street: brown patches on the

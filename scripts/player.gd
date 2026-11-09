@@ -222,7 +222,7 @@ func _process(delta: float) -> void:
 
 	# Snow: slippery. The character slides on after letting go (longer the
 	# drunker) and turns lazily; sharp turns can end on the backside.
-	if GameState.weather == "snow":
+	if GameState.slippery():
 		if moving:
 			_check_snow_slip(Vector2(v.x, v.z), speed)
 		var slide_time := 0.3 + 0.5 * maxf(GameState.promille, 0.0)
@@ -429,6 +429,17 @@ func hit_by_rider(dir: int, spd: float) -> void:
 	_maybe_fall_asleep()
 
 
+## Walked into the street sweeper: knocked over.
+func hit_by_sweeper(dir: int) -> void:
+	running = false
+	_press_time = -1.0
+	GameState.fell_down()
+	_go_ragdoll(Vector3(dir * 2.5, 1.4, randf_range(-0.6, 0.6)), 1.4)
+	GameState.damage(10.0, "car")
+	main.hud.flash_hurt()
+	main.popup("!", position + Vector3(0, 2.2, 0), Color(1, 0.6, 0.2))
+
+
 func run_over(car_dir: int) -> void:
 	_car_flings(car_dir)
 	_car_survive = "RUN_OVER_SURVIVE"
@@ -550,7 +561,7 @@ func _stumble_chance(low: float, high: float) -> float:
 	var c := 0.0
 	if p > GameState.PROMILLE_DRUNK:
 		c += lerpf(low, high, clampf((p - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
-	if GameState.weather == "snow":
+	if GameState.slippery():
 		c += 0.02 * (2.0 if GameState.is_lost("shoes") else 1.0)
 	if running:
 		c *= 1.5
@@ -807,10 +818,19 @@ func _heavy_breathing() -> void:
 		model.scale = Vector3.ONE
 
 
+## Barefoot and not running: sneaking. Quiet: the police and guards
+## notice only from close by, pickpocketing works better and a punch from
+## behind hits even harder.
+func is_sneaking() -> bool:
+	return GameState.is_lost("shoes") and not running and not is_helpless()
+
+
 func _hunger_signs() -> void:
 	var hungry := GameState.hunger >= GameState.HUNGER_EMPTY_STOMACH
+	# Sneaking: crouched forward, hands up (see PersonModel.crouch).
+	model.crouch = move_toward(model.crouch, 1.0 if is_sneaking() else 0.0, get_process_delta_time() * 4.0)
 	# Hunger slumps forward; the silly walk leans back and bounces.
-	model.rotation.z = (-0.12 if hungry else 0.0) + model.silly_lean + _wind_lean
+	model.rotation.z = (-0.12 if hungry else 0.0) - 0.22 * model.crouch + model.silly_lean + _wind_lean
 	model.position.y = model.silly_bounce + (0.15 if _hic_jolt > 0.0 else 0.0)
 	# Cold and hangover shake differently:
 	# - cold: fast fine shivering, arms hugging the body, bluish face and
@@ -824,10 +844,12 @@ func _hunger_signs() -> void:
 	if GameState.cold < GameState.COLD_SHIVER:
 		cold_k = 0.0
 	model.cold_hug = move_toward(model.cold_hug, 1.0 if cold_k > 0.0 else 0.0, get_process_delta_time() * 3.0)
-	if cold_k > 0.0:
-		shake = 0.012 + 0.02 * cold_k
+	if cold_k > 0.0 or GameState.frost:
+		if cold_k > 0.0:
+			shake = 0.012 + 0.02 * cold_k
 		_cold_puff_t += GameState.world_dt
-		if _cold_puff_t > 2.2:
+		# Hard frost: the breath steams all the time.
+		if _cold_puff_t > (1.4 if GameState.frost else 2.2):
 			_cold_puff_t = 0.0
 			main.popup_icon(main.breath_texture(), position + Vector3(0.3 * facing, 1.72, 0.3))
 	var hang := GameState.hangover_shake()
@@ -979,6 +1001,8 @@ func _short_action() -> void:
 			main.popup("?!", position + Vector3(0, 2.1, 0), Color(1.0, 0.45, 0.85))
 			_consume_hand_item()
 			return
+		if hand_item.kind == Item.Kind.BAG and _use_from_bag():
+			return
 	_punch(target, 0.0)
 
 
@@ -1024,7 +1048,7 @@ func _punch(target, charge: float, charged := false) -> void:
 	# From behind: the target doesn't see it coming (see npc.is_back_turned).
 	var surprise: bool = target.has_method("is_back_turned") and target.is_back_turned(position)
 	if surprise:
-		miss *= 0.5  # a still target is easier to hit
+		miss *= 0.0 if is_sneaking() else 0.5  # a still target is easier to hit
 	if randf() < miss:
 		main.popup("?", target.position + Vector3(0, 2.0, 0), Color(1, 1, 1))
 		return
@@ -1049,9 +1073,9 @@ func _punch(target, charge: float, charged := false) -> void:
 		knock += 1.5
 		main.popup("×3", target.position + Vector3(0, 2.4, 0), Color(1, 0.75, 0.25), 1.6)
 	if surprise:
-		# Double damage (even a hangover punch lands), and a fully charged
-		# one knocks out at once.
-		dmg = maxi(dmg, 1) * 2
+		# Double damage (even a hangover punch lands), triple when sneaking
+		# up barefoot, and a fully charged one knocks out at once.
+		dmg = maxi(dmg, 1) * (3 if is_sneaking() else 2)
 		main.popup("!", target.position + Vector3(0, 2.4, 0), Color(1, 0.35, 0.2), 2.2)
 		main.popup("*", target.position + Vector3(0, 1.4, 0), Color(1, 0.95, 0.5), 1.8)
 	elif counter:
@@ -1175,6 +1199,16 @@ func _pickup(it) -> void:
 		main.popup("+%d €" % it.value, it.global_position + Vector3(0, 1.0, 0), Color(1, 0.85, 0.3))
 		main.remove_item(it)
 		return
+	# A bag in the hand: things go into the bag (the bag stays in the hand).
+	if hand_item != null and hand_item.kind == Item.Kind.BAG and it.kind != Item.Kind.BAG:
+		_bag_add(it)
+		return
+	# Picking up a bag: whatever was in the hand goes into it.
+	if it.kind == Item.Kind.BAG and hand_item != null and hand_item.kind != Item.Kind.BAG:
+		var old = hand_item
+		it.contents.append([old.kind, old.value, old.drink])
+		it.update_bag_look()
+		_consume_hand_item()
 	# The hand holds one thing: touching a new item swaps it.
 	if hand_item != null:
 		var old = hand_item
@@ -1183,6 +1217,67 @@ func _pickup(it) -> void:
 	it.hold(model.hand)
 	hand_item = it
 	hand_hint_t = HAND_HINT_TIME
+
+
+func _bag_add(it) -> void:
+	var bag = hand_item
+	bag.contents.append([it.kind, it.value, it.drink])
+	main.remove_item(it)
+	bag.update_bag_look()
+	main.popup("+", position + Vector3(0, 1.6, 0), Color(0.9, 0.95, 1.0), 0.8)
+	if bag.contents.size() > Item.BAG_MAX:
+		tear_bag()
+
+
+## The bag tears (too full, or in a fight): everything spills on the street.
+func tear_bag() -> void:
+	if hand_item == null or hand_item.kind != Item.Kind.BAG:
+		return
+	var bag = hand_item
+	var from: Vector3 = model.hand.global_position
+	for e in bag.contents:
+		var spilt = main.spawn_item(e[0], from, e[1], e[2])
+		spilt.launch(from, Vector3(randf_range(-2.0, 2.0), randf_range(1.0, 2.5), randf_range(-1.2, 1.2)))
+	bag.contents.clear()
+	_consume_hand_item()
+	main.popup("rits!", position + Vector3(0, 2.2, 0), Color(0.9, 0.95, 1.0))
+	GameState.busy_time = maxf(GameState.busy_time, 1.0)
+
+
+## Short press with a bag: use the last thing in it that can be drunk or
+## eaten (like holding it). False when there is nothing like that.
+func _use_from_bag() -> bool:
+	var bag = hand_item
+	for i in range(bag.contents.size() - 1, -1, -1):
+		var e: Array = bag.contents[i]
+		var top := position + Vector3(0, 2.1, 0)
+		match e[0]:
+			Item.Kind.BOTTLE:
+				GameState.drink(Item.DRINK_PROMILLE[e[2]])
+				GameState.warm_up(Item.DRINK_WARMTH[e[2]])
+				main.popup("glug", top, Color(1, 0.8, 0.3))
+			Item.Kind.COFFEE, Item.Kind.ENERGY:
+				var coffee: bool = e[0] == Item.Kind.COFFEE
+				GameState.caffeinate(GameState.COFFEE_AWAKE if coffee else GameState.ENERGY_AWAKE)
+				if coffee:
+					GameState.warm_up(GameState.COFFEE_WARMTH)
+				main.popup("!", top, Color(0.6, 1.0, 0.4))
+			Item.Kind.FOOD:
+				GameState.eat()
+				main.popup("+", top, Color(1, 0.35, 0.35))
+			Item.Kind.PILLS:
+				GameState.take_pills()
+				main.popup("?!", top, Color(1.0, 0.45, 0.85))
+			_:
+				continue
+		bag.contents.remove_at(i)
+		bag.update_bag_look()
+		return true
+	return false
+
+
+## Chance that a blow tears a bag that has something in it.
+const BAG_TEAR_CHANCE := 0.4
 
 
 ## After picking something up, a hint above the head tells what the
@@ -1202,6 +1297,13 @@ func hand_short_action_key() -> String:
 			return "ACT_DRINK"
 		Item.Kind.FOOD, Item.Kind.PILLS:
 			return "ACT_EAT"
+		Item.Kind.BAG:
+			for i in range(hand_item.contents.size() - 1, -1, -1):
+				match hand_item.contents[i][0]:
+					Item.Kind.BOTTLE, Item.Kind.COFFEE, Item.Kind.ENERGY:
+						return "ACT_DRINK"
+					Item.Kind.FOOD, Item.Kind.PILLS:
+						return "ACT_EAT"
 	return "ACT_PUNCH"
 
 
@@ -1210,6 +1312,10 @@ func take_hit(dmg: float, from_x: float, source := "fight") -> void:
 		return
 	_knock = Vector3(signf(position.x - from_x) * 4.0, 0.0, 0.0)
 	main.hud.flash_hurt()
+	# A bag with things in it may tear in a fight.
+	if hand_item != null and hand_item.kind == Item.Kind.BAG and not hand_item.contents.is_empty() \
+			and randf() < BAG_TEAR_CHANCE:
+		tear_bag()
 	_combo = 0
 	# The jacket softens blows.
 	if GameState.is_lost("jacket"):

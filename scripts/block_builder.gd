@@ -21,7 +21,9 @@ const FACADE_COLORS := [Color(0.93, 0.83, 0.55), Color(0.85, 0.6, 0.45), Color(0
 
 
 ## `home_x` is the x of the player's home door if home is in this block.
-static func build(seg: Vector3i, home_x := INF, home_type := "flat") -> Node3D:
+## `booth`: a politician's election stall on the far sidewalk today.
+## `checkpoint`: a police breath test across the middle of the block.
+static func build(seg: Vector3i, home_x := INF, home_type := "flat", booth := false, checkpoint := false) -> Node3D:
 	var root := Node3D.new()
 	root.name = "Block"
 	var rng := RandomNumberGenerator.new()
@@ -46,7 +48,15 @@ static func build(seg: Vector3i, home_x := INF, home_type := "flat") -> Node3D:
 	if seg == CityMap.police_station():
 		doors.append(CityMap.police_door_x())
 	root.set_meta("doors", doors)
+	if booth and not sea:
+		var bx := clear_of_doors(root, rng, -11.0, 11.0)
+		if not is_nan(bx):
+			_booth(root, bx)
+			doors.append(bx)  # bins keep clear of it like of a door
+			root.set_meta("booth", bx)
 	_props(root, rng, sea)
+	if checkpoint:
+		_checkpoint(root)
 	_signs(root, seg)
 	_roadworks(root, seg, rng)
 	return root
@@ -325,6 +335,55 @@ const AWNING_Y := 2.4
 ## on top of an awning (y, z).
 const TREE_ITEM := Vector2(2.35, -6.45)
 const AWNING_ITEM := Vector2(AWNING_Y + 0.08, -7.1)
+
+
+## Election stall: a table, a striped canopy on four poles and a sign
+## board with a big smiling face. The politician stands behind the table.
+static func _booth(root: Node3D, x: float) -> void:
+	var blue := Color(0.15, 0.4, 0.8)
+	_box(root, Vector3(x, 0.85, -6.7), Vector3(1.8, 0.06, 0.7), Color(0.95, 0.95, 0.95))
+	_box(root, Vector3(x, 0.5, -6.38), Vector3(1.8, 0.66, 0.04), blue)
+	for px in [-0.85, 0.85]:
+		for pz in [-7.0, -6.4]:
+			_cyl(root, Vector3(x + px, 1.2, pz), 0.03, 2.4, Color(0.8, 0.8, 0.82))
+	for k in 5:
+		_box(root, Vector3(x - 0.8 + k * 0.4, 2.42, -6.7), Vector3(0.4, 0.06, 0.8),
+			blue if k % 2 == 0 else Color(0.97, 0.97, 0.97))
+	# Sign board on the front of the canopy: a smiling face.
+	_box(root, Vector3(x, 2.15, -6.28), Vector3(1.2, 0.5, 0.04), Color(0.97, 0.97, 0.97))
+	_sphere(root, Vector3(x, 2.15, -6.25), 0.18, Color(1.0, 0.85, 0.3))
+	for ex in [-0.06, 0.06]:
+		_box(root, Vector3(x + ex, 2.2, -6.08), Vector3(0.03, 0.04, 0.02), Color(0.1, 0.1, 0.1))
+	_box(root, Vector3(x, 2.1, -6.08), Vector3(0.14, 0.025, 0.02), Color(0.1, 0.1, 0.1))
+	# Coffee pot and cups on the table.
+	_cyl(root, Vector3(x - 0.5, 1.0, -6.7), 0.08, 0.24, Color(0.2, 0.2, 0.22))
+	for cx in [-0.2, 0.0, 0.2]:
+		_cyl(root, Vector3(x + cx, 0.93, -6.6), 0.035, 0.08, Color(0.97, 0.97, 0.95))
+	for ox in [-0.6, 0.0, 0.6]:
+		_obstacle(root, x + ox, -6.7, 0.4)
+
+
+## Breath test checkpoint across the street at x = 0: a row of cones, a
+## police sign board and blue lights on poles that blink (main.gd blinks
+## the meshes listed in the root meta "blue_lights").
+static func _checkpoint(root: Node3D) -> void:
+	root.set_meta("checkpoint", 0.0)
+	for i in 5:
+		_cone(root, Vector3(-0.8, 0, -4.2 + i * 1.5))
+	var lights: Array = []
+	for z in [-5.3, 2.8]:
+		_cyl(root, Vector3(-1.4, 1.1, z), 0.04, 2.2, Color(0.25, 0.27, 0.3))
+		var l := _box(root, Vector3(-1.4, 2.3, z), Vector3(0.22, 0.16, 0.22), Color(0.2, 0.4, 1.0))
+		var lm: StandardMaterial3D = l.material_override
+		lm.emission_enabled = true
+		lm.emission = Color(0.2, 0.45, 1.0)
+		lights.append(l)
+	root.set_meta("blue_lights", lights)
+	_box(root, Vector3(-1.4, 1.3, -5.24), Vector3(0.9, 0.5, 0.05), Color(0.1, 0.25, 0.65))
+	var text := TranslationServer.translate("SIGN_POLICE")
+	var lb := _label(text, 48, 0.006)
+	lb.position = Vector3(-1.4, 1.3, -5.2)
+	root.add_child(lb)
 
 
 ## Shop sign colours and texts.

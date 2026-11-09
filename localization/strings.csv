@@ -8,6 +8,8 @@ DAY_N,Päivä %d
 SCORE,Pisteet %d
 SCORE_PLACE,%d. sija
 HISCORES,Ennätykset
+SPECIAL_KARPAT,KÄRPÄT MESTAREIKSI – KAUPUNKI JUHLII!
+SPECIAL_CLEANUP,KATUJEN SIIVOUSPÄIVÄ TÄNÄÄN
 SIGN_KIOSK,KIOSKI
 SIGN_BAR,BAARI
 SIGN_PHARMACY,APTEEKKI
@@ -90,7 +92,7 @@ HELP_KEY_1,Nuolet / WASD: liiku  ·  Shift: juokse
 HELP_KEY_2,"Välilyönti: lyö, juo, syö, penko, ovi  ·  pohjassa: heitä"
 HELP_KEY_3,P: puhelin  ·  F1: ohje  ·  F2: saavutukset  ·  F3: ennätykset
 HELP_CLOSE,Esc sulkee
-HELP_DEBUG,"Debug päällä: F5 health täyteen, F6 +0,1 ‰, F7 +100 €, F8 akku +25 %, F9 ei nälkää, kylmää eikä väsymystä, F10 seuraava päivä, F11 uusi peli seuraavassa kaupungissa. Poliisien näkökeilat näkyvät. F12 pois."
+HELP_DEBUG,"Debug päällä: F5 health täyteen, F6 +0,1 ‰, F7 +100 €, F8 akku +25 %, F9 ei nälkää, kylmää eikä väsymystä, F10 seuraava päivä, F11 uusi peli seuraavassa kaupungissa, F4 tietyöt, F3 myrsky; pakkanen vain ruudun napista. Poliisien näkökeilat näkyvät. F12 pois."
 HL_SOBER_5,Raitis päivä osoittautui liian raskaaksi
 HL_SOBER_6,Tutkimus: selvä olotila voi olla hengenvaarallinen
 HL_SOBER_7,Mies kokeili tipattomuutta – tulokset murskaavia

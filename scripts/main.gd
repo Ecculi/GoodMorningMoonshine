@@ -20,6 +20,7 @@ const LostItemNode = preload("res://scripts/lost_item_node.gd")
 const ModalUI = preload("res://scripts/modal_ui.gd")
 const DebugTools = preload("res://scripts/debug_tools.gd")
 const Car = preload("res://scripts/car.gd")
+const Sweeper = preload("res://scripts/sweeper.gd")
 
 ## Battery use per second while the phone is open, by page.
 ## Battery per second of use, by page. Drains only while the phone is open.
@@ -89,6 +90,9 @@ var _next_gang := 0
 var items: Array = []
 var lost_nodes: Array = []
 var cars: Array = []
+## Street cleaning day: the sweeper in this block (at most one at a time).
+var sweepers: Array = []
+var _sweeper_timer := 2.0
 var _car_timer := 3.0
 var rng := RandomNumberGenerator.new()
 
@@ -186,6 +190,7 @@ func _process(delta: float) -> void:
 	_check_lost_pickups()
 	_check_arrest()
 	_check_choke()
+	_check_checkpoint()
 	_update_signs()
 	# Death: the headline, then the high scores, then a new game.
 	if hud.mode == "scores" and hud.card_time > 0.6 and Input.is_action_just_pressed("action"):
@@ -342,7 +347,8 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	if level != null:
 		level.queue_free()
 	_cloud_sun_set = false
-	level = BlockBuilder.build(seg, GameState.home_x if seg == GameState.home_seg else INF, GameState.home_type)
+	level = BlockBuilder.build(seg, GameState.home_x if seg == GameState.home_seg else INF, GameState.home_type,
+		GameState.booth_segs.has(seg), GameState.checkpoint_segs.has(seg))
 	add_child(level)
 	# Wind-blown leaves on the street.
 	var leaves = Leaves.new()
@@ -360,6 +366,10 @@ func _clear_block_content() -> void:
 	for c in cars:
 		c.queue_free()
 	cars.clear()
+	for sw in sweepers:
+		sw.queue_free()
+	sweepers.clear()
+	_sweeper_timer = rng.randf_range(1.0, 6.0)
 	_car_timer = rng.randf_range(2.0, 8.0)
 	for ln in lost_nodes:
 		ln.queue_free()
@@ -389,7 +399,7 @@ func _save_block_items() -> void:
 	var saved := []
 	for it in items:
 		if is_instance_valid(it) and it != player.hand_item and it.state == Item.St.GROUND:
-			saved.append([it.kind, it.global_position, it.value, it.drink])
+			saved.append([it.kind, it.global_position, it.value, it.drink, it.contents.duplicate(true)])
 	_block_items[_key(segment)] = saved
 	var shards := []
 	for g in glass:
@@ -403,7 +413,10 @@ func _populate_block() -> void:
 		spawn_glass(entry[0], entry[1])
 	if _block_items.has(key):
 		for entry in _block_items[key]:
-			spawn_item(entry[0], entry[1], entry[2], entry[3])
+			var it = spawn_item(entry[0], entry[1], entry[2], entry[3])
+			if entry.size() > 4:
+				it.contents = entry[4]
+				it.update_bag_look()
 	else:
 		for i in rng.randi_range(2, 5):
 			var r := rng.randf()
@@ -419,6 +432,9 @@ func _populate_block() -> void:
 			elif r < 0.75:
 				kind = Item.Kind.COIN
 			spawn_item(kind, Vector3(rng.randf_range(-15.0, 15.0), 0, _random_z()), rng.randi_range(1, 3))
+		# Now and then a plastic bag blowing about.
+		if rng.randf() < 0.35:
+			spawn_item(Item.Kind.BAG, Vector3(rng.randf_range(-15.0, 15.0), 0, _random_z()))
 	for i in rng.randi_range(2, 5):
 		_spawn_npc(false)
 	# Police patrol some blocks (more of them later in the game); guards
@@ -437,6 +453,23 @@ func _populate_block() -> void:
 				var bo = _spawn_npc(false, "bouncer")
 				bo.position = Vector3(sh["x"] + 1.0, 0, -7.3)
 				bo.post = bo.position
+	if level.has_meta("checkpoint"):
+		# Two officers at the breath test, one on each sidewalk.
+		for z in [-6.2, 3.8]:
+			var cop = _spawn_npc(false, "police")
+			cop.position = Vector3(0.6, 0, z)
+			cop.stationary = true
+			cop.dir = -1 if player.position.x < 0.0 else 1
+			cop.set_meta("checkpoint", true)
+	if level.has_meta("booth"):
+		# The politician behind the table, two aides in front of it.
+		var bx: float = level.get_meta("booth")
+		var pol = _spawn_npc(false, "politician")
+		pol.position = Vector3(bx, 0, -7.25)
+		pol.post = pol.position
+		for s in [-1.0, 1.0]:
+			var aide = _spawn_npc(false, "aide")
+			aide.position = Vector3(bx + s * 1.5, 0, -6.2)
 	_spawn_street_folk()
 	for id in GameState.placements:
 		var pl: Array = GameState.placements[id]
@@ -717,6 +750,10 @@ func _process_modal(delta: float) -> void:
 				_close_modal()
 			elif GameState.battery <= 0.0:
 				phone_dead_t = PHONE_DEAD_TIME
+		"breath":
+			breath_t += delta
+			if breath_t >= BREATH_TIME:
+				_end_breath_test()
 		"shop":
 			var opts := shop_options()
 			if Input.is_action_just_pressed("move_left"):
@@ -955,12 +992,14 @@ func _new_game() -> void:
 	_searched_bins.clear()
 	_lock_hits = 0
 	_friend_refused = false
+	_breath_done = false
 	_block_items.clear()
 	_block_glass.clear()
 	player.reset(Vector3.ZERO)
 	_enter_block(GameState.home_seg, _home_door_pos(), 1)
 	hud.show_pocket_check()
 	hud.show_city(CityMap.city_name())
+	hud.show_special()
 	_save_morning(GameState.home_seg, _home_door_pos(), 1)
 
 
@@ -969,7 +1008,7 @@ func _save_morning(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	var hand: Array = []
 	var h = player.hand_item
 	if h != null and is_instance_valid(h):
-		hand = [h.kind, h.value, h.drink]
+		hand = [h.kind, h.value, h.drink, h.contents.duplicate(true)]
 	GameState.save_morning({"seg": seg, "pos": pos, "facing": facing, "hand": hand})
 
 
@@ -985,14 +1024,19 @@ func _continue_game() -> bool:
 	_block_glass.clear()
 	_pending_followers.clear()
 	arrest = 0.0
+	_breath_done = false
 	player.reset(Vector3.ZERO)
 	player.wake_up()
 	_enter_block(s.get("seg", GameState.home_seg), s.get("pos", _home_door_pos()), s.get("facing", 1))
 	var hand: Array = s.get("hand", [])
-	if hand.size() == 3:
+	if hand.size() >= 3:
 		var it = spawn_item(hand[0], player.position, hand[1], hand[2])
+		if hand.size() > 3:
+			it.contents = hand[3]
+			it.update_bag_look()
 		player._pickup(it)
 	hud.show_pocket_check()
+	hud.show_special()
 	return true
 
 
@@ -1018,11 +1062,13 @@ func _new_day() -> void:
 	_block_glass.clear()
 	_searched_bins.clear()
 	_friend_refused = false
+	_breath_done = false
 	arrest = 0.0
 	player.wake_up()
 	var facing := 1 if rng.randf() < 0.5 else -1
 	_enter_block(GameState.wake_seg, GameState.wake_pos, facing)
 	hud.show_pocket_check()
+	hud.show_special()
 	_save_morning(GameState.wake_seg, GameState.wake_pos, facing)
 	if GameState.sleep_place == "jail":
 		_cellmate()
@@ -1445,6 +1491,16 @@ func _spawn_street_folk() -> void:
 	# From day 6 an influencer films anything silly the player does.
 	if GameState.day >= 6 and rng.randf() < 0.3:
 		_spawn_npc(false, "influencer")
+	# Kärpät day: fans everywhere, all of a block's fans stick together.
+	if GameState.special_day == "karpat":
+		var fans: Array = []
+		for i in rng.randi_range(3, 6):
+			fans.append(_spawn_npc(false, "fan"))
+		for f in fans:
+			f.gang = fans
+	# From day 8 an extremist party's canvasser hands out leaflets.
+	if GameState.day >= 8 and rng.randf() < 0.3:
+		_spawn_npc(false, "canvasser")
 	# From day 6 a priest may help a cold or hungry player.
 	if GameState.day >= 6 and rng.randf() < 0.25:
 		_spawn_npc(false, "priest")
@@ -1715,6 +1771,43 @@ func food_on_ground_near(pos: Vector3, r: float):
 	return null
 
 
+func remove_sweeper(sw) -> void:
+	sweepers.erase(sw)
+	sw.queue_free()
+
+
+## The sweeper sucked up one of the player's lost things: it ends up dumped
+## in some block two to four blocks away (the phone map follows it).
+func lost_swept(ln) -> void:
+	var id: String = ln.id
+	lost_nodes.erase(ln)
+	ln.queue_free()
+	popup("slurp", ln.position + Vector3(0, 1.2, 0), Color(1, 0.6, 0.4), 1.2)
+	hud.think([id])
+	if not GameState.placements.has(id):
+		return
+	var seg := segment
+	for attempt in 100:
+		var cand := CityMap.random_segment(rng)
+		var d := GameState.seg_distance(cand, segment)
+		if d >= 2.0 and d <= 4.0 and CityMap.is_open(cand):
+			seg = cand
+			break
+	GameState.placements[id] = [seg, Vector3(rng.randf_range(-12.0, 12.0), 0.0, _random_z())]
+	for h in GameState.phone_map_hints:
+		if h["id"] == id:
+			h["seg"] = seg
+
+
+## Someone hit the politician: the aides go for the player and the police
+## always come.
+func politician_attacked(pos: Vector3) -> void:
+	for n in npcs:
+		if n.role == "aide" and not n.is_down():
+			n.provoke()
+	report_crime(pos, true, false, true)
+
+
 ## A passer-by gave up (or lost) the lost thing they carried.
 func carrier_dropped(id: String, pos: Vector3) -> void:
 	GameState.carried_items.erase(id)
@@ -1795,6 +1888,18 @@ func _update_traffic() -> void:
 			rd.setup(rng, rdir)
 			add_child(rd)
 			riders.append(rd)
+	# Street cleaning day: a sweeper comes through every block now and then
+	# (also along the pedestrian street).
+	if GameState.special_day == "cleanup" and sweepers.is_empty():
+		_sweeper_timer -= dt
+		if _sweeper_timer <= 0.0:
+			_sweeper_timer = rng.randf_range(15.0, 30.0)
+			var sd := 1 if rng.randf() < 0.5 else -1
+			var sw = Sweeper.new()
+			sw.main = self
+			sw.setup(rng, sd)
+			add_child(sw)
+			sweepers.append(sw)
 	if _is_pedestrian_street():
 		return
 	_car_timer -= dt
@@ -1910,7 +2015,7 @@ var arrest := 0.0
 ## (hitting a priest).
 func report_crime(pos: Vector3, alarm: bool, animal := false, certain := false) -> void:
 	var noticed := false
-	var reach := SNEAK_NOTICE_DIST if GameState.is_lost("shoes") else INF
+	var reach := SNEAK_NOTICE_DIST if player.is_sneaking() else INF
 	# Drunk and loud: noticed from further away even when sneaking.
 	if GameState.promille > GameState.PROMILLE_DRUNK:
 		reach *= 2.0
@@ -1937,14 +2042,60 @@ func report_crime(pos: Vector3, alarm: bool, animal := false, certain := false) 
 		cop.notice()
 
 
+## Breath test: crossing the checkpoint line stops the player for a
+## breathalyser (once per day). Over the limit: the cell.
+const BREATH_TIME := 3.0
+var breath_t := 0.0
+var _breath_done := false
+
+
+func _check_checkpoint() -> void:
+	if level == null or not level.has_meta("checkpoint"):
+		return
+	# The blue lights blink.
+	var on := int(Time.get_ticks_msec() / 250) % 2 == 0
+	for l in level.get_meta("blue_lights", []):
+		var lm: StandardMaterial3D = l.material_override
+		lm.emission_energy_multiplier = 3.0 if on else 0.2
+	if GameState.over or GameState.modal != "" or _breath_done or player.is_helpless():
+		return
+	var cx: float = level.get_meta("checkpoint")
+	if absf(player.position.x - cx) > 1.0 or player.position.z < Z_MIN - 0.1 or player.position.z > Z_MAX + 0.1:
+		return
+	var manned := false
+	for n in npcs:
+		if n.has_meta("checkpoint") and not n.is_down() and not n.is_hostile():
+			manned = true
+	if not manned:
+		return
+	_breath_done = true
+	breath_t = 0.0
+	GameState.modal = "breath"
+
+
+## 0..1 how far the breath test is.
+func breath_progress() -> float:
+	return clampf(breath_t / BREATH_TIME, 0.0, 1.0)
+
+
+## Breath test result after BREATH_TIME (see modal_ui for the meter).
+func _end_breath_test() -> void:
+	_close_modal()
+	if GameState.promille > GameState.CHECKPOINT_LIMIT:
+		_get_arrested()
+	else:
+		popup("✓", player.position + Vector3(0, 2.4, 0), Color(0.4, 1.0, 0.5), 1.4)
+
+
 ## How far the police see (the length of the vision cone): short when the
 ## player sneaks barefoot, longer when drunk and loud.
 func police_sight() -> float:
 	var r: float = Npc.VISION_RANGE
-	if GameState.is_lost("shoes"):
+	var sneak: bool = player.is_sneaking()
+	if sneak:
 		r = SNEAK_NOTICE_DIST
 	if GameState.promille > GameState.PROMILLE_DRUNK:
-		r *= 2.0 if GameState.is_lost("shoes") else 1.25
+		r *= 2.0 if sneak else 1.25
 	if GameState.viral:
 		r *= GameState.VIRAL_SIGHT
 	return r
@@ -2175,6 +2326,14 @@ func _update_sun() -> void:
 		"rain": Color(0.38, 0.4, 0.44), "snow": Color(0.7, 0.72, 0.76)}[weather]
 	sky_mat.sky_horizon_color = {"sunny": Color(0.6, 0.72, 0.85), "cloudy": Color(0.72, 0.74, 0.76),
 		"rain": Color(0.55, 0.57, 0.6), "snow": Color(0.86, 0.87, 0.9)}[weather]
+	if GameState.frost:
+		# Hard frost: a deep clear sky and a cold, bright blue light.
+		sky_mat.sky_top_color = Color(0.12, 0.32, 0.82)
+		sky_mat.sky_horizon_color = Color(0.75, 0.86, 0.97)
+		sun.light_color = sun.light_color.lerp(Color(0.8, 0.9, 1.0), 0.6)
+		env.ambient_light_color = Color(0.55, 0.63, 0.78)
+	else:
+		env.ambient_light_color = Color(0.62, 0.62, 0.66)
 	_update_precipitation(weather)
 	# Without sunglasses, facing the sun on a sunny day dazzles; a low sun
 	# is the worst.
@@ -2290,11 +2449,13 @@ func _update_precipitation(weather: String) -> void:
 	var wx := wind_at(Vector3(camera.position.x, 2.0, -1.0)).x
 	rain.gravity = Vector3(wx * 3.0, -18.0, 0.0)
 	rain.particle_flag_align_y = GameState.storm
-	snow_cover.visible = snowing
+	# Hard frost: hoarfrost on the ground and a thin icy haze.
+	var frost := GameState.frost
+	snow_cover.visible = snowing or frost
 	snow_cover.position.x = camera.position.x
-	env.fog_enabled = raining or snowing
-	env.fog_light_color = Color(0.6, 0.62, 0.66) if raining else Color(0.9, 0.92, 0.95)
-	env.fog_density = 0.012 if raining else 0.006
+	env.fog_enabled = raining or snowing or frost
+	env.fog_light_color = Color(0.6, 0.62, 0.66) if raining else (Color(0.8, 0.88, 1.0) if frost else Color(0.9, 0.92, 0.95))
+	env.fog_density = 0.012 if raining else (0.004 if frost else 0.006)
 
 
 func _build_clouds() -> void:
