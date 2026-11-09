@@ -49,7 +49,7 @@ func _player(stream: AudioStreamWAV, db: float) -> AudioStreamPlayer:
 
 func _process(delta: float) -> void:
 	_t += delta
-	var in_bar := GameState.modal == "shop" and main != null and main.shop_type == "bar"
+	var in_bar: bool = GameState.modal == "shop" and main != null and main.shop_type == "bar"
 	if in_bar and _bar == null:
 		_bar = _player(_bar_tune(), -80.0)  # made the first time it's needed
 	var hung := GameState.promille < GameState.PROMILLE_HANGOVER
