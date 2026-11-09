@@ -872,7 +872,10 @@ func _draw_trade_hint() -> void:
 	var cc := sp + Vector2(14, 0)
 	draw_circle(cc, 9.0, Color(0.95, 0.75, 0.2))
 	draw_arc(cc, 9.0, 0.0, TAU, 20, Color(0.5, 0.35, 0.05), 1.5, true)
-	if n.role == "beggar":
+	if n.carry_id != "":
+		# Coin (or a bottle) -> the lost thing.
+		LostItems.draw_icon(self, n.carry_id, sp + Vector2(42, 0), 24.0, "own")
+	elif n.role == "beggar":
 		var font := get_theme_default_font()
 		draw_string_outline(font, sp + Vector2(28, 8), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, 5, Color.BLACK)
 		draw_string(font, sp + Vector2(28, 8), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color.WHITE)

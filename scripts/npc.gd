@@ -31,6 +31,7 @@ extends Node3D
 ##   left alone, they may offer a can of beer
 
 const PersonModel = preload("res://scripts/person_model.gd")
+const LostItems = preload("res://scripts/lost_items.gd")
 const Item = preload("res://scripts/item.gd")
 const Ragdoll = preload("res://scripts/ragdoll.gd")
 
@@ -402,9 +403,68 @@ func is_lawman() -> bool:
 	return role == "police" or role == "guard"
 
 
-## Beggar or street drunk: the action button trades instead of punching.
+## Beggar, street drunk or someone carrying a lost thing: the action
+## button trades instead of punching.
 func is_trader() -> bool:
-	return (role == "beggar" or role == "drunk") and state == S.WALK
+	return (role == "beggar" or role == "drunk" or carry_id != "") and state == S.WALK
+
+
+## Carrying one of the player's lost things (a passer-by who picked it
+## up): it shows in the hand, with a yellow arrow above when close.
+## Get it back by paying, swapping a bottle, pickpocketing or a knockout.
+const CARRY_PRICE := 5
+var carry_id := ""
+var _carry_model: Node3D
+var _carry_arrow: Label3D
+
+
+func carry_lost(id: String) -> void:
+	carry_id = id
+	trades_left = 1
+	speed = minf(speed, 1.15)
+	_carry_model = LostItems.build_mesh(id)
+	_carry_model.scale = Vector3.ONE * 1.2
+	_carry_model.position = Vector3(0.05, -0.1, 0)
+	model.hand.add_child(_carry_model)
+	_carry_arrow = Label3D.new()
+	_carry_arrow.text = "▼"
+	_carry_arrow.font_size = 96
+	_carry_arrow.pixel_size = 0.005
+	_carry_arrow.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_carry_arrow.no_depth_test = true
+	_carry_arrow.modulate = Color(1, 0.85, 0.2)
+	_carry_arrow.outline_size = 18
+	_carry_arrow.visible = false
+	add_child(_carry_arrow)
+
+
+## Lets go of the lost thing: it drops to the ground at `at`.
+func _drop_carried(at: Vector3) -> void:
+	if carry_id == "":
+		return
+	var id := carry_id
+	carry_id = ""
+	if _carry_model != null:
+		_carry_model.queue_free()
+		_carry_model = null
+	if _carry_arrow != null:
+		_carry_arrow.queue_free()
+		_carry_arrow = null
+	main.carrier_dropped(id, at)
+
+
+## Keeps the hint position up to date (hot/cold, the edge arrow) and shows
+## the arrow when close enough to recognise the thing.
+func _update_carry() -> void:
+	if not GameState.placements.has(carry_id):
+		_drop_carried(position)
+		return
+	GameState.placements[carry_id][1] = Vector3(position.x, 0.0, position.z)
+	var p: Vector3 = main.player.position
+	var d := Vector2(p.x - position.x, p.z - position.z).length()
+	var reach := LostItems.REVEAL_DIST_NO_GLASSES if GameState.is_lost("glasses") else LostItems.REVEAL_DIST
+	_carry_arrow.visible = d < reach + 3.0
+	_carry_arrow.position = Vector3(0, 2.35 + absf(sin(Time.get_ticks_msec() / 250.0)) * 0.15, 0)
 
 
 func _head_box(pos: Vector3, size: Vector3, col: Color) -> void:
@@ -460,6 +520,24 @@ func offer_trade(p: Node3D) -> bool:
 	var top := position + Vector3(0, 1.4 if model.sitting else 2.2, 0)
 	if trades_left <= 0:
 		main.popup("…", top, Color(0.85, 0.85, 0.85))
+		return true
+	if carry_id != "":
+		# Swap a bottle for it, or buy it back.
+		if p.hand_item != null and p.hand_item.kind == Item.Kind.BOTTLE:
+			var b = p.hand_item
+			p.hand_item = null
+			main.remove_item(b)
+			main.popup("♥", top, Color(1, 0.5, 0.6))
+		elif GameState.money >= CARRY_PRICE:
+			GameState.money -= CARRY_PRICE
+			main.popup("-%d €" % CARRY_PRICE, top, Color(1, 0.85, 0.3))
+		else:
+			main.popup("%d €?" % CARRY_PRICE, top, Color(1, 0.85, 0.3))
+			return true
+		trades_left = 0
+		model.punch()
+		_drop_carried(Vector3(p.position.x, 0.0, p.position.z))
+		GameState.busy_time = maxf(GameState.busy_time, 0.6)
 		return true
 	match role:
 		"beggar":
@@ -725,6 +803,17 @@ func _bub_prism(pos: Vector3, size: Vector3, c: Color, apex: float) -> void:
 	mi.material_override = _flat(c)
 	mi.position = pos
 	_bubble.add_child(mi)
+
+
+## Someone carrying a lost thing stops when the player comes up from the
+## front (to trade). From behind they don't notice: a pickpocket chance.
+func _carrier_wait(dt: float) -> bool:
+	var p = main.player
+	var dx: float = p.position.x - position.x
+	if dx * dir <= 0.0 or absf(dx) > 1.8 or absf(p.position.z - position.z) > 0.9 or p.is_helpless():
+		return false
+	model.animate(0.0, dt)
+	return true
 
 
 ## Priest: gives a cold or hungry player a bun (food) or a coffee, once.
@@ -1015,6 +1104,8 @@ func _process(_delta: float) -> void:
 		_rise_t -= dt
 		return
 	var start_pos := position
+	if carry_id != "":
+		_update_carry()
 	_open_t = maxf(0.0, _open_t - dt)
 	if _pointing and state != S.WALK:
 		_pointing = false
@@ -1188,6 +1279,8 @@ func _walk(dt: float) -> void:
 	if role == "tourist" and _tourist(dt):
 		return
 	if role == "priest" and _priest(dt):
+		return
+	if carry_id != "" and _carrier_wait(dt):
 		return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
@@ -1530,7 +1623,9 @@ func hug(p: Node3D) -> void:
 	p.get_tree().create_timer(1.0).timeout.connect(func(): p.model.raise_arm(false))
 	GameState.busy_time = maxf(GameState.busy_time, 1.0)
 	main.popup_icon(main.heart_texture(), (position + p.position) * 0.5 + Vector3(0, 2.1, 0.3))
-	if main.rng.randf() < 0.9:
+	if carry_id != "":
+		_drop_carried(Vector3(p.position.x, 0.0, p.position.z))
+	elif main.rng.randf() < 0.9:
 		var amount: int = main.rng.randi_range(1, 6)
 		GameState.money += amount
 		main.popup("+%d €" % amount, position + Vector3(0, 2.4, 0), Color(1, 0.85, 0.3))
@@ -1557,6 +1652,10 @@ func check_pickpocket(p: Node3D) -> void:
 	if p.hic_window > 0.0:
 		chance = 0.0
 	if main.rng.randf() < chance:
+		if carry_id != "":
+			# Slips the lost thing out of their hand.
+			_drop_carried(Vector3(p.position.x, 0.0, p.position.z))
+			return
 		var amount: int = main.rng.randi_range(1, 6)
 		GameState.money += amount
 		main.popup("+%d €" % amount, position + Vector3(0, 2.0, 0), Color(1, 0.85, 0.3))
@@ -1600,6 +1699,7 @@ func _end_ragdoll() -> void:
 ## face_down: a direction to topple the rag doll over forwards (fall on
 ## the face); zero = the usual random tumble.
 func _knock_out(push := Vector3(0, 1.5, 0), face_down := Vector3.ZERO) -> void:
+	_drop_carried(Vector3(position.x + 0.4 * float(dir), 0.0, position.z))
 	if role == "thief" and (loot_id != "" or loot_money > 0):
 		_give_back()
 		GameState.unlock("THIEF_CAUGHT")

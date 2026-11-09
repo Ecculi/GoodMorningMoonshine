@@ -436,6 +436,11 @@ func _populate_block() -> void:
 			# In a stray dog's mouth.
 			var dg = _spawn_animal("dog", pl[1])
 			dg.carry(id)
+		elif pl[0] == segment and GameState.carried_items.has(id):
+			# In a passer-by's hand.
+			var cn = _spawn_npc(false)
+			cn.position = Vector3(pl[1].x, 0.0, pl[1].z)
+			cn.carry_lost(id)
 		elif pl[0] == segment:
 			var ln = LostItemNode.new()
 			ln.main = self
@@ -1630,6 +1635,12 @@ func food_on_ground_near(pos: Vector3, r: float):
 			if Vector2(it.global_position.x - pos.x, it.global_position.z - pos.z).length() < r:
 				return it
 	return null
+
+
+## A passer-by gave up (or lost) the lost thing they carried.
+func carrier_dropped(id: String, pos: Vector3) -> void:
+	GameState.carried_items.erase(id)
+	drop_lost(id, pos)
 
 
 ## A dog let go of a lost thing: it lies on the ground there now.

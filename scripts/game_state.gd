@@ -160,6 +160,13 @@ var dog_items: Array = []
 ## mouth, with this chance each (never the phone).
 const DOG_ITEM_FROM_DAY := 3
 const DOG_ITEM_CHANCE := 0.25
+## Lost things someone (a passer-by) has picked up and carries about in
+## their hand today (ids). From CARRIED_FROM_DAY, with this chance each
+## (never the phone). Buy it back, swap a bottle for it, pickpocket it or
+## knock them out.
+var carried_items: Array = []
+const CARRIED_FROM_DAY := 4
+const CARRIED_CHANCE := 0.25
 ## Where the character slept: "home", "stairs" or "street".
 var sleep_place := "home"
 ## Wet and soiled trousers after a night on the street (brown at the back,
@@ -515,6 +522,7 @@ func find_item(id: String) -> void:
 	lost.erase(id)
 	placements.erase(id)
 	dog_items.erase(id)
+	carried_items.erase(id)
 	found_today.append(id)
 	# Everything found, the phone last (so without its map and hints).
 	if lost.is_empty() and id == "phone" and found_today.size() >= 2:
@@ -756,6 +764,7 @@ func _lose_items() -> void:
 func _place_lost_items() -> void:
 	placements.clear()
 	dog_items.clear()
+	carried_items.clear()
 	var radius := search_radius()
 	var home_c := _seg_center(home_seg)
 	# Where the day starts (home on the first day).
@@ -783,6 +792,8 @@ func _place_lost_items() -> void:
 		if id != "phone" and day >= DOG_ITEM_FROM_DAY and rng.randf() < DOG_ITEM_CHANCE:
 			dog_items.append(id)
 			placements[id][1].z = rng.randf_range(-4.0, 1.5)  # the dog trots about the street
+		elif id != "phone" and day >= CARRIED_FROM_DAY and rng.randf() < CARRIED_CHANCE:
+			carried_items.append(id)
 
 
 ## Each morning the phone has a little battery and maybe some hints about
@@ -894,7 +905,7 @@ const SAVE_FILE := "user://save.cfg"
 const SAVE_KEYS := [
 	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
 	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
-	"placements", "dog_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
+	"placements", "dog_items", "carried_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
 	"weather", "storm", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
 ]
 

@@ -563,6 +563,11 @@ Lisätty prototyyppiin:
     - **makkaralla:** kun makkara on kädessä, koira tulee luo ja vaihtaa tavaran makkaraan (♥). Maahan heitetty ruoka saa sen pudottamaan tavaran ja menemään syömään. Saavutus: Vaihtokauppa.
     - **kiinni juoksemalla:** juokseva pelaaja on koiraa nopeampi. Kun koiran saa kiinni, se pudottaa tavaran ja lähtee.
     - **lyömällä tai heittämällä:** koira säikähtää, pudottaa tavaran ja lähtee vinkuen.
+  - **Tavara jonkun hallussa (päivästä 4):** jokainen hukattu tavara (ei puhelin, ei koiran suussa oleva) on 25 %:n todennäköisyydellä ohikulkijan kädessä siinä korttelissa, johon se on arvottu. Ohikulkija kävelee korttelissa edestakaisin tavara näkyvästi kädessä, ja hänen päällään näkyy keltainen nuoli, kun pelaaja on lähellä. Lämpömittari, reunanuoli ja puhelimen kartta seuraavat häntä. Kun pelaaja tulee häntä vastaan edestä, hän pysähtyy, ja toimintonapin vihje näyttää kolikon ja tavaran. Tavaran saa takaisin:
+    - **ostamalla:** 5 € (jos rahaa ei ole tarpeeksi, "5 €?").
+    - **vaihtamalla:** pullo kädessä toimintonappi vaihtaa pullon tavaraan (♥).
+    - **taskuvarastamalla:** selän takaa; onnistuessa tavara jää pelaajan jalkoihin.
+    - **halaamalla** (humalainen halaus) tai **tyrmäämällä** (ladattu lyönti tai heitto): tavara putoaa maahan.
 
 - **Ilman puhelinta ei olla hukassa:**
   - Puhelin itse hukkuu aina lähelle päivän aloituspaikkaa (noin korttelin päähän), joten sen löytäminen on helppo alku.
