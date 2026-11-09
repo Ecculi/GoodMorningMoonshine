@@ -662,6 +662,11 @@ func new_game() -> void:
 	_place_lost_items()
 	_make_phone_hints()
 	task = {}
+	ex_look = rng.randi() % EX_LOOKS
+	ex_segs.clear()
+	ex_item = ""
+	ex_called_day = -1
+	ex_mad_day = -1
 	modal = ""
 	over = false
 
@@ -670,6 +675,8 @@ func new_game() -> void:
 func new_day() -> void:
 	_doses.clear()
 	var at_sleep := promille
+	if day == EX_FROM_DAY and not ex_met:
+		unlock("NEVER_AGAIN")
 	_reset_day_counters()
 	street_nights = street_nights + 1 if sleep_place == "street" else 0
 	if street_nights >= 3:
@@ -738,6 +745,7 @@ func new_day() -> void:
 			clock_min += 120.0
 	_lose_items()
 	_place_lost_items()
+	_roll_ex(wake_seg)
 	_make_phone_hints()
 	_roll_task(wake_seg)
 	modal = ""
@@ -803,6 +811,65 @@ const WATCH_CHANCE := 0.12
 
 func is_sunday() -> bool:
 	return weekday == 6
+
+
+# --- The ex (from day 10) ------------------------------------------------------
+
+## The ex-girlfriend: always dressed the same in one game (ex_look). From
+## EX_FROM_DAY she walks about some mornings in a block near where the day
+## starts, with her big new boyfriend. Some days she has one of the lost
+## things (ex_item): get it back by talking to her fairly sober or with a
+## gift. Other days she is best avoided: if she sees you she comes over
+## for a "chat" that costs half an hour and some of the buzz. Hit her or
+## get loud with her and the boyfriend goes for you. Very drunk, the phone
+## tempts you to call her; then she is cross the next day.
+const EX_FROM_DAY := 10
+const EX_CHANCE := 0.6
+const EX_ITEM_CHANCE := 0.5
+## Talking to her works only under this per mille (or with a gift).
+const EX_SOBER := 1.0
+## The phone call temptation from this per mille.
+const EX_CALL_PROMILLE := 2.5
+const EX_LOOKS := 3
+var ex_look := 0
+var ex_segs: Array = []
+var ex_item := ""
+## Met (talked or got caught for a chat) today.
+var ex_met := false
+## Stormed off today: she doesn't come back.
+var ex_gone := false
+var ex_called_day := -1
+## The day she is cross (the day after a drunken call).
+var ex_mad_day := -1
+
+
+func ex_is_mad() -> bool:
+	return ex_mad_day == day
+
+
+func _roll_ex(start: Vector3i) -> void:
+	ex_segs.clear()
+	ex_item = ""
+	if day < EX_FROM_DAY or rng.randf() > EX_CHANCE:
+		return
+	var seg := start
+	for attempt in 100:
+		var cand := CityMap.random_segment(rng)
+		var d := seg_distance(cand, start)
+		if d >= 1.0 and d <= 3.0 and not CityMap.closed.has(cand):
+			seg = cand
+			break
+	ex_segs.append(seg)
+	if rng.randf() > EX_ITEM_CHANCE:
+		return
+	var pool: Array = []
+	for id in lost:
+		if id != "phone" and not dog_items.has(id) and not carried_items.has(id) and not high_items.has(id):
+			pool.append(id)
+	if pool.is_empty():
+		return
+	ex_item = pool[rng.randi() % pool.size()]
+	placements[ex_item] = [seg, Vector3(rng.randf_range(-12.0, 12.0), 0.0, -6.4 if rng.randf() < 0.5 else 4.0)]
 
 
 ## Little task of the day (0 or 1, from TASK_FROM_DAY): a pal somewhere
@@ -1082,7 +1149,8 @@ const SAVE_KEYS := [
 	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
 	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
 	"placements", "dog_items", "carried_items", "high_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
-	"weather", "storm", "frost", "special_day", "booth_segs", "checkpoint_segs", "task", "weekday", "has_watch", "church_day", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
+	"weather", "storm", "frost", "special_day", "booth_segs", "checkpoint_segs", "task", "weekday", "has_watch", "church_day",
+	"ex_look", "ex_segs", "ex_item", "ex_called_day", "ex_mad_day", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
 ]
 
 
@@ -1213,7 +1281,7 @@ const ACHIEVEMENTS := [
 	"DOCTOR", "SOBER_30", "ELEPHANTS", "MORNING_BEER", "HOME_DRUNK", "PROMILLE_333",
 	"CLEAN_DAY", "NO_MAP", "BEGGAR_PAY",
 	"GRAVITY5", "BONNET_SURVIVE", "RUN_OVER_SURVIVE", "LAUNDRY", "HEADLINES10", "BACKSTAB",
-	"DOG_TRADE", "THIEF_CAUGHT", "COLLEAGUE", "VIRAL", "TOURIST_GUIDE",
+	"DOG_TRADE", "THIEF_CAUGHT", "COLLEAGUE", "VIRAL", "TOURIST_GUIDE", "DONT_CALL", "NEVER_AGAIN", "EX_BACK",
 ]
 const ACH_FILE := "user://achievements.cfg"
 ## Seconds of game time in the mending zone / under the hangover limit.
@@ -1318,6 +1386,8 @@ func _check_achievements(dt: float) -> void:
 
 func _reset_day_counters() -> void:
 	viral = false
+	ex_met = false
+	ex_gone = false
 	found_today.clear()
 	falls_today = 0
 	crashes_today = 0

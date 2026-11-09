@@ -144,15 +144,19 @@ Uudet hahmot päivä kerrallaan:
 
 - **Päivä 7:** **poliisiparit**.
 
-**Päivä 10: exä (ideoita, issue #78, ei vielä päätetty).** Entinen tyttöystävä on tunnistettava hahmo (aina sama asu koko pelin ajan, esim. punainen takki, ponnari ja aurinkolasit), joka kulkee päivästä 10 alkaen satunnaisesti jossain korttelissa. Vaihtoehtoja, joita voi yhdistellä:
+**Päivä 10: exä (#78).** Entinen tyttöystävä on aina samassa asussa koko pelin ajan (yksi kolmesta: punainen takki ja aurinkolasit, violetti takki tai vihreä parkatakki; kaikilla ponnari). Päivästä 10 alkaen 60 %:n todennäköisyydellä hän kulkee aamulla jossain korttelissa 1–3 korttelin päässä aloituspaikasta, ja hänen vieressään kävelee **uusi poikaystävä** (iso, valkoinen hihaton paita, lippis väärinpäin, lyö kovaa: 18 vahinkoa, heavy-tyyli).
 
-- **Tavara exällä:** yksi hukatuista tavaroista on exällä ("jäi mun luo"), esimerkiksi avaimet tai takki. Sen saa takaisin vain puhumalla hänelle (toimintonappi) **kohtuullisessa kunnossa** (alle 1,0 ‰), tai antamalla lahjan (makkara, kahvi tai kukka kioskilta). Liian humalaisena hän tuhahtaa "#!?" ja lähtee. Vihjeet (kartta, lämpömittari) toimivat kuten muillakin tavaroilla.
-- **Uusi kumppani:** exän vieressä kävelee iso, salilla käyvä uusi kumppani. Jos exä suuttuu (pelaaja lyö, heittää tai on liian humalassa), kumppani käy kimppuun (heavy-tyyli). Kumppanin tyrmääminen tuo exältä lööppimäisen "#!?"-reaktion eikä tavaraa saa enää sinä päivänä.
-- **Välttely:** jos tavaraa ei ole exällä, hänet kannattaa välttää. Kun hän huomaa pelaajan (alle 8 m, näkökeila kuten poliisilla), hän tulee "juttelemaan": pelaaja jää paikalleen, kello hyppää 30 minuuttia ja ajatuskuplassa on särkynyt sydän; krapula voi pahentua (promillet −0,2). Piiloon pääsee kääntymällä kadun toiselle puolelle, juoksemalla toiseen kortteliin tai hiippailemalla.
-- **Puhelin:** yli 2,5 ‰ humalassa puhelimeen voi tulla houkutus "soita exälle" (viesti hänen kuvallaan). Soittaminen kuluttaa akkua ja antaa saavutuksen "Älä soita exälle", mutta seuraavana päivänä exä on vihainen.
-- **Lööpit ja saavutukset:** kuolinlööppi, jos exän kumppani tappaa ("Exän uusi mies: 'Hän aloitti'"), ja saavutus "Ei ikinä enää" (selviä päivästä 10 tapaamatta exää).
-
-Suositus: aloitetaan yhdistelmällä **tavara exällä + uusi kumppani** (selkeä tavoite, käyttää valmiita mekaniikkoja), ja välttely ja puhelin lisätään myöhemmin.
+- **Tavara exällä:** puolet kerroista yksi hukatuista tavaroista (ei puhelin) on exän kädessä. Keltainen nuoli, lämpömittari, reunanuoli ja kartta seuraavat häntä. Hän pysähtyy, kun pelaaja tulee häntä vastaan edestä. Toimintonappi hänen vieressään (vihje: sydän ja tavara):
+  - **lahja** kädessä (makkara, kahvi tai kioskin ruusu, 3 €): sydän, ja tavara palautuu (ilman tavaraa +200 bonuspistettä). Lahja myös leppyttää suuttuneen exän.
+  - **alle 1,0 ‰** ilman lahjaa: "…okei", ja tavara palautuu. Saavutus: Takaisin saatu.
+  - **liian humalassa** (tai jos hän on suuttunut): "#!?", ja hän lähtee tavaroineen (tavara on poissa sen päivän). Yli 2,0 ‰ myös poikaystävä käy kimppuun.
+  - Taskuvarkaus onnistuu puolta heikommin, mutta onnistuessaan tavara tippuu jalkoihin.
+- **Välttely:** kun exällä ei ole tavaraa, hän huomaa pelaajan näkökeilastaan (8 m; hiippailevan vain 2 metristä), huikkaa "Moi!" ja kävelee luo (2,2 m/s, eli kävellen pääsee hitaasti karkuun ja juosten helposti; yli 12 metrissä hän luovuttaa). Kun hän ehtii viereen, tulee "juttelu": "bla bla bla", kello +30 min, promillet −0,2 ja särkynyt sydän. Juttelu tulee kerran päivässä.
+- **Exää ei voi satuttaa:** lyönti tai heitto saa hänet suuttumaan ja lähtemään, ja poikaystävä käy kimppuun. Jos poikaystävän tyrmää, exä lähtee tavaroineen.
+- **Puhelin:** päivästä 10, yli 2,5 ‰ humalassa, puhelimen viestisivun ylimpänä on exän kuva, sydän ja vilkkuva vihreä soittonappi. Toimintonappi soittaa: "Haloo…?", särkynyt sydän, akkua −10 ja saavutus **Älä soita exälle**. Seuraavana päivänä exä on vihainen: hän ei tule juttelemaan, ja ilman lahjaa puhuminen saa hänet lähtemään.
+- **Saavutus Ei ikinä enää:** selviä päivästä 10 tapaamatta exää.
+- **Lööpit:** poikaystävän tappama pelaaja saa omat lööpit ("Exän uusi mies: ”Hän aloitti”" jne.).
+- Debugissa ruudun nappi "exä" tuo exän nykyiseen kortteliin, ja hänellä on ensimmäinen hukattu tavara.
 
 Vaikeammat hukatut tavarat myöhempinä päivinä:
 
@@ -493,6 +497,7 @@ Hahmoideat:
 
 ## Kuolema
 
+- **Lööppien valinta:** lööpit ja kuvatekstit ovat käännöstiedostossa avaimilla `HL_<SYY>_n` ja `CAP_<SYY>_n` (lisää vain uusia numeroita, peli laskee ne itse), ja `CAP_ANY_n` sopivat mihin tahansa kuolemaan (noin kolmanneksella kerroista ne ovat mukana arvonnassa). Ensin arvotaan lööppi, jota tällä laitteella ei ole vielä nähty; vasta kun kaikki on nähty, mikä tahansa. Kuvateksti ei ole sama kuin kuudessa edellisessä. Syitä on 15: selviäminen, tappelu, auto, koira, portsari, kaatuminen, kylmä, nälkä, krapula, uupumus, pyörä, lasi, mummo, exän poikaystävä ja lakaisukone. Lööppejä on syytä kohden 5–15 ja yleisiä kuvatekstejä 12, osa reilusti härskejä.
 - **Lööppi kuolinsyyn mukaan:** peli muistaa, mikä viimeksi vei healthia (tappelu, auto, koira, portsari, kaatuminen, kylmä, nälkä, krapula, uupumus, tai selviäminen nollaan promilleen), ja lööppiin arvotaan siihen sopiva humoristinen otsikko ja kuvateksti (2–4 vaihtoehtoa kullekin).
 - **Kuva kuoleman hetkestä:** hahmo lysähtää, ja hetken päästä "lukijan kuva" otetaan eri kulmasta kuin pelikamera: katutasolta vinosti (vähän kallellaan), ylhäältä kuin ikkunasta tai tekijän olan yli. Kuva on seepiansävyinen, rakeinen ja reunoilta tumma kuin sanomalehdessä. Lööpissä on iso kuva, sen vieressä kuvateksti ja alla "Kuva: lukijan kuva".
 

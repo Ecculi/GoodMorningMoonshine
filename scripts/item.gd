@@ -1,7 +1,7 @@
 extends Node3D
 ## An item on the street, in the player's hand, or flying after a throw.
 
-enum Kind { BOTTLE, CAN, FOOD, COIN, COFFEE, ENERGY, PILLS, BAG, FLYER }
+enum Kind { BOTTLE, CAN, FOOD, COIN, COFFEE, ENERGY, PILLS, BAG, FLYER, FLOWER }
 enum St { GROUND, HELD, FLYING }
 
 
@@ -67,6 +67,12 @@ func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:
 			for sx in [-0.05, 0.05]:
 				var hd := _cyl(0.012, 0.09, white, Vector3(sx, 0.27, 0))
 				hd.rotation.z = -sx * 6.0
+		Kind.FLOWER:
+			# A single red rose from the kiosk (a gift).
+			_cyl(0.008, 0.3, Color(0.2, 0.55, 0.2), Vector3(0, 0.15, 0))
+			_cyl(0.035, 0.05, Color(0.85, 0.08, 0.15), Vector3(0, 0.31, 0))
+			var leaf := _cyl(0.025, 0.006, Color(0.25, 0.6, 0.25), Vector3(0.02, 0.15, 0))
+			leaf.rotation.z = 0.6
 		Kind.FLYER:
 			# A folded leaflet: plain grey, a black block of text, no slogan.
 			var sheet := _cyl(0.07, 0.006, Color(0.9, 0.9, 0.86), Vector3(0, 0.004, 0))
@@ -149,9 +155,10 @@ const SHAPES := {
 	Kind.PILLS: ["box", 0.12, 0.04, 0.02],
 	Kind.BAG: ["box", 0.2, 0.26, 0.13],
 	Kind.FLYER: ["box", 0.14, 0.02, 0.01],
+	Kind.FLOWER: ["box", 0.06, 0.34, 0.17],
 }
 const MASS := {Kind.BOTTLE: 0.8, Kind.CAN: 0.15, Kind.COFFEE: 0.3, Kind.ENERGY: 0.35, Kind.FOOD: 0.2, Kind.PILLS: 0.05,
-	Kind.FLYER: 0.03}
+	Kind.FLYER: 0.03, Kind.FLOWER: 0.05}
 ## Items fly on their own collision layer and hit the world only.
 const ITEM_LAYER := 4
 const WORLD_LAYER := 1

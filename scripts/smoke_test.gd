@@ -117,6 +117,20 @@ func _process(_delta: float) -> void:
 			main.hud.show_card("start", "", "")
 		990:
 			main.start_choice(0)
+		1020:
+			print("SMOKE: the ex")
+			main.debug_tools._ex()
+			GameState.promille = 2.8
+		1040:
+			main.open_phone()
+			main.phone_page = 0
+			main._call_ex()
+		1060:
+			for n in main.npcs.duplicate():
+				if is_instance_valid(n) and n.role == "ex":
+					n.offer_trade(main.player)
+					main.ex_chat(n)
+					main.ex_offended(n, true)
 		1100:
 			print("SMOKE: death and high scores")
 			GameState.health = -1.0

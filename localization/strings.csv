@@ -217,3 +217,94 @@ ACH_VIRAL,Viraalihitti
 ACH_VIRAL_DESC,Joudu some-vaikuttajan videolle.
 ACH_TOURIST_GUIDE,Paikallisopas
 ACH_TOURIST_GUIDE_DESC,Neuvo turistille oikea suunta nähtävyydelle.
+HL_SOBER_9,"Mies selvisi niin perusteellisesti, ettei hänestä jäänyt mitään"
+HL_SOBER_10,Krapulan välttely onnistui täydellisesti – pysyvästi
+HL_SOBER_11,"Raitistumisen sivuvaikutuksena kuolema, kertoo apteekkari"
+HL_SOBER_12,Viimeinen tippa meni ohi suun
+HL_SOBER_13,Mies kuoli selvin päin – ensimmäistä kertaa sitten rippikoulun
+HL_SOBER_14,Tipaton tammikuu venyi ikuiseksi
+CAP_SOBER_4,"Hätäkeskukseen soitettiin, mutta Alkon aukeamiseen oli vielä kaksi tuntia."
+CAP_SOBER_5,Taskusta löytyi kuitti: yksi vichy. Poliisi pitää löytöä järkyttävänä.
+CAP_SOBER_6,"Läheiset epäilevät, että vainaja joi salaa vettä."
+HL_FIGHT_10,Mies sai turpaan – ja sitten vähän lisää
+HL_FIGHT_11,"Nyrkki osui, mies ei"
+HL_FIGHT_12,Kapakkafilosofi hävisi väittelyn nyrkkien kielellä
+HL_FIGHT_13,"Katutappelu päättyi 1–0, ja se nolla on vainaja"
+HL_FIGHT_14,"Mies löi ensin, toinen lopuksi"
+HL_FIGHT_15,”Pidä mun kaljaa” – viimeiset sanat
+CAP_FIGHT_4,Tappelun syy on selvä: kumpikaan ei muista sitä.
+CAP_FIGHT_5,"Paikalle jäi hammas, joka ei ollut kummankaan."
+CAP_FIGHT_6,Poliisi tutkii tapausta pahoinpitelynä ja itsensä nolaamisena.
+HL_CAR_10,Mies ja Toyota kohtasivat – Toyota sai paremmat arvostelut
+HL_CAR_11,"Konepeltiin jäi kuva miehestä, miehestä jäi vain kuva"
+HL_CAR_12,Kuljettaja jatkoi matkaa: ”Luulin hirveksi”
+HL_CAR_13,Suojatie olisi ollut ilmainen
+CAP_CAR_7,Tuulilasiin jäi täydellinen kasvokuva. Kuljettaja aikoo kehystää sen.
+HL_DOG_7,Chihuahua kaatoi 90-kiloisen miehen – omistaja ylpeä
+HL_DOG_8,Koira merkitsi miehen reviirikseen – lahkeeseen asti
+HL_DOG_9,Mies yritti silittää väärää koiraa väärästä kohdasta
+CAP_DOG_4,Koira sai tapauksen jälkeen herkkupalan ja oman Instagram-tilin.
+HL_BOUNCER_6,Portsari: ”Sisään ei tulla housut kintuissa”
+HL_BOUNCER_7,Mies lensi baarista kauemmas kuin oli koskaan lomamatkalla käynyt
+HL_BOUNCER_8,"Ovella tarkistettiin henkkarit, kengät ja elämänhalu"
+CAP_BOUNCER_3,Portsari kertoo tehneensä vain työnsä – ja vähän ylitöitä.
+HL_FALL_7,"Mies kaatui niin komeasti, että ohikulkijat taputtivat"
+HL_FALL_8,Katukiveys voitti kasvot selvin numeroin
+HL_FALL_9,Mies otti tukea kaiteesta – kaidetta ei ollut
+HL_FALL_10,"Housut putosivat ensin, mies perässä"
+CAP_FALL_3,"Silminnäkijät antoivat kaatumiselle tyylipisteet 9,5."
+HL_COLD_7,Mies jäätyi kiinni lyhtypylvääseen – kieli edellä
+HL_COLD_8,"Paleltuma ulottui paikkoihin, joita ei perhelehdessä mainita"
+HL_COLD_9,"”Ei tää oo vielä mitään pakkasta”, sanoi mies ja muuttui jääveistokseksi"
+CAP_COLD_3,"Ruumiinavaus siirrettiin kevääseen, kun mies sulaa."
+HL_HUNGER_5,Mies kuoli nälkään grillin jonossa – vuoro olisi ollut seuraava
+HL_HUNGER_6,"Vatsa kurni niin kovaa, että naapurit soittivat poliisille"
+HL_HUNGER_7,Lokki söi miehen viimeisen makkaran ja nauroi päälle
+CAP_HUNGER_3,Taskusta löytyi kolme tyhjää nakkikääreä ja yksi toiveikas ketsuppipussi.
+HL_HANGOVER_7,Krapula kesti kauemmin kuin mies
+HL_HANGOVER_8,Aamu-ukko ei noussut – ei mieskään
+HL_HANGOVER_9,Darra iski kuin entinen anoppi
+CAP_HANGOVER_3,Viimeinen viesti puhelimessa: ”Onks kellään buranaa?”
+HL_EXHAUST_5,"Mies juoksi karkuun poliisia, koiraa ja lopulta elämää"
+HL_EXHAUST_6,Kunto loppui ennen matkaa
+CAP_EXHAUST_3,"Liikuntaneuvoja suosittelee aloittamaan maltilla, esimerkiksi kävelemällä kioskille."
+HL_BIKE_4,Fillari 1 – jalankulkija 0
+HL_BIKE_5,Sähköpotkulauta ajoi yli ja kirjautui ulos sovelluksesta
+CAP_BIKE_3,"Pyöräilijä tarkisti ensin, ettei Strava-suoritus katkennut."
+HL_GLASS_4,Mies astui paljain jaloin pullonsirpaleisiin – ja historiaan
+HL_GLASS_5,Kaupunki muistuttaa kenkien hyödyistä
+CAP_GLASS_3,Toinen kenkä löytyi myöhemmin naapurin parvekkeelta. Toinen ei koskaan.
+HL_GRANNY_5,Mummo tarjosi kahvit – ja käsilaukusta
+HL_GRANNY_6,84-vuotias treenaa yhä – nyt tiedetään miksi
+CAP_GRANNY_3,Mummo kertoo lyöneensä vain ”ihan vähäsen”.
+HL_EX_1,Exän uusi mies: ”Hän aloitti”
+HL_EX_2,Mies yritti saada exän takaisin – sai uuden miehen nyrkistä
+HL_EX_3,"Exä: ”Tiesin, että tässä käy näin”"
+HL_EX_4,"Entinen rakas, nykyinen kuolinsyy"
+HL_EX_5,Exän salikundi nosti miehen penkiltä – lopullisesti
+HL_EX_6,"”Hän oli aina vähän liikaa”, kommentoi exä"
+CAP_EX_1,"Exä vahvistaa, että kyseessä oli ”se viimeinen kerta”."
+CAP_EX_2,"Uusi poikaystävä kertoo käyneensä salilla jo aamulla, jalkapäivänä."
+CAP_EX_3,"Exä ei halunnut kuvaan. Uusi mies halusi, paita pois."
+HL_SWEEPER_1,Katulakaisukone siivosi kadun – ja miehen
+HL_SWEEPER_2,Kaupungin siivouspäivä onnistui yli odotusten
+HL_SWEEPER_3,Mies jäi harjojen alle – kuljettaja: ”Luulin roskaksi”
+CAP_SWEEPER_1,Kone jatkoi matkaa ja imaisi vielä kaksi tölkkiä.
+CAP_SWEEPER_2,Kaupunki muistuttaa: siivouspäivänä kadulla ei kannata maata.
+CAP_ANY_2,Vainajan housut olivat tapahtumahetkellä takaperin.
+CAP_ANY_3,"Taskuista löytyi 37 senttiä, kaksi korkkia ja yhden naisen puhelinnumero väärin kirjoitettuna."
+CAP_ANY_4,Silminnäkijä: ”Hän oli juuri kertomassa parasta vitsiään.”
+CAP_ANY_5,Läheisten mukaan vainaja oli ”aina vähän sellainen”.
+CAP_ANY_6,Kuvaan tarttui myös tuntematon pakara. Toimitus pahoittelee.
+CAP_ANY_7,Vainajan viimeinen toive oli kebab. Toive ei toteutunut.
+CAP_ANY_8,"Paikalle kokoontui nopeasti yleisöä, joista kolme kuvasi ja yksi söi makkaraa."
+CAP_ANY_9,"Poliisi ei epäile rikosta, mutta epäilee kaikkea muuta."
+CAP_ANY_10,"Tapahtumapaikalta löytyi myös rintaliivit, joiden alkuperä on epäselvä."
+CAP_ANY_11,"Ex-vaimo kieltäytyi kommentoimasta, mutta hymyili."
+CAP_ANY_12,Lokki kävi ottamassa vainajalta vielä viimeisen ranskalaisen.
+ACH_DONT_CALL,Älä soita exälle
+ACH_DONT_CALL_DESC,Soita exälle kovassa humalassa.
+ACH_NEVER_AGAIN,Ei ikinä enää
+ACH_NEVER_AGAIN_DESC,Selviä päivästä 10 tapaamatta exää.
+ACH_EX_BACK,Takaisin saatu
+ACH_EX_BACK_DESC,Saa hukattu tavara takaisin exältä.
