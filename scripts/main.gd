@@ -21,6 +21,8 @@ const ModalUI = preload("res://scripts/modal_ui.gd")
 const DebugTools = preload("res://scripts/debug_tools.gd")
 const Car = preload("res://scripts/car.gd")
 const Sweeper = preload("res://scripts/sweeper.gd")
+const Sfx = preload("res://scripts/sfx.gd")
+const Music = preload("res://scripts/music.gd")
 
 ## Battery use per second while the phone is open, by page.
 ## Battery per second of use, by page. Drains only while the phone is open.
@@ -63,6 +65,8 @@ const EDGE_LIMIT_X := 21.0
 
 var player
 var hud
+## Sound effects (see sfx.gd).
+var sfx
 var camera: Camera3D
 var sun: DirectionalLight3D
 var env: Environment
@@ -138,6 +142,17 @@ var _focus_y := 0.58
 
 func _ready() -> void:
 	rng.randomize()
+	sfx = Sfx.new()
+	sfx.main = self
+	add_child(sfx)
+	var music = Music.new()
+	music.main = self
+	add_child(music)
+	# CI: `-- --smoke` drives the game through late days and special days.
+	if OS.get_cmdline_user_args().has("--smoke"):
+		var smoke = load("res://scripts/smoke_test.gd").new()
+		smoke.main = self
+		add_child(smoke)
 	_build_environment()
 	_build_physics_ground()
 	_build_clouds()
@@ -453,6 +468,13 @@ func _populate_block() -> void:
 				var bo = _spawn_npc(false, "bouncer")
 				bo.position = Vector3(sh["x"] + 1.0, 0, -7.3)
 				bo.post = bo.position
+	# The little task of the day: the pal waits here.
+	var tk: Dictionary = GameState.task
+	if not tk.is_empty() and tk["seg"] == segment and not tk["done"]:
+		var pal = _spawn_npc(false, "pal")
+		pal.position = Vector3(tk["x"], 0, -6.6)
+		pal.dir = 1 if player.position.x > tk["x"] else -1
+		pal.set_want(tk["want"])
 	if level.has_meta("checkpoint"):
 		# Two officers at the breath test, one on each sidewalk.
 		for z in [-6.2, 3.8]:
@@ -928,6 +950,9 @@ func try_enter_door(pos: Vector3) -> bool:
 	if segment == CityMap.police_station() and absf(pos.x - CityMap.police_door_x()) < 0.9 and pos.z < -6.0:
 		_police_desk()
 		return true
+	if segment == CityMap.church() and absf(pos.x - CityMap.CHURCH_DOOR_X) < 1.0 and pos.z < -6.0:
+		_church_door()
+		return true
 	if segment != GameState.home_seg:
 		return false
 	if absf(pos.x - GameState.home_x) > 0.9 or pos.z > -6.0:
@@ -1072,6 +1097,22 @@ func _new_day() -> void:
 	_save_morning(GameState.wake_seg, GameState.wake_pos, facing)
 	if GameState.sleep_place == "jail":
 		_cellmate()
+
+
+## Church: once a day a warm-up inside; on Sundays communion wine too.
+func _church_door() -> void:
+	var door := Vector3(CityMap.CHURCH_DOOR_X, 2.6, -7.4)
+	if GameState.church_day == GameState.day:
+		popup("…", door, Color(0.9, 0.9, 0.9))
+		return
+	GameState.church_day = GameState.day
+	GameState.warm_up(40.0)
+	GameState.wet = 0.0  # dried by the radiator
+	popup_icon(heart_texture(), door)
+	if GameState.is_sunday():
+		var it = spawn_item(Item.Kind.BOTTLE, player.position, 1, Item.Drink.WINE)
+		player._pickup(it)
+		popup("✝", door + Vector3(0, 0.5, 0), Color(1, 0.9, 0.5), 1.4)
 
 
 ## Police station desk: confiscated things are handed back with an ID card.
@@ -1303,7 +1344,16 @@ func _update_shake(delta: float) -> void:
 	camera.v_offset = randf_range(-1.0, 1.0) * _shake * 0.6
 
 
+## Popups that are sounds too ("glug", a bark, a bell...).
+const POPUP_SOUNDS := {"glug": "glug", "Hau!": "bark", "Vuh!": "bark", "Vink!": "whimper", "kling!": "bell",
+	"piip!": "horn", "SPLASH!": "splash", "slurp": "slurp", "rits!": "tear", "KOPS!": "hit", "Kärpät!": "cheer"}
+
+
 func popup(text: String, pos: Vector3, color: Color, size := 1.0) -> void:
+	if POPUP_SOUNDS.has(text):
+		sfx.play(POPUP_SOUNDS[text], pos)
+	elif text == "Grr":
+		sfx.play("bark", pos, -4.0, 0.6)
 	var l := Label3D.new()
 	l.text = text
 	l.font_size = 64
@@ -1790,7 +1840,8 @@ func lost_swept(ln) -> void:
 	for attempt in 100:
 		var cand := CityMap.random_segment(rng)
 		var d := GameState.seg_distance(cand, segment)
-		if d >= 2.0 and d <= 4.0 and CityMap.is_open(cand):
+		var far := 3.0 if id == "shoes" else 4.0
+		if d >= 2.0 and d <= far and CityMap.is_open(cand):
 			seg = cand
 			break
 	GameState.placements[id] = [seg, Vector3(rng.randf_range(-12.0, 12.0), 0.0, _random_z())]

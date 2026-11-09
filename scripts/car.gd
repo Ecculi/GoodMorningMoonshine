@@ -115,6 +115,7 @@ func _process(_delta: float) -> void:
 		_brake_in -= dt
 		if _brake_in < 0.0:
 			braking = true
+			main.sfx.play("brake", position)
 	if braking:
 		# Emergency stop, wait a moment, then drive on.
 		speed = move_toward(speed, 0.0, 26.0 * dt)
@@ -279,6 +280,7 @@ func _check_hits() -> void:
 	var p = main.player
 	if not p.is_helpless() and p.car_grace <= 0.0 and absf(p.position.x - position.x) < HALF_LEN + 0.3 and absf(p.position.z - position.z) < 1.1:
 		_hit_cool = 1.0
+		main.sfx.play("bump", p.position + Vector3(0, 1.0, 0), 3.0)
 		var r: float = main.rng.randf()
 		if r < 0.65:
 			# The bumper hits: thrown at once as a rag doll, further the

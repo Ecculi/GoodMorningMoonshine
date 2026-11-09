@@ -81,6 +81,19 @@ jobs:
             exit 1
           fi
 
+      # The quick run above only sees the start of day 1. The smoke test
+      # (scripts/smoke_test.gd) jumps to day 10, switches the special days
+      # on, spawns every kind of character and plays about by itself.
+      - name: Smoke test
+        run: |
+          timeout 180 ~/godot/godot --headless --path . --quit-after 4000 -- --smoke > smoke.log 2>&1 || true
+          grep "SMOKE:" smoke.log || true
+          if grep -E "SCRIPT ERROR|Parse Error|Failed to load script|Compile Error|ERROR: .*\.gd" smoke.log; then
+            grep -A4 "SCRIPT ERROR" smoke.log | head -150
+            echo "::error::Script errors in the smoke test (see above)"
+            exit 1
+          fi
+
       # Release build: the debug tools are still there behind F1 -> F12.
       - name: Export
         run: |

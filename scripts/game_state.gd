@@ -241,6 +241,7 @@ func _process(delta: float) -> void:
 		active = false
 		_tick_body(delta, false)
 		cold = maxf(0.0, cold - COLD_INDOOR_WARM * delta)
+		wet = maxf(0.0, wet - delta)  # clothes dry indoors
 		return
 	if modal != "":
 		world_dt = 0.0
@@ -354,16 +355,33 @@ func cold_rate() -> float:
 	var r: float = COLD_WEATHER.get(weather, 0.0)
 	if frost:
 		r += FROST_COLD
-	if is_lost("jacket"):
+	if is_lost("jacket") or wet > 0.0:
 		r += 0.3
-	if is_lost("shoes") and (weather == "rain" or weather == "snow" or frost):
+	if (is_lost("shoes") or wet > 0.0) and (weather == "rain" or weather == "snow" or frost or wet > 0.0):
 		r += 0.2
+	if wet > 0.0:
+		r += WET_COLD
 	if r > 0.0 and promille > PROMILLE_DRUNK:
 		r *= 0.6
 	# Running keeps you warm.
 	if running and moving:
 		r -= COLD_RUN_WARM
 	return r
+
+
+## Soaked from falling into the water: seconds of drying indoors still
+## needed (0 = dry). While wet the cold grows fast, as if the jacket and
+## shoes were missing; the cold water also wakes you up.
+var wet := 0.0
+const WET_DRY_TIME := 20.0
+const WET_COLD := 1.2
+const WET_AWAKE := 40.0
+
+
+func soak() -> void:
+	wet = WET_DRY_TIME
+	tired = maxf(0.0, tired - WET_AWAKE)
+	cold = minf(100.0, cold + 25.0)
 
 
 ## Warms the character up right away (a punch, a strong drink).
@@ -613,6 +631,7 @@ func new_game() -> void:
 	jitter_t = 0.0
 	focus_t = 0.0
 	trip_t = 0.0
+	wet = 0.0
 	doze_t = -1.0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
@@ -624,8 +643,11 @@ func new_game() -> void:
 		forced_city = -1
 	else:
 		CityMap.set_city(rng.randi() % CityMap.CITIES.size())
+	weekday = rng.randi() % 7
+	has_watch = false
+	church_day = -1
 	home_seg = CityMap.random_segment(rng)
-	while CityMap.far_side_is_sea(home_seg) or home_seg == CityMap.police_station():
+	while CityMap.far_side_is_sea(home_seg) or home_seg == CityMap.police_station() or home_seg == CityMap.church():
 		home_seg = CityMap.random_segment(rng)
 	home_x = rng.randf_range(-11.0, 11.0)
 	home_type = ["flat", "basement", "friend"][rng.randi() % 3]
@@ -639,6 +661,7 @@ func new_game() -> void:
 	_lose_items()
 	_place_lost_items()
 	_make_phone_hints()
+	task = {}
 	modal = ""
 	over = false
 
@@ -657,6 +680,7 @@ func new_day() -> void:
 		soiled = false
 	yesterday_max = maxf(today_max, at_sleep)
 	day += 1
+	weekday = (weekday + 1) % 7
 	match sleep_place:
 		"home":
 			promille = clampf(0.4 + maxf(at_sleep - 1.5, 0.0) * 0.3, 0.3, 1.5)
@@ -686,6 +710,7 @@ func new_day() -> void:
 	focus_t = 0.0
 	trip_t = 0.0
 	painkiller_t = 0.0
+	wet = 0.0
 	doze_t = -1.0
 	strain = 0.0
 	exhausted = false
@@ -714,6 +739,7 @@ func new_day() -> void:
 	_lose_items()
 	_place_lost_items()
 	_make_phone_hints()
+	_roll_task(wake_seg)
 	modal = ""
 	over = false
 
@@ -763,6 +789,45 @@ func _roll_special() -> void:
 			special_day = k
 			return
 		r -= SPECIAL_CHANCE[k]
+
+
+## Day of the week: 0 = Monday ... 6 = Sunday. The first day of a game is
+## a random one and the player isn't told; a wristwatch (pickpocketed
+## from someone) shows it. On Sundays the church hands out communion wine.
+var weekday := 0
+var has_watch := false
+## The last day the church door was used (once a day).
+var church_day := -1
+const WATCH_CHANCE := 0.12
+
+
+func is_sunday() -> bool:
+	return weekday == 6
+
+
+## Little task of the day (0 or 1, from TASK_FROM_DAY): a pal somewhere
+## near wants something brought to them: "food" (a sausage) or "bottle".
+## {"want", "seg", "x", "done"} or {}. Shown as a picture in the pal's
+## thought bubble and as a phone message with the street; bring it and
+## press the button next to them: money and bonus points.
+const TASK_FROM_DAY := 2
+const TASK_CHANCE := 0.6
+const TASK_BONUS := 300
+var task := {}
+
+
+func _roll_task(start: Vector3i) -> void:
+	task = {}
+	if day < TASK_FROM_DAY or rng.randf() > TASK_CHANCE:
+		return
+	for attempt in 100:
+		var cand := CityMap.random_segment(rng)
+		var d := seg_distance(cand, start)
+		if d >= 1.0 and d <= 3.0 and not CityMap.closed.has(cand):
+			task = {"want": "food" if rng.randf() < 0.5 else "bottle", "seg": cand,
+				"x": rng.randf_range(-12.0, 12.0), "done": false}
+			phone_msgs.push_front({"icon": "task_" + task["want"], "street": CityMap.street_name(cand)})
+			return
 
 
 ## Breath test checkpoint: from CHECKPOINT_FROM_DAY, some mornings the
@@ -860,6 +925,9 @@ func _lose_items() -> void:
 		lost.append(pool[i])
 
 
+const SHOES_MAX_DIST := 3.0
+
+
 ## Lost items lie in blocks near home; the area grows day by day.
 ## They are placed anew every morning.
 func _place_lost_items() -> void:
@@ -886,6 +954,10 @@ func _place_lost_items() -> void:
 				ok = absf(c.x - start_c.x) + absf(c.y - start_c.y) <= 1.0 and cand != home_seg
 			else:
 				ok = absf(c.x - home_c.x) + absf(c.y - home_c.y) <= radius and cand != home_seg
+				# Shoes are never more than SHOES_MAX_DIST blocks from where the
+				# day starts: walking barefoot far is no fun.
+				if id == "shoes" and absf(c.x - start_c.x) + absf(c.y - start_c.y) > SHOES_MAX_DIST:
+					ok = false
 			if ok:
 				seg = cand
 				break
@@ -1010,7 +1082,7 @@ const SAVE_KEYS := [
 	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
 	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
 	"placements", "dog_items", "carried_items", "high_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
-	"weather", "storm", "frost", "special_day", "booth_segs", "checkpoint_segs", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
+	"weather", "storm", "frost", "special_day", "booth_segs", "checkpoint_segs", "task", "weekday", "has_watch", "church_day", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
 ]
 
 
@@ -1050,6 +1122,8 @@ func load_save() -> Dictionary:
 	jitter_t = 0.0
 	focus_t = 0.0
 	trip_t = 0.0
+	painkiller_t = 0.0
+	wet = 0.0
 	doze_t = -1.0
 	busy_time = 0.0
 	hit_stop_t = 0.0

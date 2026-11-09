@@ -209,6 +209,8 @@ var _found_t := 0.0
 
 
 func show_found(id: String) -> void:
+	if main != null:
+		main.sfx.play("found")
 	_found_id = id
 	_found_t = FOUND_TIME
 
@@ -266,6 +268,8 @@ var _ach_t := 0.0
 
 
 func show_achievement(id: String) -> void:
+	if main != null:
+		main.sfx.play("achievement")
 	_ach_queue.append(id)
 
 
@@ -446,6 +450,7 @@ func _draw() -> void:
 	_draw_police_vision()
 	_draw_offscreen_lost(vs)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
+	_draw_watch(Vector2(186, 100))
 	_draw_phone_icon(vs, font)
 	_draw_charge()
 	_draw_shading_hand(vs)
@@ -465,6 +470,8 @@ func _draw() -> void:
 	_draw_lost_list(vs)
 	if _bubble_on and mode == "" and GameState.modal == "":
 		_draw_pocket_check(vs)
+	elif mode == "" and GameState.modal == "":
+		_draw_needs(vs)
 
 	if mode == "day":
 		draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, clampf(card_time * 2.0, 0.0, 0.9)))
@@ -618,6 +625,28 @@ func _draw_bottle(origin: Vector2, promille: float, font: Font) -> void:
 	var pos := Vector2(origin.x, origin.y + 74)
 	draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_CENTER, 44, 15, 5, Color.BLACK)
 	draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_CENTER, 44, 15, Color.WHITE)
+
+
+## Wristwatch (once pickpocketed): a little watch face with seven pips
+## for the days of the week, today's lit (Sunday's pip is red).
+func _draw_watch(c: Vector2) -> void:
+	if not GameState.has_watch:
+		return
+	draw_rect(Rect2(c + Vector2(-6, -24), Vector2(12, 48)), Color(0.35, 0.25, 0.18))  # strap
+	draw_circle(c, 17.0, Color(0.75, 0.75, 0.78))
+	draw_circle(c, 14.0, Color(0.97, 0.97, 0.95))
+	var mins := GameState.clock_min
+	var ha := (mins / 60.0) / 12.0 * TAU - PI * 0.5
+	var ma := fmod(mins, 60.0) / 60.0 * TAU - PI * 0.5
+	draw_line(c, c + Vector2(cos(ha), sin(ha)) * 7.0, Color(0.1, 0.1, 0.1), 2.5)
+	draw_line(c, c + Vector2(cos(ma), sin(ma)) * 11.0, Color(0.1, 0.1, 0.1), 1.5)
+	for i in 7:
+		var pc := c + Vector2(26 + i * 9, 0)
+		var today := i == GameState.weekday
+		var col := Color(0.85, 0.15, 0.15) if i == 6 else Color(0.95, 0.95, 0.95)
+		draw_circle(pc, 4.5 if today else 3.0, col if today else Color(col.r, col.g, col.b, 0.35))
+		if today:
+			draw_arc(pc, 6.0, 0, TAU, 12, Color(1, 1, 1, 0.9), 1.5, true)
 
 
 func _draw_coin(center: Vector2, amount: int, font: Font) -> void:
@@ -907,6 +936,11 @@ func _draw_trade_hint() -> void:
 	_hint_arrow(sp + Vector2(-8, 0), 1.0)
 	if n.role == "politician":
 		_hint_action(sp + Vector2(22, 0), "ACT_DRINK", 1.0)  # free coffee
+		return
+	if n.role == "pal":
+		# What they want -> a coin.
+		_hint_action(sp + Vector2(14, 0), "ACT_EAT" if n.want_kind == "food" else "ACT_DRINK", 1.0)
+		draw_circle(sp + Vector2(40, 0), 9.0, Color(0.95, 0.75, 0.2))
 		return
 	# A coin.
 	var cc := sp + Vector2(14, 0)
@@ -1305,6 +1339,158 @@ func warmth(id: String) -> float:
 		return lerpf(0.75, 1.0, 1.0 - clampf(d / 20.0, 0.0, 1.0))
 	var bd: float = GameState.seg_distance(main.segment, pl[0])
 	return clampf(0.75 - (bd - 0.5) * 0.3, 0.0, 0.6)
+
+
+# --- What's wrong: a thought bubble with pictures ----------------------------
+
+## Now and then (and whenever something new goes wrong) a thought bubble
+## above the head shows the character's worst troubles as little picture
+## pairs, "trouble -> what helps": hungry -> sausage, cold -> a warm door,
+## tired -> coffee, hangover -> a drink, hurting -> a drink, soaked -> a
+## warm door. At most two pairs at a time.
+const NEEDS_SHOW := 3.5
+const NEEDS_EVERY := 25.0
+var _needs: Array = []
+var _needs_t := 0.0
+var _needs_cd := 4.0
+var _needs_seen := {}
+
+
+func _current_needs() -> Array:
+	var list: Array = []
+	if GameState.hangover_drain() > 0.0:
+		list.append([3.0, "hangover"])
+	if GameState.health < 30.0:
+		list.append([2.5, "hurt"])
+	if GameState.hunger >= GameState.HUNGER_HURTS - 10.0:
+		list.append([GameState.hunger / 40.0, "hungry"])
+	if GameState.cold >= GameState.COLD_SHIVER + 15.0:
+		list.append([GameState.cold / 40.0, "cold"])
+	if GameState.wet > 0.0:
+		list.append([2.2, "wet"])
+	if GameState.tired >= 70.0:
+		list.append([GameState.tired / 40.0, "tired"])
+	list.sort_custom(func(a, b): return a[0] > b[0])
+	var ids: Array = []
+	for e in list:
+		ids.append(e[1])
+	return ids.slice(0, 2)
+
+
+func _update_needs(dt: float) -> void:
+	var now := _current_needs()
+	var fresh := false
+	for id in now:
+		if not _needs_seen.has(id):
+			fresh = true
+	_needs_seen.clear()
+	for id in now:
+		_needs_seen[id] = true
+	if _needs_t > 0.0:
+		_needs_t -= dt
+		return
+	_needs_cd -= dt
+	if now.is_empty():
+		return
+	if fresh or _needs_cd <= 0.0:
+		_needs = now
+		_needs_t = NEEDS_SHOW
+		_needs_cd = NEEDS_EVERY
+
+
+func _draw_needs(vs: Vector2) -> void:
+	if main == null or main.player == null or GameState.over:
+		return
+	_update_needs(GameState.world_dt if GameState.world_dt > 0.0 else get_process_delta_time() * 0.25)
+	if _needs_t <= 0.0 or _needs.is_empty():
+		return
+	var head: Vector3 = main.player.global_position + Vector3(0, 2.3, 0)
+	if main.camera.is_position_behind(head):
+		return
+	var a := clampf(_needs_t / 0.4, 0.0, 1.0) * clampf((NEEDS_SHOW - _needs_t) / 0.25, 0.0, 1.0)
+	var anchor: Vector2 = main.camera.unproject_position(head)
+	var pair_w := 96.0
+	var w := _needs.size() * pair_w + 20.0
+	var h := 64.0
+	var center := anchor + Vector2(-30, -h * 0.5 - 46)
+	center.x = clampf(center.x, w * 0.5 + 8, vs.x - w * 0.5 - 8)
+	center.y = maxf(center.y, h * 0.5 + 8)
+	var r := _cloud(anchor, center, w, h, a)
+	for i in _needs.size():
+		var c := Vector2(r.position.x + 10 + pair_w * (i + 0.5), center.y)
+		_need_icon(_needs[i], c - Vector2(26, 0), a)
+		draw_colored_polygon(PackedVector2Array([c + Vector2(-4, -5), c + Vector2(4, 0), c + Vector2(-4, 5)]),
+			Color(0.3, 0.3, 0.35, a))
+		_need_help_icon(_needs[i], c + Vector2(26, 0), a)
+
+
+## The thought cloud (as in the morning pocket check); returns its rect.
+func _cloud(anchor: Vector2, center: Vector2, w: float, h: float, a: float) -> Rect2:
+	var white := Color(1, 1, 1, 0.92 * a)
+	var edge := Color(0.2, 0.2, 0.25, 0.8 * a)
+	draw_circle(anchor + Vector2(-6, -10), 5.0, white)
+	draw_circle(anchor + Vector2(-14, -26), 8.0, white)
+	var r := Rect2(center - Vector2(w, h) * 0.5, Vector2(w, h))
+	var bumps := maxi(3, int(w / 34.0))
+	for pass_i in 2:
+		var grow := 0.0 if pass_i == 0 else -2.0
+		var col := edge if pass_i == 0 else white
+		for i in bumps + 1:
+			var x := lerpf(r.position.x + h * 0.3, r.end.x - h * 0.3, float(i) / bumps)
+			draw_circle(Vector2(x, r.position.y + h * 0.3), h * 0.32 + grow, col)
+			draw_circle(Vector2(x, r.end.y - h * 0.3), h * 0.32 + grow, col)
+		draw_rect(r.grow(-2.0 + grow), col)
+	return r
+
+
+func _need_icon(id: String, c: Vector2, a: float) -> void:
+	match id:
+		"hungry":
+			# A stomach, rumbling.
+			var col := Color(0.9, 0.55, 0.5, a)
+			draw_circle(c, 11.0, col)
+			draw_circle(c + Vector2(6, 7), 7.0, col)
+			for k in 3:
+				draw_arc(c + Vector2(-16 - k * 3, 0), 4.0 + k * 3, -0.8, 0.8, 6, Color(0.3, 0.3, 0.35, a), 1.5)
+		"cold":
+			# A snowflake.
+			for k in 3:
+				var d := Vector2(cos(k * PI / 3.0), sin(k * PI / 3.0)) * 12.0
+				draw_line(c - d, c + d, Color(0.35, 0.65, 1.0, a), 3.0)
+		"tired":
+			var font := get_theme_default_font()
+			draw_string(font, c + Vector2(-12, 6), "Z", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.3, 0.35, 0.6, a))
+			draw_string(font, c + Vector2(2, -4), "z", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.3, 0.35, 0.6, a))
+		"hangover":
+			# A shaky empty bottle.
+			var t := Time.get_ticks_msec() / 60.0
+			var o := Vector2(sin(t) * 1.5, 0)
+			draw_rect(Rect2(c + o + Vector2(-5, -4), Vector2(10, 16)), Color(0.55, 0.6, 0.55, a), false, 2.0)
+			draw_rect(Rect2(c + o + Vector2(-2, -12), Vector2(4, 8)), Color(0.55, 0.6, 0.55, a), false, 2.0)
+		"hurt":
+			_draw_heart(c, 26.0, 0.2)
+		"wet":
+			var blue := Color(0.3, 0.55, 1.0, a)
+			draw_circle(c + Vector2(0, 4), 8.0, blue)
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-7, 1), c + Vector2(0, -13), c + Vector2(7, 1)]), blue)
+
+
+func _need_help_icon(id: String, c: Vector2, a: float) -> void:
+	match id:
+		"hungry":
+			_hint_action(c, "ACT_EAT", a)
+		"cold", "wet":
+			# Warmth indoors: a lit doorway.
+			draw_rect(Rect2(c + Vector2(-9, -13), Vector2(18, 26)), Color(0.95, 0.8, 0.45, a))
+			draw_rect(Rect2(c + Vector2(-9, -13), Vector2(18, 26)), Color(0.35, 0.22, 0.15, a), false, 2.0)
+		"tired":
+			# A cup of coffee with steam.
+			draw_rect(Rect2(c + Vector2(-7, -4), Vector2(14, 14)), Color(0.95, 0.95, 0.93, a))
+			draw_arc(c + Vector2(8, 3), 4.0, -PI * 0.5, PI * 0.5, 8, Color(0.95, 0.95, 0.93, a), 2.0)
+			draw_line(c + Vector2(-2, -7), c + Vector2(0, -12), Color(0.6, 0.6, 0.65, a), 1.5)
+			draw_line(c + Vector2(3, -7), c + Vector2(5, -12), Color(0.6, 0.6, 0.65, a), 1.5)
+		_:
+			_hint_action(c, "ACT_DRINK", a)
 
 
 ## Morning: a thought bubble above the character's head with the things

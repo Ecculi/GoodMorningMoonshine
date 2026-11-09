@@ -26,13 +26,15 @@ var _root: Node3D
 
 
 ## Bottle contents: what it is and how much it raises the per mille.
-enum Drink { BOTTLE, BEER, SPIRITS, MYSTERY }
-const DRINK_PROMILLE := {Drink.BOTTLE: 0.4, Drink.BEER: 0.25, Drink.SPIRITS: 0.6, Drink.MYSTERY: 0.9}
+enum Drink { BOTTLE, BEER, SPIRITS, MYSTERY, WINE }
+const DRINK_PROMILLE := {Drink.BOTTLE: 0.4, Drink.BEER: 0.25, Drink.SPIRITS: 0.6, Drink.MYSTERY: 0.9,
+	Drink.WINE: 0.35}
 const DRINK_COLOR := {Drink.BOTTLE: Color(0.18, 0.42, 0.2), Drink.BEER: Color(0.45, 0.25, 0.08),
-	Drink.SPIRITS: Color(0.85, 0.9, 0.95), Drink.MYSTERY: Color(0.55, 0.2, 0.7)}
+	Drink.SPIRITS: Color(0.85, 0.9, 0.95), Drink.MYSTERY: Color(0.55, 0.2, 0.7), Drink.WINE: Color(0.45, 0.05, 0.12)}
 var drink: Drink = Drink.BOTTLE
 ## How much a drink warms up a cold character: strong stuff burns warm.
-const DRINK_WARMTH := {Drink.BOTTLE: 5.0, Drink.BEER: 0.0, Drink.SPIRITS: 25.0, Drink.MYSTERY: 20.0}
+const DRINK_WARMTH := {Drink.BOTTLE: 5.0, Drink.BEER: 0.0, Drink.SPIRITS: 25.0, Drink.MYSTERY: 20.0,
+	Drink.WINE: 8.0}
 
 
 func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:
@@ -311,6 +313,7 @@ func _break() -> void:
 		return
 	state = St.GROUND
 	main.popup("*", global_position + Vector3(0, 0.4, 0), Color(0.6, 0.9, 0.6))
+	main.sfx.play("break", global_position)
 	main.spawn_glass(global_position, DRINK_COLOR[drink])
 	if _body != null and is_instance_valid(_body):
 		_body.queue_free()

@@ -35,6 +35,9 @@ extends Node3D
 ## - "fan": (Kärpät day) a hockey fan in yellow and black with a flag;
 ##   meeting the player, hugs them and often hands over a beer. Some are
 ##   rowdy and pick a fight; hit one and every fan in the block comes.
+## - "pal": (the little task of the day) an acquaintance waiting in one
+##   spot with a thought bubble of what they want (a sausage or a bottle);
+##   bring it and press the button next to them for money and points.
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -48,6 +51,8 @@ const Ragdoll = preload("res://scripts/ragdoll.gd")
 enum S { WALK, FIGHT, STUNNED, KO, LEAVE, CHASE, RETURN }
 
 const EDGE_X := 25.0
+## Middle of the crossing street at either end of the block.
+const SIDE_STREET_X := 19.5
 ## Faster than the player walks (2.6), slower than running (6.4): walking
 ## away is no escape, running is.
 const CHASE_SPEED := 3.2
@@ -284,6 +289,11 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 				model.hand.add_child(half)
 			speed = rng.randf_range(1.2, 1.7)
 			rowdy = rng.randf() < 0.25
+		"pal":
+			model = PersonModel.new(Color(0.3, 0.5, 0.35), Color(0.25, 0.25, 0.3), skin,
+				HAIRS[rng.randi() % HAIRS.size()], 1.0)
+			_head_box(Vector3(0.0, 1.84, 0), Vector3(0.3, 0.1, 0.34), Color(0.75, 0.2, 0.2))  # beanie
+			stationary = true
 		"canvasser":
 			model = PersonModel.new(Color(0.3, 0.32, 0.36), Color(0.2, 0.2, 0.22), skin,
 				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.97, 1.04))
@@ -474,7 +484,8 @@ func is_lawman() -> bool:
 ## Beggar, street drunk or someone carrying a lost thing: the action
 ## button trades instead of punching.
 func is_trader() -> bool:
-	return (role == "beggar" or role == "drunk" or role == "politician" or carry_id != "") and state == S.WALK
+	return (role == "beggar" or role == "drunk" or role == "politician" or role == "pal" or carry_id != "") \
+		and state == S.WALK
 
 
 ## Carrying one of the player's lost things (a passer-by who picked it
@@ -608,6 +619,21 @@ func offer_trade(p: Node3D) -> bool:
 		GameState.busy_time = maxf(GameState.busy_time, 0.6)
 		return true
 	match role:
+		"pal":
+			var want: int = Item.Kind.FOOD if want_kind == "food" else Item.Kind.BOTTLE
+			if p.hand_item == null or p.hand_item.kind != want:
+				main.popup("?", top, Color(1, 1, 1))
+				return true
+			p._consume_hand_item()
+			trades_left = 0
+			_hide_bubble()
+			var pay: int = main.rng.randi_range(4, 8)
+			GameState.money += pay
+			GameState.bonus += GameState.TASK_BONUS
+			GameState.task["done"] = true
+			model.punch()
+			main.popup("♥", top, Color(1, 0.5, 0.6), 1.3)
+			main.popup("+%d €" % pay, p.position + Vector3(0, 2.4, 0), Color(1, 0.85, 0.3))
 		"politician":
 			# A handshake, a big smile and a free coffee.
 			model.punch()
@@ -810,6 +836,14 @@ func _show_bubble(kind: String) -> void:
 			var fruit := [Color(0.95, 0.5, 0.1), Color(0.3, 0.7, 0.2), Color(0.9, 0.2, 0.2)]
 			for k in 3:
 				_bub_box(Vector3(-0.09 + k * 0.09, -0.07, z + 0.01), Vector3(0.05, 0.05, 0.02), fruit[k])
+		"food":
+			# A sausage.
+			_bub_ball(Vector3(-0.12, 0.0, z), Vector3(0.1, 0.1, 0.02), Color(0.78, 0.32, 0.25))
+			_bub_ball(Vector3(0.12, 0.0, z), Vector3(0.1, 0.1, 0.02), Color(0.78, 0.32, 0.25))
+			_bub_box(Vector3(0, 0.0, z), Vector3(0.24, 0.1, 0.02), Color(0.78, 0.32, 0.25))
+		"bottle":
+			_bub_box(Vector3(0, -0.06, z), Vector3(0.1, 0.24, 0.02), Color(0.2, 0.5, 0.25))
+			_bub_box(Vector3(0, 0.12, z), Vector3(0.04, 0.12, 0.02), Color(0.2, 0.5, 0.25))
 		"station":
 			_bub_box(Vector3(0, -0.08, z), Vector3(0.4, 0.2, 0.02), Color(0.65, 0.3, 0.22))
 			_bub_box(Vector3(0, 0.12, z), Vector3(0.1, 0.2, 0.02), Color(0.65, 0.3, 0.22))
@@ -923,6 +957,16 @@ func _fan(_dt: float) -> bool:
 			p._pickup(it)
 	GameState.busy_time = maxf(GameState.busy_time, 1.0)
 	return true
+
+
+## Pal: what they want ("food" or "bottle"), shown in a thought bubble.
+var want_kind := ""
+
+
+func set_want(kind: String) -> void:
+	want_kind = kind
+	trades_left = 1
+	_show_bubble(kind)
 
 
 ## Canvasser: notices the player within CANVASS_NOTICE, then sticks about
@@ -1436,11 +1480,21 @@ func _walk(dt: float) -> void:
 		return
 	if role == "fan" and _fan(dt):
 		return
+	# The way on is fenced off: off along the side street before the fence
+	# (up or down, whichever is open), or back if there is none.
+	if absf(position.x) > 18.5 and position.x * dir > 0.0 and not main.end_open(dir):
+		var t: int = main.shut_end_turn(dir)
+		if t == 2:
+			dir = -dir
+		else:
+			position.x = move_toward(position.x, dir * SIDE_STREET_X, speed * dt)
+			position.z += t * speed * dt
+			model.animate(1.0, dt, speed / 1.3)
+			if position.z < -13.0 or position.z > 10.0:
+				main.respawn_npc(self)
+			return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
-	# The way on is fenced off: turn back.
-	if absf(position.x) > 20.5 and position.x * dir > 0.0 and not main.end_open(dir):
-		dir = -dir
 	if position.x > EDGE_X:
 		position.x = -EDGE_X
 	elif position.x < -EDGE_X:
@@ -1808,6 +1862,11 @@ func check_pickpocket(p: Node3D) -> void:
 	if p.hic_window > 0.0:
 		chance = 0.0
 	if main.rng.randf() < chance:
+		if not GameState.has_watch and role == "civ" and main.rng.randf() < GameState.WATCH_CHANCE:
+			# A wristwatch: from now on it shows the day of the week.
+			GameState.has_watch = true
+			main.popup("⌚", position + Vector3(0, 2.0, 0), Color(1, 0.9, 0.5), 1.3)
+			return
 		if carry_id != "":
 			# Slips the lost thing out of their hand.
 			_drop_carried(Vector3(p.position.x, 0.0, p.position.z))

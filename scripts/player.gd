@@ -6,6 +6,7 @@ extends Node3D
 const PersonModel = preload("res://scripts/person_model.gd")
 const Ragdoll = preload("res://scripts/ragdoll.gd")
 const Item = preload("res://scripts/item.gd")
+const CityMap = preload("res://scripts/city_map.gd")
 
 const WALK_SPEED := 2.6
 const RUN_SPEED := 6.4  # one block (~32 m) in about 5 s
@@ -77,6 +78,7 @@ func reset(pos: Vector3) -> void:
 	hand_item = null
 	_ride_car = null
 	_fall_t = 0.0
+	_swim_t = 0.0
 	_sleep_after_fall = false
 	_car_survive = ""
 	if _ragdoll != null:
@@ -100,6 +102,7 @@ func wake_up() -> void:
 	_ride_car = null
 	_fall_t = 0.0
 	_rise_t = 0.0
+	_swim_t = 0.0
 	_sleep_after_fall = false
 	_car_survive = ""
 	if _ragdoll != null:
@@ -148,6 +151,10 @@ func _process(delta: float) -> void:
 	# Hit by a car: riding on the bonnet, then flying onto the street.
 	if _ride_car != null:
 		_ride_on_car(delta)
+		return
+	# In the water: splashing about, then climbing back up onto the quay.
+	if _swim_t > 0.0:
+		_swim(delta)
 		return
 	# Fallen over or knocked out: the rag doll does the falling; then get up
 	# where it ended.
@@ -256,6 +263,7 @@ func _process(delta: float) -> void:
 	position = main.clamp_walkable(position)
 	if moving or sliding:
 		_check_stumbles(before)
+	_check_water(moving, delta)
 	_collide_cars(before)
 	# A wrong way that runs into a wall or the curb would leave the
 	# character silly-walking on the spot: drop it instead.
@@ -326,6 +334,7 @@ func _drunk_states(moving: bool) -> void:
 			_hic_jolt = 0.15
 			hic_window = 1.0
 			main.popup(tr("HICCUP"), position + Vector3(0.3 * facing, 1.9, 0.3), Color(1, 1, 1))
+			main.sfx.play("hiccup", position + Vector3(0, 1.7, 0))
 
 	# Singing out loud now and then.
 	if _sing_t > 0.0:
@@ -429,6 +438,61 @@ func hit_by_rider(dir: int, spd: float) -> void:
 	_maybe_fall_asleep()
 
 
+## Falling into the sea: on the shore street the far sidewalk ends at the
+## water. Staggering drunk along the edge can take you over it. You climb
+## back out soaked (see GameState.soak); things in the hand stay with you.
+const WATER_EDGE_Z := -7.15
+const SWIM_TIME := 2.8
+var _swim_t := 0.0
+var _drip_t := 0.0
+
+
+func _check_water(moving: bool, delta: float) -> void:
+	if GameState.wet > 0.0:
+		_drip_t -= delta
+		if _drip_t <= 0.0:
+			_drip_t = 0.6
+			main.popup("·", position + Vector3(randf_range(-0.2, 0.2), 1.2, 0.2), Color(0.4, 0.65, 1.0), 1.6)
+	if not moving or position.z > WATER_EDGE_Z or not CityMap.far_side_is_sea(main.segment):
+		return
+	# (Only along the block, not at the crossings at either end.)
+	if absf(position.x) > 15.5 or GameState.promille < GameState.PROMILLE_DRUNK:
+		return
+	var drunk := clampf((GameState.promille - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0)
+	if randf() < lerpf(0.12, 0.6, drunk) * delta:
+		fall_in_water()
+
+
+func fall_in_water() -> void:
+	_swim_t = SWIM_TIME
+	running = false
+	_press_time = -1.0
+	position.z = -8.8
+	GameState.busy_time = maxf(GameState.busy_time, SWIM_TIME)
+	GameState.soak()
+	GameState.fell_down()
+	main.popup("SPLASH!", position + Vector3(0, 1.0, 0), Color(0.5, 0.75, 1.0), 1.6)
+	main.shake(0.12)
+	for i in 6:
+		main.popup("·", position + Vector3(randf_range(-0.8, 0.8), randf_range(0.2, 1.2), 0), Color(0.6, 0.8, 1.0), 2.0)
+
+
+func _swim(delta: float) -> void:
+	_swim_t -= delta
+	GameState.moving = false
+	# Head and shoulders above the water, bobbing, arms flailing.
+	model.position.y = -1.15 + sin(_swim_t * 6.0) * 0.06
+	model.rotation.z = sin(_swim_t * 4.0) * 0.1
+	model.animate(1.0, delta, 1.6)
+	if _swim_t <= 0.0:
+		# Hauls themself back up onto the quay.
+		model.position.y = 0.0
+		model.rotation.z = 0.0
+		position = main.clamp_walkable(Vector3(position.x, 0.0, -7.2))
+		_rise_t = RISE_TIME
+		main.popup("brr", position + Vector3(0, 2.2, 0), Color(0.6, 0.8, 1.0))
+
+
 ## Walked into the street sweeper: knocked over.
 func hit_by_sweeper(dir: int) -> void:
 	running = false
@@ -504,6 +568,7 @@ func _knock_out(dmg: float, push: Vector3) -> void:
 
 
 func _go_ragdoll(push: Vector3, time: float) -> void:
+	main.sfx.play("fall", position + Vector3(0, 0.5, 0))
 	_fall_t = time
 	running = false
 	_press_time = -1.0
@@ -545,7 +610,7 @@ func _get_up() -> void:
 
 
 func is_helpless() -> bool:
-	return _ride_car != null or _fall_t > 0.0 or _rise_t > 0.0
+	return _ride_car != null or _fall_t > 0.0 or _rise_t > 0.0 or _swim_t > 0.0
 
 
 ## Falling only happens on a change of surface (stepping over the curb
@@ -814,6 +879,7 @@ func _heavy_breathing() -> void:
 		model.rotation.z += 0.08 + 0.05 * heave
 		if fmod(_breath_t, 0.9) < dt:
 			main.popup_icon(main.breath_texture(), position + Vector3(0.35 * facing, 1.75, 0.3))
+			main.sfx.play("pant", position + Vector3(0, 1.7, 0), -4.0)
 	elif model.scale != Vector3.ONE:
 		model.scale = Vector3.ONE
 
@@ -892,6 +958,7 @@ func _hunger_signs() -> void:
 	if _growl_t > 4.0:
 		_growl_t = 0.0
 		main.popup_icon(main.stomach_texture(), position + Vector3(0.2 * facing, 1.3, 0.3))
+		main.sfx.play("growl", position + Vector3(0, 1.1, 0))
 
 
 func _update_run(dir: Vector2, moving: bool, delta: float) -> void:
@@ -1085,6 +1152,7 @@ func _punch(target, charge: float, charged := false) -> void:
 	if dmg > 0:
 		GameState.hit_stop(0.04 + 0.025 * mini(dmg, 4))
 		main.shake(0.04 + 0.03 * mini(dmg, 4))
+		main.sfx.play("punch", target.position + Vector3(0, 1.4, 0), 0.0, 1.15 - 0.08 * mini(dmg, 4))
 	target.take_hit(dmg, self, knock, surprise, full)
 	GameState.silly_moment.emit()
 	if charged and charge >= 1.0 and target.is_down() and target.times_hit == 1:
@@ -1312,6 +1380,9 @@ func take_hit(dmg: float, from_x: float, source := "fight") -> void:
 		return
 	_knock = Vector3(signf(position.x - from_x) * 4.0, 0.0, 0.0)
 	main.hud.flash_hurt()
+	main.sfx.play("hit", position + Vector3(0, 1.4, 0))
+	if randf() < 0.6:
+		main.sfx.play("groan", position + Vector3(0, 1.6, 0), -2.0)
 	# A bag with things in it may tear in a fight.
 	if hand_item != null and hand_item.kind == Item.Kind.BAG and not hand_item.contents.is_empty() \
 			and randf() < BAG_TEAR_CHANCE:
