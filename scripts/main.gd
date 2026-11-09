@@ -186,6 +186,7 @@ func _process(delta: float) -> void:
 	_check_lost_pickups()
 	_check_arrest()
 	_check_choke()
+	_check_checkpoint()
 	_update_signs()
 	# Death: the headline, then the high scores, then a new game.
 	if hud.mode == "scores" and hud.card_time > 0.6 and Input.is_action_just_pressed("action"):
@@ -343,7 +344,7 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 		level.queue_free()
 	_cloud_sun_set = false
 	level = BlockBuilder.build(seg, GameState.home_x if seg == GameState.home_seg else INF, GameState.home_type,
-		GameState.booth_segs.has(seg))
+		GameState.booth_segs.has(seg), GameState.checkpoint_segs.has(seg))
 	add_child(level)
 	# Wind-blown leaves on the street.
 	var leaves = Leaves.new()
@@ -444,6 +445,14 @@ func _populate_block() -> void:
 				var bo = _spawn_npc(false, "bouncer")
 				bo.position = Vector3(sh["x"] + 1.0, 0, -7.3)
 				bo.post = bo.position
+	if level.has_meta("checkpoint"):
+		# Two officers at the breath test, one on each sidewalk.
+		for z in [-6.2, 3.8]:
+			var cop = _spawn_npc(false, "police")
+			cop.position = Vector3(0.6, 0, z)
+			cop.stationary = true
+			cop.dir = -1 if player.position.x < 0.0 else 1
+			cop.set_meta("checkpoint", true)
 	if level.has_meta("booth"):
 		# The politician behind the table, two aides in front of it.
 		var bx: float = level.get_meta("booth")
@@ -733,6 +742,10 @@ func _process_modal(delta: float) -> void:
 				_close_modal()
 			elif GameState.battery <= 0.0:
 				phone_dead_t = PHONE_DEAD_TIME
+		"breath":
+			breath_t += delta
+			if breath_t >= BREATH_TIME:
+				_end_breath_test()
 		"shop":
 			var opts := shop_options()
 			if Input.is_action_just_pressed("move_left"):
@@ -971,6 +984,7 @@ func _new_game() -> void:
 	_searched_bins.clear()
 	_lock_hits = 0
 	_friend_refused = false
+	_breath_done = false
 	_block_items.clear()
 	_block_glass.clear()
 	player.reset(Vector3.ZERO)
@@ -1001,6 +1015,7 @@ func _continue_game() -> bool:
 	_block_glass.clear()
 	_pending_followers.clear()
 	arrest = 0.0
+	_breath_done = false
 	player.reset(Vector3.ZERO)
 	player.wake_up()
 	_enter_block(s.get("seg", GameState.home_seg), s.get("pos", _home_door_pos()), s.get("facing", 1))
@@ -1037,6 +1052,7 @@ func _new_day() -> void:
 	_block_glass.clear()
 	_searched_bins.clear()
 	_friend_refused = false
+	_breath_done = false
 	arrest = 0.0
 	player.wake_up()
 	var facing := 1 if rng.randf() < 0.5 else -1
@@ -1966,6 +1982,51 @@ func report_crime(pos: Vector3, alarm: bool, animal := false, certain := false) 
 		cop.position.x = Npc.EDGE_X * (-1.0 if pos.x < 0.0 else 1.0)
 		cop.position.z = clampf(pos.z, Z_MIN, Z_MAX)
 		cop.notice()
+
+
+## Breath test: crossing the checkpoint line stops the player for a
+## breathalyser (once per day). Over the limit: the cell.
+const BREATH_TIME := 3.0
+var breath_t := 0.0
+var _breath_done := false
+
+
+func _check_checkpoint() -> void:
+	if level == null or not level.has_meta("checkpoint"):
+		return
+	# The blue lights blink.
+	var on := int(Time.get_ticks_msec() / 250) % 2 == 0
+	for l in level.get_meta("blue_lights", []):
+		var lm: StandardMaterial3D = l.material_override
+		lm.emission_energy_multiplier = 3.0 if on else 0.2
+	if GameState.over or GameState.modal != "" or _breath_done or player.is_helpless():
+		return
+	var cx: float = level.get_meta("checkpoint")
+	if absf(player.position.x - cx) > 1.0 or player.position.z < Z_MIN - 0.1 or player.position.z > Z_MAX + 0.1:
+		return
+	var manned := false
+	for n in npcs:
+		if n.has_meta("checkpoint") and not n.is_down() and not n.is_hostile():
+			manned = true
+	if not manned:
+		return
+	_breath_done = true
+	breath_t = 0.0
+	GameState.modal = "breath"
+
+
+## 0..1 how far the breath test is.
+func breath_progress() -> float:
+	return clampf(breath_t / BREATH_TIME, 0.0, 1.0)
+
+
+## Breath test result after BREATH_TIME (see modal_ui for the meter).
+func _end_breath_test() -> void:
+	_close_modal()
+	if GameState.promille > GameState.CHECKPOINT_LIMIT:
+		_get_arrested()
+	else:
+		popup("✓", player.position + Vector3(0, 2.4, 0), Color(0.4, 1.0, 0.5), 1.4)
 
 
 ## How far the police see (the length of the vision cone): short when the

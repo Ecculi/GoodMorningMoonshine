@@ -27,6 +27,51 @@ func _draw() -> void:
 			_draw_phone(vs)
 		"shop":
 			_draw_shop(vs)
+		"breath":
+			_draw_breathalyser(vs)
+
+
+## Breath test: a hand-held breathalyser; the reading climbs to the real
+## per mille, then turns green (OK) or red (over the limit).
+func _draw_breathalyser(vs: Vector2) -> void:
+	var font := get_theme_default_font()
+	draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, 0.35))
+	var h := minf(vs.y * 0.6, 360.0)
+	var w := h * 0.5
+	var body := Rect2(Vector2((vs.x - w) * 0.5, (vs.y - h) * 0.5), Vector2(w, h))
+	# Mouthpiece on top, then the body.
+	draw_rect(Rect2(Vector2(body.get_center().x - w * 0.08, body.position.y - h * 0.18), Vector2(w * 0.16, h * 0.2)),
+		Color(0.92, 0.92, 0.95))
+	draw_rect(body, Color(0.95, 0.75, 0.1))
+	draw_rect(body, Color(0.2, 0.2, 0.2), false, 3.0)
+	var scr := Rect2(body.position + Vector2(w * 0.1, h * 0.12), Vector2(w * 0.8, h * 0.28))
+	var t: float = main.breath_progress()
+	var reading := GameState.promille * clampf(t / 0.7, 0.0, 1.0)
+	var done := t >= 0.75
+	var over := GameState.promille > GameState.CHECKPOINT_LIMIT
+	var bg := Color(0.15, 0.2, 0.15)
+	if done:
+		bg = Color(0.85, 0.15, 0.12) if over else Color(0.2, 0.7, 0.3)
+	draw_rect(scr, bg)
+	var txt := ("%.2f ‰" % reading).replace(".", ",")
+	draw_string(font, Vector2(scr.position.x, scr.get_center().y + 14), txt, HORIZONTAL_ALIGNMENT_CENTER, scr.size.x,
+		int(h * 0.11), Color(0.7, 1.0, 0.7) if not done else Color.WHITE)
+	# Blowing: little puffs into the mouthpiece until the reading is done.
+	if not done:
+		for i in 3:
+			var ph := fmod(t * 4.0 + i * 0.33, 1.0)
+			draw_circle(Vector2(body.get_center().x + (i - 1) * 14, body.position.y - h * 0.22 - ph * 30.0),
+				5.0 + ph * 4.0, Color(1, 1, 1, 0.6 * (1.0 - ph)))
+	else:
+		var c := Vector2(body.get_center().x, body.position.y + h * 0.65)
+		if over:
+			# Handcuffs: two rings and a chain.
+			draw_arc(c + Vector2(-22, 0), 16.0, 0, TAU, 24, Color(0.2, 0.2, 0.22), 5.0, true)
+			draw_arc(c + Vector2(22, 0), 16.0, 0, TAU, 24, Color(0.2, 0.2, 0.22), 5.0, true)
+			draw_line(c + Vector2(-6, 0), c + Vector2(6, 0), Color(0.2, 0.2, 0.22), 4.0)
+		else:
+			draw_line(c + Vector2(-20, 0), c + Vector2(-5, 15), Color(0.1, 0.5, 0.2), 7.0)
+			draw_line(c + Vector2(-5, 15), c + Vector2(22, -16), Color(0.1, 0.5, 0.2), 7.0)
 
 
 # --- Phone ------------------------------------------------------------------
@@ -219,6 +264,12 @@ func _draw_map(r: Rect2) -> void:
 		var cm: Vector2 = (ca + cb) * 0.5
 		draw_line(cm + Vector2(-6, -6), cm + Vector2(6, 6), Color(0.8, 0.05, 0.05), 3.0)
 		draw_line(cm + Vector2(-6, 6), cm + Vector2(6, -6), Color(0.8, 0.05, 0.05), 3.0)
+	# Breath test checkpoint: a blinking blue dot in the middle of the block.
+	for ks in GameState.checkpoint_segs:
+		var kc: Vector2 = to_screen.call(ks.z + 0.5, float(ks.y)) if ks.x == 0 else to_screen.call(float(ks.y), ks.z + 0.5)
+		var blink := 0.5 + 0.5 * sin(Time.get_ticks_msec() / 150.0)
+		draw_circle(kc, 8.0, Color(0.15, 0.35, 1.0, 0.5 + 0.5 * blink))
+		draw_circle(kc, 4.0, Color(1, 1, 1, 0.9))
 	# Home: a little house at the home door's position.
 	var hs: Vector3i = GameState.home_seg
 	var hf := clampf((GameState.home_x + 16.0) / 32.0, 0.0, 1.0)

@@ -632,6 +632,7 @@ func new_game() -> void:
 	_roll_weather()
 	_roll_roadworks()
 	_roll_booths()
+	_roll_checkpoint(home_seg)
 	_lose_items()
 	_place_lost_items()
 	_make_phone_hints()
@@ -698,6 +699,7 @@ func new_day() -> void:
 	_roll_roadworks()
 	_roll_booths()
 	_choose_wake_place()
+	_roll_checkpoint(wake_seg)
 	if sleep_place == "jail":
 		# Released at the police station door; without an ID card they keep
 		# you longer, so the day starts later.
@@ -734,6 +736,27 @@ func _choose_wake_place() -> void:
 	wake_seg = best
 	var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
 	wake_pos = Vector3(rng.randf_range(-12.0, 12.0), 0.0, z)
+
+
+## Breath test checkpoint: from CHECKPOINT_FROM_DAY, some mornings the
+## police stop everyone passing through one block and breathalyse them.
+## Over CHECKPOINT_LIMIT per mille = a night in the cell. The block shows
+## on the phone map and by its blue lights.
+const CHECKPOINT_FROM_DAY := 3
+const CHECKPOINT_CHANCE := 0.35
+const CHECKPOINT_LIMIT := 1.5
+var checkpoint_segs: Array = []
+
+
+func _roll_checkpoint(start: Vector3i) -> void:
+	checkpoint_segs.clear()
+	if day < CHECKPOINT_FROM_DAY or rng.randf() > CHECKPOINT_CHANCE:
+		return
+	for attempt in 50:
+		var cand := CityMap.random_segment(rng)
+		if cand != home_seg and cand != start and cand != CityMap.police_station() and not CityMap.closed.has(cand):
+			checkpoint_segs.append(cand)
+			return
 
 
 ## Election booths: from BOOTH_FROM_DAY a politician hands out free coffee
@@ -960,7 +983,7 @@ const SAVE_KEYS := [
 	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
 	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
 	"placements", "dog_items", "carried_items", "high_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
-	"weather", "storm", "frost", "booth_segs", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
+	"weather", "storm", "frost", "booth_segs", "checkpoint_segs", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
 ]
 
 
