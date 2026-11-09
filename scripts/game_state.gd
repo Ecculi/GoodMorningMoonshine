@@ -581,7 +581,9 @@ func go_jail() -> void:
 
 ## Chance that a block has police patrolling; grows day by day.
 func police_chance() -> float:
-	return minf(0.15 + 0.05 * float(day), 0.6)
+	# Kärpät day: the police are out in force.
+	var extra := 0.3 if special_day == "karpat" else 0.0
+	return minf(0.15 + 0.05 * float(day) + extra, 0.8)
 
 
 ## Search radius in grid units around home; grows every day.
@@ -632,6 +634,7 @@ func new_game() -> void:
 	_roll_weather()
 	_roll_roadworks()
 	_roll_booths()
+	_roll_special()
 	_roll_checkpoint(home_seg)
 	_lose_items()
 	_place_lost_items()
@@ -698,6 +701,7 @@ func new_day() -> void:
 	_roll_weather()
 	_roll_roadworks()
 	_roll_booths()
+	_roll_special()
 	_choose_wake_place()
 	_roll_checkpoint(wake_seg)
 	if sleep_place == "jail":
@@ -736,6 +740,29 @@ func _choose_wake_place() -> void:
 	wake_seg = best
 	var z := rng.randf_range(-7.0, -5.6) if rng.randf() < 0.5 else rng.randf_range(3.2, 5.0)
 	wake_pos = Vector3(rng.randf_range(-12.0, 12.0), 0.0, z)
+
+
+## Special day (rolled every morning from SPECIAL_FROM_DAY): "" (none),
+## "karpat" (Kärpät won the championship: fans in yellow and black on
+## every street, hugging and handing out drinks, quick to fight; more
+## police) or "cleanup" (street cleaning: a sweeper goes round and sucks
+## up everything lying on the street). Shown as a newspaper bill in the
+## morning.
+var special_day := ""
+const SPECIAL_FROM_DAY := 2
+const SPECIAL_CHANCE := {"karpat": 0.08, "cleanup": 0.08}
+
+
+func _roll_special() -> void:
+	special_day = ""
+	if day < SPECIAL_FROM_DAY:
+		return
+	var r := rng.randf()
+	for k in SPECIAL_CHANCE:
+		if r < SPECIAL_CHANCE[k]:
+			special_day = k
+			return
+		r -= SPECIAL_CHANCE[k]
 
 
 ## Breath test checkpoint: from CHECKPOINT_FROM_DAY, some mornings the
@@ -983,7 +1010,7 @@ const SAVE_KEYS := [
 	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
 	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
 	"placements", "dog_items", "carried_items", "high_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
-	"weather", "storm", "frost", "booth_segs", "checkpoint_segs", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
+	"weather", "storm", "frost", "special_day", "booth_segs", "checkpoint_segs", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
 ]
 
 

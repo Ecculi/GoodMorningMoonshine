@@ -122,6 +122,42 @@ var _city_a := 0.0
 var _city_fading := false
 
 
+## Special day: a newspaper bill at the top of the screen in the morning,
+## until the character has walked a while.
+var _special_a := 0.0
+var _special_walk := 0.0
+var _special_last := Vector3.INF
+
+
+func show_special() -> void:
+	_special_a = 1.0 if GameState.special_day != "" else 0.0
+	_special_walk = 0.0
+	_special_last = Vector3.INF
+
+
+func _draw_special(vs: Vector2, font: Font) -> void:
+	if _special_a <= 0.0 or GameState.special_day == "" or main == null or main.player == null:
+		return
+	var p: Vector3 = main.player.position
+	if _special_last != Vector3.INF:
+		var d := p.distance_to(_special_last)
+		if d < 2.0:
+			_special_walk += d
+	_special_last = p
+	if _special_walk > 12.0:
+		_special_a = maxf(0.0, _special_a - get_process_delta_time() * 1.5)
+	var a := _special_a
+	var text := tr("SPECIAL_" + GameState.special_day.to_upper())
+	var w := minf(vs.x * 0.7, 640.0)
+	var r := Rect2(Vector2((vs.x - w) * 0.5, 96.0), Vector2(w, 70))
+	var paper := Color(1.0, 0.85, 0.1, a) if GameState.special_day == "karpat" else Color(0.97, 0.95, 0.87, a)
+	draw_rect(r, paper)
+	draw_rect(r, Color(0.1, 0.1, 0.1, a), false, 3.0)
+	draw_rect(Rect2(r.position, Vector2(w, 16)), Color(0.85, 0.1, 0.12, a))
+	draw_string(font, r.position + Vector2(0, 13), tr("PAPER_NAME"), HORIZONTAL_ALIGNMENT_CENTER, w, 12, Color(1, 1, 1, a))
+	draw_string(font, r.position + Vector2(0, 56), text, HORIZONTAL_ALIGNMENT_CENTER, w, 32, Color(0.08, 0.08, 0.08, a))
+
+
 func show_city(n: String) -> void:
 	_city_name = n
 	_city_a = 1.0
@@ -420,6 +456,7 @@ func _draw() -> void:
 	_draw_found(vs)
 	_draw_version(vs, font)
 	_draw_city(vs, font)
+	_draw_special(vs, font)
 	_draw_rotate_prompt(vs, font)
 	_draw_achievement(vs, font)
 	_draw_head_heart(delta_draw())

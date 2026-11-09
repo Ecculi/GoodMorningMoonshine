@@ -32,6 +32,9 @@ extends Node3D
 ## - "politician": (from day 8) stands behind an election stall, smiles
 ##   and offers a handshake and a free coffee (once). Hit him and his two
 ##   aides ("aide", blue vests) go for you, and the police always come.
+## - "fan": (Kärpät day) a hockey fan in yellow and black with a flag;
+##   meeting the player, hugs them and often hands over a beer. Some are
+##   rowdy and pick a fight; hit one and every fan in the block comes.
 ## - "beggar": sits by a wall with a cup; for 2 € tells where a lost thing is
 ## - "drunk": stands swaying with a bottle; sells a sip for 1 € or for food
 ## - "punk": walks in a gang of 2-3; hit one and the whole gang attacks;
@@ -250,6 +253,37 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 			model = PersonModel.new(Color(0.15, 0.4, 0.8), Color(0.2, 0.2, 0.25), skin,
 				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.97, 1.05))
 			stationary = true
+		"fan":
+			var yellow := Color(1.0, 0.8, 0.1)
+			var black := Color(0.08, 0.08, 0.09)
+			model = PersonModel.new(yellow if rng.randf() < 0.7 else black, black, skin,
+				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.94, 1.06))
+			_head_box(Vector3(0.0, 1.84, 0), Vector3(0.3, 0.12, 0.34), black if rng.randf() < 0.5 else yellow)  # beanie
+			_head_box(Vector3(0.0, 1.5, 0), Vector3(0.3, 0.08, 0.48), yellow)  # scarf
+			# A little flag on a stick: yellow and black halves.
+			var pole := MeshInstance3D.new()
+			var pm := CylinderMesh.new()
+			pm.top_radius = 0.012
+			pm.bottom_radius = 0.012
+			pm.height = 0.7
+			pole.mesh = pm
+			var pmat := StandardMaterial3D.new()
+			pmat.albedo_color = Color(0.6, 0.45, 0.25)
+			pole.material_override = pmat
+			pole.position = Vector3(0, 0.25, 0)
+			model.hand.add_child(pole)
+			for k in 2:
+				var half := MeshInstance3D.new()
+				var hm := BoxMesh.new()
+				hm.size = Vector3(0.01, 0.22, 0.17)
+				half.mesh = hm
+				var hmat := StandardMaterial3D.new()
+				hmat.albedo_color = yellow if k == 0 else black
+				half.material_override = hmat
+				half.position = Vector3(0, 0.49, 0.1 + k * 0.17)
+				model.hand.add_child(half)
+			speed = rng.randf_range(1.2, 1.7)
+			rowdy = rng.randf() < 0.25
 		"canvasser":
 			model = PersonModel.new(Color(0.3, 0.32, 0.36), Color(0.2, 0.2, 0.22), skin,
 				HAIRS[rng.randi() % HAIRS.size()], rng.randf_range(0.97, 1.04))
@@ -857,6 +891,40 @@ func _carrier_wait(dt: float) -> bool:
 	return true
 
 
+## Fan (Kärpät day): the first time the player comes close, a hug and
+## often a beer; a rowdy one wants a fight instead.
+var rowdy := false
+var _fan_met := false
+
+
+func _fan(_dt: float) -> bool:
+	if _fan_met:
+		return false
+	var p = main.player
+	var d := Vector2(p.position.x - position.x, p.position.z - position.z).length()
+	if d > 1.4 or p.is_helpless() or GameState.modal != "":
+		return false
+	_fan_met = true
+	dir = 1 if p.position.x >= position.x else -1
+	var top := position + Vector3(0, 2.3, 0)
+	if rowdy:
+		main.popup("Häh?!", top, Color(1, 0.4, 0.3))
+		provoke()
+		return true
+	main.popup("Kärpät!", top, Color(1, 0.85, 0.1), 1.2)
+	_hug_t = 1.0
+	model.raise_arm(true)
+	p.model.raise_arm(true)
+	p.get_tree().create_timer(1.0).timeout.connect(func(): p.model.raise_arm(false))
+	main.popup_icon(main.heart_texture(), (position + p.position) * 0.5 + Vector3(0, 2.1, 0.3))
+	if main.rng.randf() < 0.5:
+		var it = main.spawn_item(Item.Kind.BOTTLE, p.position, 1, Item.Drink.BEER)
+		if p.hand_item == null:
+			p._pickup(it)
+	GameState.busy_time = maxf(GameState.busy_time, 1.0)
+	return true
+
+
 ## Canvasser: notices the player within CANVASS_NOTICE, then sticks about
 ## a metre behind them (a bit faster than walking: only running shakes
 ## him off) and every few seconds pushes a leaflet into their hand.
@@ -1365,6 +1433,8 @@ func _walk(dt: float) -> void:
 	if carry_id != "" and _carrier_wait(dt):
 		return
 	if role == "canvasser" and _canvass(dt):
+		return
+	if role == "fan" and _fan(dt):
 		return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)

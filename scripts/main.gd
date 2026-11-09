@@ -991,6 +991,7 @@ func _new_game() -> void:
 	_enter_block(GameState.home_seg, _home_door_pos(), 1)
 	hud.show_pocket_check()
 	hud.show_city(CityMap.city_name())
+	hud.show_special()
 	_save_morning(GameState.home_seg, _home_door_pos(), 1)
 
 
@@ -1027,6 +1028,7 @@ func _continue_game() -> bool:
 			it.update_bag_look()
 		player._pickup(it)
 	hud.show_pocket_check()
+	hud.show_special()
 	return true
 
 
@@ -1058,6 +1060,7 @@ func _new_day() -> void:
 	var facing := 1 if rng.randf() < 0.5 else -1
 	_enter_block(GameState.wake_seg, GameState.wake_pos, facing)
 	hud.show_pocket_check()
+	hud.show_special()
 	_save_morning(GameState.wake_seg, GameState.wake_pos, facing)
 	if GameState.sleep_place == "jail":
 		_cellmate()
@@ -1480,6 +1483,13 @@ func _spawn_street_folk() -> void:
 	# From day 6 an influencer films anything silly the player does.
 	if GameState.day >= 6 and rng.randf() < 0.3:
 		_spawn_npc(false, "influencer")
+	# Kärpät day: fans everywhere, all of a block's fans stick together.
+	if GameState.special_day == "karpat":
+		var fans: Array = []
+		for i in rng.randi_range(3, 6):
+			fans.append(_spawn_npc(false, "fan"))
+		for f in fans:
+			f.gang = fans
 	# From day 8 an extremist party's canvasser hands out leaflets.
 	if GameState.day >= 8 and rng.randf() < 0.3:
 		_spawn_npc(false, "canvasser")
