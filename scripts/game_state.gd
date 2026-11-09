@@ -241,6 +241,7 @@ func _process(delta: float) -> void:
 		active = false
 		_tick_body(delta, false)
 		cold = maxf(0.0, cold - COLD_INDOOR_WARM * delta)
+		wet = maxf(0.0, wet - delta)  # clothes dry indoors
 		return
 	if modal != "":
 		world_dt = 0.0
@@ -354,16 +355,33 @@ func cold_rate() -> float:
 	var r: float = COLD_WEATHER.get(weather, 0.0)
 	if frost:
 		r += FROST_COLD
-	if is_lost("jacket"):
+	if is_lost("jacket") or wet > 0.0:
 		r += 0.3
-	if is_lost("shoes") and (weather == "rain" or weather == "snow" or frost):
+	if (is_lost("shoes") or wet > 0.0) and (weather == "rain" or weather == "snow" or frost or wet > 0.0):
 		r += 0.2
+	if wet > 0.0:
+		r += WET_COLD
 	if r > 0.0 and promille > PROMILLE_DRUNK:
 		r *= 0.6
 	# Running keeps you warm.
 	if running and moving:
 		r -= COLD_RUN_WARM
 	return r
+
+
+## Soaked from falling into the water: seconds of drying indoors still
+## needed (0 = dry). While wet the cold grows fast, as if the jacket and
+## shoes were missing; the cold water also wakes you up.
+var wet := 0.0
+const WET_DRY_TIME := 20.0
+const WET_COLD := 1.2
+const WET_AWAKE := 40.0
+
+
+func soak() -> void:
+	wet = WET_DRY_TIME
+	tired = maxf(0.0, tired - WET_AWAKE)
+	cold = minf(100.0, cold + 25.0)
 
 
 ## Warms the character up right away (a punch, a strong drink).
@@ -613,6 +631,7 @@ func new_game() -> void:
 	jitter_t = 0.0
 	focus_t = 0.0
 	trip_t = 0.0
+	wet = 0.0
 	doze_t = -1.0
 	clock_min = DAY_START_MIN
 	busy_time = 0.0
@@ -691,6 +710,7 @@ func new_day() -> void:
 	focus_t = 0.0
 	trip_t = 0.0
 	painkiller_t = 0.0
+	wet = 0.0
 	doze_t = -1.0
 	strain = 0.0
 	exhausted = false
@@ -1095,6 +1115,8 @@ func load_save() -> Dictionary:
 	jitter_t = 0.0
 	focus_t = 0.0
 	trip_t = 0.0
+	painkiller_t = 0.0
+	wet = 0.0
 	doze_t = -1.0
 	busy_time = 0.0
 	hit_stop_t = 0.0

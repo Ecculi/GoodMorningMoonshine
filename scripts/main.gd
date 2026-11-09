@@ -1092,6 +1092,7 @@ func _church_door() -> void:
 		return
 	GameState.church_day = GameState.day
 	GameState.warm_up(40.0)
+	GameState.wet = 0.0  # dried by the radiator
 	popup_icon(heart_texture(), door)
 	if GameState.is_sunday():
 		var it = spawn_item(Item.Kind.BOTTLE, player.position, 1, Item.Drink.WINE)
