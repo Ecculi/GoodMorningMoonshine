@@ -36,6 +36,8 @@ static func build(seg: Vector3i, home_x := INF, home_type := "flat", booth := fa
 		_buildings(root, rng, home_x)
 		if seg == CityMap.police_station():
 			_police_station(root)
+		if seg == CityMap.church():
+			_church(root)
 		if home_x != INF:
 			_home_door(root, home_x, home_type)
 	# Doors on the far side; bins, trees (and beggars) keep clear of them so
@@ -47,6 +49,8 @@ static func build(seg: Vector3i, home_x := INF, home_type := "flat", booth := fa
 		doors.append(home_x)
 	if seg == CityMap.police_station():
 		doors.append(CityMap.police_door_x())
+	if seg == CityMap.church() and not sea:
+		doors.append(CityMap.CHURCH_DOOR_X)
 	root.set_meta("doors", doors)
 	if booth and not sea:
 		var bx := clear_of_doors(root, rng, -11.0, 11.0)
@@ -420,6 +424,26 @@ static func _home_door(root: Node3D, x: float, home_type: String) -> void:
 	m.emission_enabled = true
 	m.emission = Color(1.0, 0.8, 0.4)
 	m.emission_energy_multiplier = 2.0
+
+
+## Church front: white stone, a tall arched wooden door, a tower with a
+## cross. Shops that would be behind it are dropped.
+static func _church(root: Node3D) -> void:
+	var x := CityMap.CHURCH_DOOR_X
+	var shops: Array = []
+	for sh in root.get_meta("shops", []):
+		if absf(sh["x"] - x) > 6.0:
+			shops.append(sh)
+	root.set_meta("shops", shops)
+	var white := Color(0.94, 0.93, 0.9)
+	_box(root, Vector3(x, 5.0, -7.92), Vector3(9.0, 10.0, 0.1), white)
+	_box(root, Vector3(x, 12.0, -7.95), Vector3(3.0, 6.0, 0.1), white)  # tower
+	_box(root, Vector3(x, 16.0, -7.9), Vector3(0.25, 2.0, 0.1), Color(0.85, 0.7, 0.25))  # cross
+	_box(root, Vector3(x, 16.4, -7.9), Vector3(1.0, 0.25, 0.1), Color(0.85, 0.7, 0.25))
+	_box(root, Vector3(x, 1.4, -7.85), Vector3(1.6, 2.8, 0.1), Color(0.4, 0.25, 0.15))  # door
+	_sphere(root, Vector3(x, 2.8, -7.86), 0.8, Color(0.4, 0.25, 0.15)).scale = Vector3(1.0, 0.5, 0.12)
+	for wx in [x - 3.0, x + 3.0]:
+		_box(root, Vector3(wx, 4.5, -7.86), Vector3(0.9, 2.6, 0.08), Color(0.35, 0.45, 0.65))
 
 
 ## Police station front: grey-blue facade, blue POLIISI sign, glass door.

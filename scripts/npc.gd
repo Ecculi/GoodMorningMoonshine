@@ -1850,6 +1850,11 @@ func check_pickpocket(p: Node3D) -> void:
 	if p.hic_window > 0.0:
 		chance = 0.0
 	if main.rng.randf() < chance:
+		if not GameState.has_watch and role == "civ" and main.rng.randf() < GameState.WATCH_CHANCE:
+			# A wristwatch: from now on it shows the day of the week.
+			GameState.has_watch = true
+			main.popup("⌚", position + Vector3(0, 2.0, 0), Color(1, 0.9, 0.5), 1.3)
+			return
 		if carry_id != "":
 			# Slips the lost thing out of their hand.
 			_drop_carried(Vector3(p.position.x, 0.0, p.position.z))

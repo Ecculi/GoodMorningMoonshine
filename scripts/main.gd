@@ -935,6 +935,9 @@ func try_enter_door(pos: Vector3) -> bool:
 	if segment == CityMap.police_station() and absf(pos.x - CityMap.police_door_x()) < 0.9 and pos.z < -6.0:
 		_police_desk()
 		return true
+	if segment == CityMap.church() and absf(pos.x - CityMap.CHURCH_DOOR_X) < 1.0 and pos.z < -6.0:
+		_church_door()
+		return true
 	if segment != GameState.home_seg:
 		return false
 	if absf(pos.x - GameState.home_x) > 0.9 or pos.z > -6.0:
@@ -1079,6 +1082,21 @@ func _new_day() -> void:
 	_save_morning(GameState.wake_seg, GameState.wake_pos, facing)
 	if GameState.sleep_place == "jail":
 		_cellmate()
+
+
+## Church: once a day a warm-up inside; on Sundays communion wine too.
+func _church_door() -> void:
+	var door := Vector3(CityMap.CHURCH_DOOR_X, 2.6, -7.4)
+	if GameState.church_day == GameState.day:
+		popup("…", door, Color(0.9, 0.9, 0.9))
+		return
+	GameState.church_day = GameState.day
+	GameState.warm_up(40.0)
+	popup_icon(heart_texture(), door)
+	if GameState.is_sunday():
+		var it = spawn_item(Item.Kind.BOTTLE, player.position, 1, Item.Drink.WINE)
+		player._pickup(it)
+		popup("✝", door + Vector3(0, 0.5, 0), Color(1, 0.9, 0.5), 1.4)
 
 
 ## Police station desk: confiscated things are handed back with an ID card.

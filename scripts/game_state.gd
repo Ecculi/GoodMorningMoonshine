@@ -624,8 +624,11 @@ func new_game() -> void:
 		forced_city = -1
 	else:
 		CityMap.set_city(rng.randi() % CityMap.CITIES.size())
+	weekday = rng.randi() % 7
+	has_watch = false
+	church_day = -1
 	home_seg = CityMap.random_segment(rng)
-	while CityMap.far_side_is_sea(home_seg) or home_seg == CityMap.police_station():
+	while CityMap.far_side_is_sea(home_seg) or home_seg == CityMap.police_station() or home_seg == CityMap.church():
 		home_seg = CityMap.random_segment(rng)
 	home_x = rng.randf_range(-11.0, 11.0)
 	home_type = ["flat", "basement", "friend"][rng.randi() % 3]
@@ -658,6 +661,7 @@ func new_day() -> void:
 		soiled = false
 	yesterday_max = maxf(today_max, at_sleep)
 	day += 1
+	weekday = (weekday + 1) % 7
 	match sleep_place:
 		"home":
 			promille = clampf(0.4 + maxf(at_sleep - 1.5, 0.0) * 0.3, 0.3, 1.5)
@@ -765,6 +769,20 @@ func _roll_special() -> void:
 			special_day = k
 			return
 		r -= SPECIAL_CHANCE[k]
+
+
+## Day of the week: 0 = Monday ... 6 = Sunday. The first day of a game is
+## a random one and the player isn't told; a wristwatch (pickpocketed
+## from someone) shows it. On Sundays the church hands out communion wine.
+var weekday := 0
+var has_watch := false
+## The last day the church door was used (once a day).
+var church_day := -1
+const WATCH_CHANCE := 0.12
+
+
+func is_sunday() -> bool:
+	return weekday == 6
 
 
 ## Little task of the day (0 or 1, from TASK_FROM_DAY): a pal somewhere
@@ -1037,7 +1055,7 @@ const SAVE_KEYS := [
 	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
 	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
 	"placements", "dog_items", "carried_items", "high_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
-	"weather", "storm", "frost", "special_day", "booth_segs", "checkpoint_segs", "task", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
+	"weather", "storm", "frost", "special_day", "booth_segs", "checkpoint_segs", "task", "weekday", "has_watch", "church_day", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
 ]
 
 

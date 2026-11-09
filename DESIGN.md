@@ -285,6 +285,7 @@ Krapula ei kovene päivien mukaan.
 - Pelissä on viikonpäivät. **Ensimmäinen pelipäivä on satunnainen viikonpäivä**, eikä pelaaja tiedä, mikä se on.
 - **Sunnuntaisin** (joka 7. pelipäivä) kirkossa on **ehtoollisviiniä**, eli ilmaista alkoholia.
 - **Rannekello:** jos pelaaja saa varastettua jollekulta rannekellon, siitä näkee, mikä viikonpäivä on. Silloin hän tietää, milloin on sunnuntai.
+- **Toteutus:** kirkko on kaupungin kirkko-nähtävyyden korttelissa (Oulussa Kirkkokatu, Raahessa Kirkkokatu): valkoinen julkisivu, torni ja risti, korkea puuovi (x = −6; kauppoja ei ole sen takana, eikä koti ole samassa korttelissa). Ovella toimintonappi kerran päivässä: lämmittely sisällä (kylmä −40, sydän), ja sunnuntaina lisäksi pullo ehtoollisviiniä käteen (tummanpunainen, 0,35 ‰, lämmittää vähän; "✝"). Samana päivänä uudestaan: "…". Onnistunut taskuvarkaus tavalliselta ohikulkijalta antaa 12 %:n todennäköisyydellä rahan sijaan rannekellon ("⌚"), joka säilyy pelin loppuun. Kello näkyy HUDissa kolikon alla: viisarit näyttävät kellonajan, ja vieressä on seitsemän pistettä viikonpäiville (maanantaista sunnuntaihin, sunnuntai punainen), tämän päivän piste korostettuna.
 
 ## Pelattava hahmo
 

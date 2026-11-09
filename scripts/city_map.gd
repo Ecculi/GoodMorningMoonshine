@@ -110,6 +110,18 @@ static func landmarks() -> Array:
 	return data()["landmarks"]
 
 
+## The block with the church (the "church" landmark), or (-1, -1, -1).
+static func church() -> Vector3i:
+	for lm in landmarks():
+		if lm["kind"] == "church":
+			return lm["seg"]
+	return Vector3i(-1, -1, -1)
+
+
+## Where the church door is in its block.
+const CHURCH_DOOR_X := -6.0
+
+
 ## Grid position (u = B index along A streets, v = A index) of the spot
 ## at `x` metres along block `seg` (blocks run from x = -16 to 16).
 static func grid_pos(seg: Vector3i, x: float) -> Vector2:

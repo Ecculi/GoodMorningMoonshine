@@ -446,6 +446,7 @@ func _draw() -> void:
 	_draw_police_vision()
 	_draw_offscreen_lost(vs)
 	_draw_coin(Vector2(186, 46), GameState.money, font)
+	_draw_watch(Vector2(186, 100))
 	_draw_phone_icon(vs, font)
 	_draw_charge()
 	_draw_shading_hand(vs)
@@ -618,6 +619,28 @@ func _draw_bottle(origin: Vector2, promille: float, font: Font) -> void:
 	var pos := Vector2(origin.x, origin.y + 74)
 	draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_CENTER, 44, 15, 5, Color.BLACK)
 	draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_CENTER, 44, 15, Color.WHITE)
+
+
+## Wristwatch (once pickpocketed): a little watch face with seven pips
+## for the days of the week, today's lit (Sunday's pip is red).
+func _draw_watch(c: Vector2) -> void:
+	if not GameState.has_watch:
+		return
+	draw_rect(Rect2(c + Vector2(-6, -24), Vector2(12, 48)), Color(0.35, 0.25, 0.18))  # strap
+	draw_circle(c, 17.0, Color(0.75, 0.75, 0.78))
+	draw_circle(c, 14.0, Color(0.97, 0.97, 0.95))
+	var mins := GameState.clock_min
+	var ha := (mins / 60.0) / 12.0 * TAU - PI * 0.5
+	var ma := fmod(mins, 60.0) / 60.0 * TAU - PI * 0.5
+	draw_line(c, c + Vector2(cos(ha), sin(ha)) * 7.0, Color(0.1, 0.1, 0.1), 2.5)
+	draw_line(c, c + Vector2(cos(ma), sin(ma)) * 11.0, Color(0.1, 0.1, 0.1), 1.5)
+	for i in 7:
+		var pc := c + Vector2(26 + i * 9, 0)
+		var today := i == GameState.weekday
+		var col := Color(0.85, 0.15, 0.15) if i == 6 else Color(0.95, 0.95, 0.95)
+		draw_circle(pc, 4.5 if today else 3.0, col if today else Color(col.r, col.g, col.b, 0.35))
+		if today:
+			draw_arc(pc, 6.0, 0, TAU, 12, Color(1, 1, 1, 0.9), 1.5, true)
 
 
 func _draw_coin(center: Vector2, amount: int, font: Font) -> void:
