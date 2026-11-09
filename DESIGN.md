@@ -151,7 +151,7 @@ Erikoispäivät (satunnaisesti, tuovat vaihtelua):
 - **Kärppien voittopäivä:** kaduilla juhlijoita, halaajia ja ilmaisia juomia, mutta myös enemmän tappeluita ja poliiseja.
 - **Katujen siivouspäivä:** lakaisukone kulkee kadulla ja imaisee maassa olevat tavarat; hukatut tavarat pitää ehtiä hakea ennen sitä.
 - **Myrsky:** tuuli työntää hahmoa, roskat ja lehdet lentävät, heitot kaartuvat.
-- **Kova pakkanen:** kylmä kasvaa nopeasti, kadut liukkaita.
+- **Kova pakkanen:** kylmä kasvaa nopeasti, kadut liukkaita. **Toteutus:** päivästä 2 alkaen 12 %:n todennäköisyydellä (ei myrskypäivinä). Taivas on kirkas ja syvänsininen, valo kylmän sininen, maassa huurre (kuten lumikerros) ja ohut jäinen usva. Kylmä kasvaa 1,6 yksikköä sekunnissa enemmän kuin aurinkoisena päivänä (lumipäivänä vain 0,8), joten ilman lämmittelyä (juoksu, lyönnit, väkevä juoma, kahvi tai sisätilat) kylmä alkaa satuttaa parissa minuutissa. Kadut ovat liukkaat kuten lumella, ja hengitys höyryää koko ajan. Debugissa ruudun nappi "pakkanen" kytkee sen päälle tai pois.
 - **Tietyöt:** jokin katu on suljettu, ja pitää kiertää.
 - **Poliisin puhallusratsia:** poliisi pysäyttää ja puhalluttaa; liian humalainen viedään putkaan.
 

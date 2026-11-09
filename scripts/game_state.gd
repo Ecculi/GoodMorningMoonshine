@@ -190,6 +190,14 @@ var weather := "sunny"
 ## Storm day: hard wind pushes the character, bends throws and blows
 ## leaves and litter about (always cloudy or rainy).
 var storm := false
+## Hard frost special day: clear and bitterly cold. The cold grows much
+## faster than on a snowy day, the streets are slippery like in snow and
+## the breath steams all the time. Warming up (running, fighting, a strong
+## drink, going indoors) matters.
+var frost := false
+const FROST_FROM_DAY := 2
+const FROST_CHANCE := 0.12
+const FROST_COLD := 1.6
 ## How often and from which day storms come depends on the city
 ## (CityMap.storm_chance / storm_from_day): Oulu now and then, Raahe
 ## nearly every day.
@@ -344,9 +352,11 @@ func _tick_body(dt: float, is_running: bool) -> void:
 ## warming up). Missing clothes make it worse; being drunk numbs it.
 func cold_rate() -> float:
 	var r: float = COLD_WEATHER.get(weather, 0.0)
+	if frost:
+		r += FROST_COLD
 	if is_lost("jacket"):
 		r += 0.3
-	if is_lost("shoes") and (weather == "rain" or weather == "snow"):
+	if is_lost("shoes") and (weather == "rain" or weather == "snow" or frost):
 		r += 0.2
 	if r > 0.0 and promille > PROMILLE_DRUNK:
 		r *= 0.6
@@ -778,6 +788,14 @@ func _roll_weather() -> void:
 	storm = day >= CityMap.storm_from_day() and rng.randf() < CityMap.storm_chance()
 	if storm:
 		weather = "rain" if rng.randf() < 0.6 else "cloudy"
+	frost = not storm and day >= FROST_FROM_DAY and rng.randf() < FROST_CHANCE
+	if frost:
+		weather = "sunny"  # clear sky, low blue light
+
+
+## Snow or hard frost: slippery streets.
+func slippery() -> bool:
+	return weather == "snow" or frost
 
 
 ## Every night new things get lost; earlier lost ones stay lost.
@@ -942,7 +960,7 @@ const SAVE_KEYS := [
 	"day", "promille", "today_max", "yesterday_max", "health", "money", "hunger", "cold", "tired",
 	"pass_out_promille", "clock_min", "home_seg", "home_x", "home_type", "lock_broken", "lost",
 	"placements", "dog_items", "carried_items", "high_items", "sleep_place", "soiled", "bonus", "confiscated", "wake_seg", "wake_pos",
-	"weather", "storm", "booth_segs", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
+	"weather", "storm", "frost", "booth_segs", "battery", "phone_msgs", "phone_photo", "phone_map_hints", "street_nights",
 ]
 
 

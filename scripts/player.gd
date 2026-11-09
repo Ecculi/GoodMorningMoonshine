@@ -222,7 +222,7 @@ func _process(delta: float) -> void:
 
 	# Snow: slippery. The character slides on after letting go (longer the
 	# drunker) and turns lazily; sharp turns can end on the backside.
-	if GameState.weather == "snow":
+	if GameState.slippery():
 		if moving:
 			_check_snow_slip(Vector2(v.x, v.z), speed)
 		var slide_time := 0.3 + 0.5 * maxf(GameState.promille, 0.0)
@@ -550,7 +550,7 @@ func _stumble_chance(low: float, high: float) -> float:
 	var c := 0.0
 	if p > GameState.PROMILLE_DRUNK:
 		c += lerpf(low, high, clampf((p - GameState.PROMILLE_DRUNK) / 1.5, 0.0, 1.0))
-	if GameState.weather == "snow":
+	if GameState.slippery():
 		c += 0.02 * (2.0 if GameState.is_lost("shoes") else 1.0)
 	if running:
 		c *= 1.5
@@ -833,10 +833,12 @@ func _hunger_signs() -> void:
 	if GameState.cold < GameState.COLD_SHIVER:
 		cold_k = 0.0
 	model.cold_hug = move_toward(model.cold_hug, 1.0 if cold_k > 0.0 else 0.0, get_process_delta_time() * 3.0)
-	if cold_k > 0.0:
-		shake = 0.012 + 0.02 * cold_k
+	if cold_k > 0.0 or GameState.frost:
+		if cold_k > 0.0:
+			shake = 0.012 + 0.02 * cold_k
 		_cold_puff_t += GameState.world_dt
-		if _cold_puff_t > 2.2:
+		# Hard frost: the breath steams all the time.
+		if _cold_puff_t > (1.4 if GameState.frost else 2.2):
 			_cold_puff_t = 0.0
 			main.popup_icon(main.breath_texture(), position + Vector3(0.3 * facing, 1.72, 0.3))
 	var hang := GameState.hangover_shake()

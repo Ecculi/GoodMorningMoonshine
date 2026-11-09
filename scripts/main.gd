@@ -2207,6 +2207,14 @@ func _update_sun() -> void:
 		"rain": Color(0.38, 0.4, 0.44), "snow": Color(0.7, 0.72, 0.76)}[weather]
 	sky_mat.sky_horizon_color = {"sunny": Color(0.6, 0.72, 0.85), "cloudy": Color(0.72, 0.74, 0.76),
 		"rain": Color(0.55, 0.57, 0.6), "snow": Color(0.86, 0.87, 0.9)}[weather]
+	if GameState.frost:
+		# Hard frost: a deep clear sky and a cold, bright blue light.
+		sky_mat.sky_top_color = Color(0.12, 0.32, 0.82)
+		sky_mat.sky_horizon_color = Color(0.75, 0.86, 0.97)
+		sun.light_color = sun.light_color.lerp(Color(0.8, 0.9, 1.0), 0.6)
+		env.ambient_light_color = Color(0.55, 0.63, 0.78)
+	else:
+		env.ambient_light_color = Color(0.62, 0.62, 0.66)
 	_update_precipitation(weather)
 	# Without sunglasses, facing the sun on a sunny day dazzles; a low sun
 	# is the worst.
@@ -2322,11 +2330,13 @@ func _update_precipitation(weather: String) -> void:
 	var wx := wind_at(Vector3(camera.position.x, 2.0, -1.0)).x
 	rain.gravity = Vector3(wx * 3.0, -18.0, 0.0)
 	rain.particle_flag_align_y = GameState.storm
-	snow_cover.visible = snowing
+	# Hard frost: hoarfrost on the ground and a thin icy haze.
+	var frost := GameState.frost
+	snow_cover.visible = snowing or frost
 	snow_cover.position.x = camera.position.x
-	env.fog_enabled = raining or snowing
-	env.fog_light_color = Color(0.6, 0.62, 0.66) if raining else Color(0.9, 0.92, 0.95)
-	env.fog_density = 0.012 if raining else 0.006
+	env.fog_enabled = raining or snowing or frost
+	env.fog_light_color = Color(0.6, 0.62, 0.66) if raining else (Color(0.8, 0.88, 1.0) if frost else Color(0.9, 0.92, 0.95))
+	env.fog_density = 0.012 if raining else (0.004 if frost else 0.006)
 
 
 func _build_clouds() -> void:

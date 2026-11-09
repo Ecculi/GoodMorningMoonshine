@@ -52,6 +52,7 @@ func _ready() -> void:
 	_button("F11 kaupunki", _next_city)
 	_button("F4 tietyö", _roadworks)
 	_button("F3 myrsky", _storm)
+	_button("pakkanen", _frost)
 
 
 func _build_help() -> void:
@@ -335,6 +336,18 @@ func _storm() -> void:
 	GameState.storm = not GameState.storm
 	if GameState.storm and (GameState.weather == "sunny" or GameState.weather == "snow"):
 		GameState.weather = "rain"
+	main._enter_block(main.segment, main.player.position, main.player.facing)
+
+
+## Hard frost on / off (the street is rebuilt).
+func _frost() -> void:
+	var main = get_parent()
+	if main == null or not main.has_method("_enter_block"):
+		return
+	GameState.frost = not GameState.frost
+	if GameState.frost:
+		GameState.storm = false
+		GameState.weather = "sunny"
 	main._enter_block(main.segment, main.player.position, main.player.facing)
 
 
