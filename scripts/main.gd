@@ -196,8 +196,14 @@ func _process(delta: float) -> void:
 	_check_transitions()
 	_update_followers()
 	_update_traffic()
-	var target_x := clampf(player.position.x, -10.0, 10.0)
+	var reach_x := 12.0 if phone_zoom else 10.0
+	var target_x := clampf(player.position.x, -reach_x, reach_x)
 	camera.position.x = lerpf(camera.position.x, target_x, 1.0 - exp(-4.0 * delta))
+	# Zoomed in on a phone: follow up and down the street a little too.
+	var target_z := CAM_Z
+	if phone_zoom:
+		target_z += clampf((player.position.z - STREET_Z) * 0.4, -2.5, 2.5)
+	camera.position.z = lerpf(camera.position.z, target_z, 1.0 - exp(-3.0 * delta))
 	_update_shake(delta)
 	_update_sun()
 	_update_focus(delta)
@@ -374,7 +380,7 @@ func _enter_block(seg: Vector3i, pos: Vector3, facing: int) -> void:
 	wind_field = leaves
 	player.position = pos
 	player.facing = facing
-	camera.position.x = clampf(pos.x, -10.0, 10.0)
+	camera.position.x = clampf(pos.x, -12.0 if phone_zoom else -10.0, 12.0 if phone_zoom else 10.0)
 	_populate_block()
 
 
@@ -2674,6 +2680,12 @@ const DESIGN_ASPECT := 16.0 / 9.0
 ## close in the sides.
 const MIN_FOV := 26.0
 const MAX_ASPECT := 2.6
+## Phones (touch screens) are small: everything 25 % closer. The camera
+## then follows the character a little up and down the street too, and a
+## bit further along it, so nothing important drops out of view.
+const PHONE_ZOOM := 1.25
+const CAM_Z := 17.0
+var phone_zoom := false
 ## Left and right edge of the playing area on screen (inside the bars).
 var play_left := 0.0
 var play_right := 1280.0
@@ -2682,7 +2694,7 @@ var play_right := 1280.0
 func _build_camera() -> void:
 	camera = Camera3D.new()
 	camera.fov = CAMERA_FOV
-	camera.position = Vector3(0, 10.5, 17.0)
+	camera.position = Vector3(0, 10.5, CAM_Z)
 	add_child(camera)
 	camera.look_at(Vector3(0, 0.6, -1.5))
 	camera.current = true
@@ -2708,6 +2720,15 @@ func _fit_camera() -> void:
 		# Same horizontal view as 16:9 at 36 degrees high.
 		camera.keep_aspect = Camera3D.KEEP_WIDTH
 		camera.fov = rad_to_deg(2.0 * atan(tan(deg_to_rad(CAMERA_FOV * 0.5)) * DESIGN_ASPECT))
+	phone_zoom = _is_phone()
+	if phone_zoom:
+		camera.fov = rad_to_deg(2.0 * atan(tan(deg_to_rad(camera.fov * 0.5)) / PHONE_ZOOM))
+
+
+## A phone or a tablet (also the web build on one).
+func _is_phone() -> bool:
+	return OS.has_feature("mobile") or OS.has_feature("web_android") or OS.has_feature("web_ios") \
+		or DisplayServer.is_touchscreen_available()
 
 
 func _build_post_process() -> void:
