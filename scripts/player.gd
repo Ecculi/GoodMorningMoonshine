@@ -1292,6 +1292,7 @@ func _bag_add(it) -> void:
 	bag.contents.append([it.kind, it.value, it.drink])
 	main.remove_item(it)
 	bag.update_bag_look()
+	main.hud.bag_changed()
 	main.popup("+", position + Vector3(0, 1.6, 0), Color(0.9, 0.95, 1.0), 0.8)
 	if bag.contents.size() > Item.BAG_MAX:
 		tear_bag()
@@ -1340,6 +1341,7 @@ func _use_from_bag() -> bool:
 				continue
 		bag.contents.remove_at(i)
 		bag.update_bag_look()
+		main.hud.bag_changed()
 		return true
 	return false
 

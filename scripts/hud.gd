@@ -3,6 +3,7 @@ extends Control
 const LostItems = preload("res://scripts/lost_items.gd")
 const BuildInfo = preload("res://scripts/build_info.gd")
 const Npc = preload("res://scripts/npc.gd")
+const Item = preload("res://scripts/item.gd")
 ## The version and build time show small at the bottom of the screen at
 ## start, until the player first moves (then they fade out quickly).
 var _version_a := 1.0
@@ -219,6 +220,84 @@ func _draw_city(vs: Vector2, font: Font) -> void:
 		draw_string(font, ic + Vector2(26, 7), lines[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(1, 1, 1, a))
 	draw_string(font, Vector2(panel.position.x, panel.end.y - 10), BuildInfo.text(), HORIZONTAL_ALIGNMENT_CENTER, pw, 13,
 		Color(1, 1, 1, 0.45 * a))
+
+
+## What is in the plastic bag in the hand: a row of small pictures (one
+## slot per thing it holds, empty slots faint) next to the bag. Shown
+## while the character stands still, and for a moment whenever something
+## goes in or comes out.
+const BAG_SHOW_TIME := 2.5
+var _bag_show_t := 0.0
+
+
+func bag_changed() -> void:
+	_bag_show_t = BAG_SHOW_TIME
+
+
+func _draw_bag_contents() -> void:
+	if main == null or main.player == null or mode != "" or GameState.modal != "":
+		return
+	var pl = main.player
+	var bag = pl.hand_item
+	_bag_show_t = maxf(0.0, _bag_show_t - get_process_delta_time())
+	if bag == null or not is_instance_valid(bag) or bag.kind != Item.Kind.BAG:
+		return
+	if GameState.moving and _bag_show_t <= 0.0:
+		return
+	var at: Vector3 = pl.model.hand.global_position + Vector3(0, 0.75, 0)
+	if main.camera.is_position_behind(at):
+		return
+	var c: Vector2 = main.camera.unproject_position(at)
+	var slot := 26.0
+	var n: int = Item.BAG_MAX
+	var w := n * slot + 10.0
+	var r := Rect2(c - Vector2(w * 0.5, slot * 0.5 + 5.0), Vector2(w, slot + 10.0))
+	draw_rect(r, Color(0, 0, 0, 0.55))
+	draw_rect(r, Color(0.9, 0.95, 1.0, 0.5), false, 1.5)
+	for i in n:
+		var sc := Vector2(r.position.x + 5.0 + slot * (i + 0.5), c.y)
+		if i < bag.contents.size():
+			var e: Array = bag.contents[i]
+			_draw_kind_icon(sc, e[0], e[2])
+		else:
+			draw_circle(sc, 3.0, Color(1, 1, 1, 0.2))
+
+
+## A small picture of an item kind (for the bag contents).
+func _draw_kind_icon(c: Vector2, kind: int, drink: int) -> void:
+	match kind:
+		Item.Kind.BOTTLE:
+			var bc: Color = Item.DRINK_COLOR.get(drink, Color(0.2, 0.45, 0.2))
+			draw_rect(Rect2(c + Vector2(-4, -3), Vector2(8, 13)), bc)
+			draw_rect(Rect2(c + Vector2(-1.5, -10), Vector2(3, 7)), bc)
+		Item.Kind.CAN:
+			draw_rect(Rect2(c + Vector2(-5, -7), Vector2(10, 14)), Color(0.75, 0.78, 0.82))
+			draw_rect(Rect2(c + Vector2(-5, -2), Vector2(10, 4)), Color(0.8, 0.2, 0.2))
+		Item.Kind.ENERGY:
+			draw_rect(Rect2(c + Vector2(-5, -7), Vector2(10, 14)), Color(0.2, 0.75, 0.3))
+			draw_rect(Rect2(c + Vector2(-5, -2), Vector2(10, 4)), Color(0.1, 0.1, 0.1))
+		Item.Kind.COFFEE:
+			draw_rect(Rect2(c + Vector2(-5, -5), Vector2(10, 12)), Color(0.95, 0.95, 0.92))
+			draw_rect(Rect2(c + Vector2(-5, -7), Vector2(10, 3)), Color(0.35, 0.2, 0.1))
+		Item.Kind.FOOD:
+			# A sausage.
+			draw_line(c + Vector2(-8, 3), c + Vector2(8, -3), Color(0.75, 0.3, 0.2), 6.0, true)
+		Item.Kind.COIN:
+			draw_circle(c, 6.0, Color(1.0, 0.82, 0.25))
+			draw_arc(c, 6.0, 0, TAU, 16, Color(0.6, 0.45, 0.1), 1.5, true)
+		Item.Kind.PILLS:
+			draw_circle(c + Vector2(-3, 0), 3.5, Color(1.0, 0.5, 0.85))
+			draw_circle(c + Vector2(3, 1), 3.5, Color(0.6, 0.85, 1.0))
+		Item.Kind.FLOWER:
+			draw_line(c + Vector2(0, 2), c + Vector2(0, 9), Color(0.2, 0.6, 0.2), 2.0)
+			draw_circle(c + Vector2(0, -2), 5.0, Color(0.95, 0.3, 0.45))
+			draw_circle(c + Vector2(0, -2), 2.0, Color(1, 0.9, 0.3))
+		Item.Kind.FLYER:
+			draw_rect(Rect2(c + Vector2(-5, -7), Vector2(10, 14)), Color(0.97, 0.97, 0.95))
+			for k in 3:
+				draw_line(c + Vector2(-3, -4 + k * 4), c + Vector2(3, -4 + k * 4), Color(0.3, 0.3, 0.35), 1.0)
+		_:
+			draw_circle(c, 5.0, Color(0.8, 0.8, 0.8))
 
 
 ## A lost thing was just found: shown big in the middle of the screen.
@@ -495,6 +574,7 @@ func _draw() -> void:
 	_draw_rotate_prompt(vs, font)
 	_draw_achievement(vs, font)
 	_draw_head_heart(delta_draw())
+	_draw_bag_contents()
 	_draw_arrest()
 	_draw_choke()
 	_draw_lost_list(vs)
