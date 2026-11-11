@@ -420,6 +420,11 @@ func show_head_heart() -> void:
 	_head_heart_t = 2.0
 
 
+## Keeps the heart over the head up while it is filling back up.
+func show_head_heart_briefly() -> void:
+	_head_heart_t = maxf(_head_heart_t, 0.6)
+
+
 ## Quick fade from black when the view changes to another block.
 func fade_in() -> void:
 	_fade = 1.0

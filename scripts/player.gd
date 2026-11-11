@@ -1174,8 +1174,11 @@ const SPAM_COST := 7.0
 ## Temporary health used per second of running: a full heart lasts
 ## about 33 s (six to seven blocks) of running.
 const RUN_STRAIN := 3.0
-const REST_DELAY := 5.0
-const STRAIN_RECOVERY := 4.0
+## After this long without punching or running the pink part starts to
+## come back, STRAIN_RECOVERY per second, in real time: also while
+## standing still (when the world waits), so a breather always helps.
+const REST_DELAY := 2.0
+const STRAIN_RECOVERY := 8.0
 var _last_punch := -10.0
 var _rest_t := 0.0
 
@@ -1193,9 +1196,11 @@ func _punch_strain() -> void:
 ## Exhausted, the heart may stay all pink only for a while (10 s at full
 ## health, 1 s near empty); after that health drops until resting starts
 ## and the red begins to come back.
-func _update_rest(_delta: float) -> void:
+func _update_rest(delta: float) -> void:
 	var dt := GameState.world_dt
-	_rest_t += dt
+	# Resting counts in real time (not in a menu or after death).
+	var rest_dt := delta if GameState.modal == "" and not GameState.over else 0.0
+	_rest_t += rest_dt
 	if GameState.running:
 		GameState.add_strain(RUN_STRAIN * dt)
 		_rest_t = 0.0
@@ -1205,8 +1210,11 @@ func _update_rest(_delta: float) -> void:
 			GameState.damage(GameState.EXHAUST_DAMAGE * dt, "exhaust")
 	else:
 		_exhaust_t = 0.0
-	if _rest_t > REST_DELAY:
-		GameState.recover_strain(STRAIN_RECOVERY * dt)
+	if _rest_t > REST_DELAY and GameState.strain > 0.0:
+		GameState.recover_strain(STRAIN_RECOVERY * rest_dt)
+		# Let it be seen: the heart over the head fills back up.
+		if GameState.strain > 5.0:
+			main.hud.show_head_heart_briefly()
 
 
 func _consume_hand_item() -> void:
