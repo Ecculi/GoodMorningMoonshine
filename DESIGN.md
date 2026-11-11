@@ -356,7 +356,7 @@ Humalan vaikutukset alkavat matalammalla kuin alussa suunniteltiin (kaikki rajat
 - **Ruoka:** syöminen palauttaa vähän.
 - **Hyvä humala korjaa:** 1,0–2,5 promillessa health palautuu itsestään hitaasti (0,4 / s liikkuessa). Selvempänä tai kovemmassa humalassa ei.
 - **Alkoholi:** juominen palauttaa healthia juoman vahvuuden mukaan (15 healthia promillea kohden: olut noin +4, pullo +6, tuoppi +8, viina +9, tuntematon aine +14; tyhjään mahaan enemmän).
-- **Apteekki:** laastaria tai särkylääkettä saa rahalla, mutta ne palauttavat vain vähän. **Toteutus:** noin joka kolmannessa korttelissa on apteekki (vihreä APTEEKKI-kyltti ja hehkuva vihreä risti oven vieressä). Kauppanäkymä toimii kuten kioskissa: laastari 2 € (+10 healthia) ja särkylääke 4 € (+20 healthia ja krapulatärinä pois kahdeksi minuutiksi pelin aikaa). Ostaminen vaatii lompakon mutta ei henkkareita.
+- **Apteekki:** laastaria tai särkylääkettä saa rahalla, mutta ne palauttavat vain vähän. **Toteutus:** noin joka kolmannessa korttelissa on apteekki (vihreä APTEEKKI-kyltti ja hehkuva vihreä risti oven vieressä). Kauppanäkymä toimii kuten kioskissa: laastari 2 € (+10 healthia) ja särkylääke 4 € (+20 healthia ja krapulatärinä pois kahdeksi minuutiksi pelin aikaa). Ostaminen vaatii lompakon mutta ei henkkareita. **Tiskillä (kioski, baari, apteekki) health ei kulu:** aika kulkee, alkoholi laskee ja nälkä kasvaa, mutta krapula ja nälkä vievät healthia vasta kadulla.
 - Päivän aikana health ei palaudu itsestään.
 
 ### Väsymyksen vähentäminen

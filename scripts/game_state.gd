@@ -239,7 +239,9 @@ func _process(delta: float) -> void:
 		# alcohol drops and hunger grows (but the street outside waits).
 		world_dt = 0.0
 		active = false
-		_tick_body(delta, false)
+		# Indoors at a counter (kiosk, bar, pharmacy) health doesn't drain:
+		# the hangover and hunger only hurt out on the street.
+		_tick_body(delta, false, true)
 		cold = maxf(0.0, cold - COLD_INDOOR_WARM * delta)
 		wet = maxf(0.0, wet - delta)  # clothes dry indoors
 		return
@@ -323,19 +325,20 @@ func doze_lids() -> float:
 
 
 ## Alcohol, clock, hangover and hunger for `dt` seconds of activity.
-func _tick_body(dt: float, is_running: bool) -> void:
+## `indoors`: at a shop counter; nothing there takes health away.
+func _tick_body(dt: float, is_running: bool, indoors := false) -> void:
 	var mult := RUN_DECAY_MULT if is_running else 1.0
 	promille = maxf(0.0, promille - PROMILLE_DECAY * dt * mult)
 	_absorb(dt)
 	clock_min += float(DAY_END_MIN - DAY_START_MIN) / DAY_ACTIVE_SECONDS * dt
-	if hangover_drain() > 0.0:
+	if hangover_drain() > 0.0 and not indoors:
 		health -= hangover_drain() * dt
 		last_hurt = "hangover"
 	health = minf(100.0, health + mend_rate() * dt)
 	# Being cold makes you hungry faster.
 	var hunger_mult := 1.5 if cold >= COLD_HUNGRY else 1.0
 	hunger = minf(100.0, hunger + HUNGER_RATE * dt * mult * hunger_mult)
-	if hunger >= HUNGER_HURTS:
+	if hunger >= HUNGER_HURTS and not indoors:
 		health -= 1.0 * dt
 		last_hurt = "hunger"
 	# Tiredness grows, faster when running and in the dark.
