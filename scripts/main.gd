@@ -802,14 +802,40 @@ func _process_modal(delta: float) -> void:
 				_end_breath_test()
 		"shop":
 			var opts := shop_options()
-			if Input.is_action_just_pressed("move_left"):
+			# The stick's main direction, acted on once each time it is
+			# pushed that way. (A touch stick is rarely straight: going
+			# by "just pressed" of each direction, a slightly sideways
+			# pull down moved the choice instead of leaving.)
+			var pushed := _stick_push()
+			if pushed == "left":
 				shop_sel = (shop_sel + opts.size() - 1) % opts.size()
-			elif Input.is_action_just_pressed("move_right"):
+			elif pushed == "right":
 				shop_sel = (shop_sel + 1) % opts.size()
-			elif Input.is_action_just_pressed("move_down"):
+			elif pushed == "down":
 				_close_modal()
 			elif Input.is_action_just_pressed("action"):
 				_buy(opts[shop_sel])
+
+
+## Which way the stick / arrows were just pushed: "left", "right", "up",
+## "down" or "" (nothing new). The bigger component wins, and a direction
+## counts once until the stick goes back towards the middle.
+var _stick_dir := ""
+
+
+func _stick_push() -> String:
+	var v := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var now := ""
+	if v.length() > 0.45:
+		if absf(v.y) >= absf(v.x):
+			now = "down" if v.y > 0.0 else "up"
+		else:
+			now = "right" if v.x > 0.0 else "left"
+	elif v.length() > 0.25:
+		now = _stick_dir  # in between: keep the last one (no flicker)
+	var fresh := now != "" and now != _stick_dir
+	_stick_dir = now
+	return now if fresh else ""
 
 
 ## The button press that closed the overlay must not also punch.
@@ -899,6 +925,8 @@ func _try_shop(sh: Dictionary) -> bool:
 	shop_sel = 0
 	shop_flash = ""
 	GameState.modal = "shop"
+	# Whatever way the stick is held as the counter opens doesn't count.
+	_stick_push()
 	return true
 
 

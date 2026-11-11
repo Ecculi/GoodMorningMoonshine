@@ -230,6 +230,7 @@ Krapula ei kovene päivien mukaan.
 
 - Kontrollien pitää olla niin simppelit, että peliä voi pelata **puhelimella**.
 - Käytössä on **suuntanuolet**, **toimintanappi** ja erillinen **puhelinnappi**.
+- **Valikoissa (kioski, baari, apteekki) ratkaisee ohjaimen pääsuunta:** vasen/oikea vaihtaa tuotetta ja alas poistuu. Suunta luetaan vasta selvästä vedosta (yli 45 %), ja suurempi komponentti voittaa, joten kosketusohjaimen vähän vino veto alaspäin poistuu eikä vaihda tuotetta. Sama suunta toimii kerran, kunnes ohjain palaa keskelle päin; avautuessa pohjassa ollutta suuntaa ei lasketa.
 - **Puhelimella** suuntanuolten tilalla on **ohjaussauva** näytön vasemmassa alareunassa: sauvan keskiö ilmestyy siihen, mihin sormi osuu, ja sormea liu'uttamalla hahmo kävelee; kun sormen vie reunaan asti (keltaisen renkaan yli), hahmo juoksee.
 - Toimintanapissa on **lyhyt ja pitkä painallus**:
 
