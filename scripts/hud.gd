@@ -9,6 +9,10 @@ var _version_a := 1.0
 var _version_fading := false
 ## The morning thought bubble stays until the player has walked this far.
 const BUBBLE_WALK := 5.0
+## The morning thought bubble pops up only after this many metres walked.
+const BUBBLE_DELAY_WALK := 1.5
+var _bubble_waiting := false
+var _bubble_start_walk := 0.0
 ## Health heart (colour drains away, no number), alcohol in per mille
 ## inside a bottle icon, money, throw charge, and the full-screen cards
 ## for day changes and death (newspaper headline).
@@ -66,7 +70,11 @@ func hide_card() -> void:
 func show_pocket_check() -> void:
 	_today = GameState.lost.duplicate()
 	_bubble_items = _today
-	_bubble_on = not _today.is_empty()
+	_bubble_on = false
+	# Not straight away: only once the player has set off and walked a
+	# little (the start screen has enough on it already).
+	_bubble_waiting = not _today.is_empty()
+	_bubble_start_walk = 0.0
 	_bubble_walked = 0.0
 	if main != null and main.player != null:
 		_bubble_last = main.player.position
@@ -102,8 +110,8 @@ func _draw_rotate_prompt(vs: Vector2, font: Font) -> void:
 ## starts (out of the way of the city intro); gone as soon as the player
 ## moves (it stays in the F1 help).
 func _draw_version(vs: Vector2, font: Font) -> void:
-	if _version_a <= 0.0:
-		return
+	if _version_a <= 0.0 or _city_a > 0.0:
+		return  # (shown inside the start panel while that is up)
 	if GameState.moving:
 		_version_fading = true
 	if _version_fading:
@@ -172,22 +180,31 @@ func _draw_city(vs: Vector2, font: Font) -> void:
 	if _city_fading:
 		_city_a = maxf(0.0, _city_a - get_process_delta_time() * 1.5)
 	var a := _city_a
-	var y := vs.y * 0.34
-	draw_string_outline(font, Vector2(0, y), _city_name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, vs.x, 72, 14,
-		Color(0, 0, 0, 0.8 * a))
-	draw_string(font, Vector2(0, y), _city_name.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, vs.x, 72, Color(1, 0.9, 0.5, a))
+	# One dark panel: the city's name, the subtitle, what to do (short
+	# lines with pictures) and the version small at the bottom.
+	var title := _city_name.to_upper()
 	var sub := tr("CITY_SUB")
-	draw_string_outline(font, Vector2(0, y + 40), sub, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 22, 6, Color(0, 0, 0, 0.8 * a))
-	draw_string(font, Vector2(0, y + 40), sub, HORIZONTAL_ALIGNMENT_CENTER, vs.x, 22, Color(1, 1, 1, 0.9 * a))
-	# What to do, in three short lines with pictures.
 	var lines := [["SEARCH", tr("INTRO_1")], ["THERMO", tr("INTRO_2")], ["ACT_DRINK", tr("INTRO_3")], ["HOME", tr(GameState.home_key("INTRO_4"))]]
-	var bw := 0.0
+	var lw := 0.0
 	for ln in lines:
-		bw = maxf(bw, font.get_string_size(ln[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x)
-	var box := Rect2(Vector2((vs.x - bw - 70) * 0.5, y + 62), Vector2(bw + 70, lines.size() * 32 + 14))
-	draw_rect(box, Color(0, 0, 0, 0.5 * a))
+		lw = maxf(lw, font.get_string_size(ln[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x + 54.0)
+	var inner := maxf(lw, maxf(font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 64).x,
+		font.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x))
+	var pw := minf(inner + 72.0, vs.x - 24.0)
+	var ph := 26.0 + 64.0 + 14.0 + 26.0 + 22.0 + lines.size() * 32.0 + 12.0 + 22.0
+	var panel := Rect2(Vector2((vs.x - pw) * 0.5, maxf(12.0, vs.y * 0.46 - ph * 0.5)), Vector2(pw, ph))
+	draw_rect(panel, Color(0.04, 0.04, 0.06, 0.82 * a))
+	draw_rect(panel, Color(1, 0.9, 0.5, 0.5 * a), false, 2.0)
+	var y := panel.position.y + 26.0 + 52.0
+	draw_string(font, Vector2(panel.position.x, y), title, HORIZONTAL_ALIGNMENT_CENTER, pw, 64, Color(1, 0.9, 0.5, a))
+	y += 14.0 + 26.0
+	draw_string(font, Vector2(panel.position.x, y), sub, HORIZONTAL_ALIGNMENT_CENTER, pw, 22, Color(1, 1, 1, 0.9 * a))
+	# A thin line between the title part and the instructions.
+	y += 14.0
+	draw_line(Vector2(panel.position.x + 30, y), Vector2(panel.end.x - 30, y), Color(1, 1, 1, 0.2 * a), 1.0)
+	var lx := panel.position.x + (pw - lw) * 0.5
 	for i in lines.size():
-		var ic := box.position + Vector2(28, 24 + i * 32)
+		var ic := Vector2(lx + 14, y + 26 + i * 32)
 		var kind: String = lines[i][0]
 		if kind == "THERMO":
 			draw_rect(Rect2(ic + Vector2(-14, -4), Vector2(28, 8)), Color(0.1, 0.1, 0.15, a))
@@ -200,6 +217,8 @@ func _draw_city(vs: Vector2, font: Font) -> void:
 		else:
 			_hint_action(ic, kind, a)
 		draw_string(font, ic + Vector2(26, 7), lines[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(1, 1, 1, a))
+	draw_string(font, Vector2(panel.position.x, panel.end.y - 10), BuildInfo.text(), HORIZONTAL_ALIGNMENT_CENTER, pw, 13,
+		Color(1, 1, 1, 0.45 * a))
 
 
 ## A lost thing was just found: shown big in the middle of the screen.
@@ -309,6 +328,7 @@ func add_today(id: String) -> void:
 
 
 func think(items: Array) -> void:
+	_bubble_waiting = false
 	_bubble_items = items
 	_bubble_on = true
 	_bubble_walked = BUBBLE_WALK - 2.0
@@ -405,7 +425,17 @@ func _process(delta: float) -> void:
 		flash_hurt()
 	_was_hungover = hung
 	_fade = maxf(0.0, _fade - delta * _fade_speed)
-	if _bubble_on and main != null and main.player != null:
+	if _bubble_waiting and main != null and main.player != null:
+		var wp: Vector3 = main.player.position
+		var wd := Vector2(wp.x - _bubble_last.x, wp.z - _bubble_last.z).length()
+		if wd < 2.0:
+			_bubble_start_walk += wd
+		_bubble_last = wp
+		if _bubble_start_walk >= BUBBLE_DELAY_WALK:
+			_bubble_waiting = false
+			_bubble_on = true
+			_bubble_walked = 0.0
+	elif _bubble_on and main != null and main.player != null:
 		var p: Vector3 = main.player.position
 		var d := Vector2(p.x - _bubble_last.x, p.z - _bubble_last.z).length()
 		if d < 2.0:  # ignore jumps when the view changes
