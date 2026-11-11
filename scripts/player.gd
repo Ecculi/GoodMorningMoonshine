@@ -633,16 +633,17 @@ func _stumble_chance(low: float, high: float) -> float:
 	return clampf(c, 0.0, 0.9)
 
 
-## Running over the curb can always trip, more likely the drunker you are.
-## Walking stays fairly safe (only risky when very drunk).
-const CURB_RUN_BASE := 0.03
-const CURB_RUN_PER_PROMILLE := 0.06
+## Running over the curb trips only when properly drunk (over
+## PROMILLE_DRUNK), more likely the drunker you are: 5 % per per mille over
+## it (about 10 % at 3.3 per mille). Walking stays fairly safe (only risky
+## when very drunk). Below that, only a slippery street can trip you.
+const CURB_RUN_PER_PROMILLE := 0.05
 
 
 func _curb_chance() -> float:
 	var c := _stumble_chance(0.02, 0.15)
 	if running:
-		c += CURB_RUN_BASE + CURB_RUN_PER_PROMILLE * maxf(GameState.promille, 0.0)
+		c += CURB_RUN_PER_PROMILLE * maxf(GameState.promille - GameState.PROMILLE_DRUNK, 0.0)
 	return clampf(c, 0.0, 0.9)
 
 
