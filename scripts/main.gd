@@ -214,6 +214,7 @@ func _process(delta: float) -> void:
 	_check_choke()
 	_check_checkpoint()
 	_update_signs()
+	_update_shop_colors(delta)
 	# Death: the headline, then the high scores, then a new game.
 	if hud.mode == "scores" and hud.card_time > 0.6 and Input.is_action_just_pressed("action"):
 		_new_game()
@@ -633,6 +634,33 @@ const SIGN_GHOSTS := [Vector3(0.05, 0.03, 0), Vector3(-0.05, -0.02, 0), Vector3(
 var _sign_step := 0
 var _sign_walk := 0.0
 var _sign_last := Vector3.ZERO
+
+
+## Drunk enough, the shops' colours (sign boards, awnings, the pharmacy
+## cross) start drifting smoothly from colour to colour, each shop on its
+## own, so the colour no longer tells a kiosk from a bar or a pharmacy.
+## Starts at PROMILLE_DRUNK, full from SHOP_COLOUR_FULL per mille on.
+const SHOP_COLOUR_FULL := 2.0
+## Turns of the colour wheel per second.
+const SHOP_COLOUR_SPEED := 0.07
+var _shop_colour_t := 0.0
+
+
+func _update_shop_colors(delta: float) -> void:
+	var k := clampf((GameState.promille - GameState.PROMILLE_DRUNK)
+		/ (SHOP_COLOUR_FULL - GameState.PROMILLE_DRUNK), 0.0, 1.0)
+	_shop_colour_t += delta
+	for mi in get_tree().get_nodes_in_group("shop_colour"):
+		var m: StandardMaterial3D = mi.material_override
+		var base: Color = mi.get_meta("base_color")
+		var c := base
+		if k > 0.0:
+			var hue := fmod(_shop_colour_t * SHOP_COLOUR_SPEED + float(mi.get_meta("phase")), 1.0)
+			c = base.lerp(Color.from_hsv(hue, 0.75, 0.8), k)
+		if m.albedo_color != c:
+			m.albedo_color = c
+			if m.emission_enabled:
+				m.emission = c
 
 
 func _update_signs() -> void:
