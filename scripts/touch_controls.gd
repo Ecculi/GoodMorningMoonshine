@@ -12,13 +12,15 @@ var _stick
 
 
 ## Floating virtual stick: the base appears where the finger lands (in
-## the lower left area) and the knob follows the finger. Deflection sets
-## the move actions' strength; at the edge (over RUN_AT) the character
-## runs.
+## the lower left area) and the knob follows the finger. Anywhere inside
+## the circle walks; only pulling the finger clearly past the circle's
+## edge (RUN_AT) runs. Dragged further still, the base follows the finger
+## so the stick never gets "stuck" out of reach.
 class Stick extends Node2D:
 	const RADIUS := 80.0
-	const DEAD := 0.2
-	const RUN_AT := 0.85
+	const DEAD := 0.15
+	const RUN_AT := 1.3
+	const FOLLOW_AT := 1.8
 	var home := Vector2(170, 500)
 	var area := Rect2()
 	var _touch := -1
@@ -47,19 +49,28 @@ class Stick extends Node2D:
 
 	func _apply() -> void:
 		var d := Vector2.ZERO
+		var raw := 0.0
 		if _touch >= 0:
 			d = (_knob - _base) / RADIUS
+			raw = d.length()
+			if raw > FOLLOW_AT:
+				# Drag the base along behind the finger.
+				_base = _knob - d.normalized() * RADIUS * FOLLOW_AT
+				d = d.normalized() * FOLLOW_AT
+				raw = FOLLOW_AT
 			if d.length() > 1.0:
 				d = d.normalized()
-				_knob = _base + d * RADIUS
 		var mag := d.length()
 		if mag < DEAD:
 			d = Vector2.ZERO
+		else:
+			# Full walking speed straight away once out of the dead zone.
+			d = d.normalized()
 		_press("move_right", maxf(d.x, 0.0))
 		_press("move_left", maxf(-d.x, 0.0))
 		_press("move_down", maxf(d.y, 0.0))
 		_press("move_up", maxf(-d.y, 0.0))
-		GameState.stick_run = mag >= RUN_AT
+		GameState.stick_run = raw >= RUN_AT
 		queue_redraw()
 
 	func _press(action: String, strength: float) -> void:
@@ -73,8 +84,9 @@ class Stick extends Node2D:
 		var k := _knob if _touch >= 0 else home
 		draw_circle(b, RADIUS, Color(0.1, 0.1, 0.12, 0.3))
 		draw_arc(b, RADIUS, 0.0, TAU, 48, Color(1, 1, 1, 0.5), 3.0, true)
-		# Run ring: past it the character runs.
-		draw_arc(b, RADIUS * RUN_AT, 0.0, TAU, 48, Color(1, 0.85, 0.3, 0.35), 2.0, true)
+		# Run ring outside the walk circle: past it the character runs.
+		var running: bool = GameState.stick_run and _touch >= 0
+		draw_arc(b, RADIUS * RUN_AT, 0.0, TAU, 48, Color(1, 0.85, 0.3, 0.8 if running else 0.3), 3.0 if running else 2.0, true)
 		draw_circle(k, 30.0, Color(1, 1, 1, 0.45 if _touch >= 0 else 0.3))
 
 
