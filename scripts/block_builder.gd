@@ -303,7 +303,7 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 		# The shop's colour parts (sign board, awning stripes, pharmacy
 		# cross) are tagged so that when drunk their colours can drift
 		# (main._update_shop_colors). One phase per shop, so they differ.
-		var phase := rng.randf()
+		var phase: float = fposmod(base.x * 0.137 + base.z * 0.071, 1.0)
 		_shop_colour(_box(root, Vector3(base.x - w * 0.15, 2.8, base.z + 0.08), Vector3(w * 0.55, 0.6, 0.1), sign_col), phase)
 		var key: String = SHOP_SIGNS[shop]
 		if shop == "pharmacy":
