@@ -954,6 +954,7 @@ func _hunger_signs() -> void:
 	else:
 		model.position.x = 0.0
 		model.position.z = 0.0
+	_apply_hip_lean()
 	_heavy_breathing()
 	if not hungry:
 		return
@@ -1055,21 +1056,13 @@ func _short_action() -> void:
 	if trader != null and trader.offer_trade(self):
 		return
 	if hand_item != null and not _fight_on():
-		if hand_item.kind == Item.Kind.BOTTLE:
-			# The amount is not shown: it sinks in slowly, and you never
-			# quite know how drunk you are going to get.
-			GameState.drink(Item.DRINK_PROMILLE[hand_item.drink])
-			GameState.warm_up(Item.DRINK_WARMTH[hand_item.drink])
-			main.popup("glug", position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
-			_consume_hand_item()
-			return
-		if hand_item.kind == Item.Kind.COFFEE or hand_item.kind == Item.Kind.ENERGY:
-			var coffee: bool = hand_item.kind == Item.Kind.COFFEE
-			GameState.caffeinate(GameState.COFFEE_AWAKE if coffee else GameState.ENERGY_AWAKE)
-			if coffee:
-				GameState.warm_up(GameState.COFFEE_WARMTH)  # hot coffee
-			main.popup("!", position + Vector3(0, 2.1, 0), Color(0.6, 1.0, 0.4))
-			_consume_hand_item()
+		if hand_item.kind == Item.Kind.BOTTLE or hand_item.kind == Item.Kind.COFFEE \
+				or hand_item.kind == Item.Kind.ENERGY:
+			# Up to the mouth, head and body tipping back (see
+			# _update_eating); the drink counts once it's down.
+			_eating = hand_item
+			model.start_drink(_drink_lean())
+			GameState.busy_time = maxf(GameState.busy_time, model.EAT_TIME)
 			return
 		if hand_item.kind == Item.Kind.FOOD:
 			# Up to the mouth and in (see _update_eating).
@@ -1264,23 +1257,66 @@ func _update_rest(delta: float) -> void:
 var _eating = null
 
 
+## Bent back from the hips (drinking): tilt the whole model back by
+## model.hip_lean (its legs are kept upright in animate()) and shift it so
+## the feet stay where they were: the bend happens at the hips.
+const HIP_HEIGHT := 0.9
+
+
+func _apply_hip_lean() -> void:
+	var a: float = model.hip_lean
+	if a <= 0.0005:
+		return
+	model.rotation.z += a
+	var yaw: float = model.rotation.y
+	var fwd := Vector3(cos(yaw), 0.0, -sin(yaw))
+	model.position += fwd * HIP_HEIGHT * sin(a) * model.scale.x
+	model.position.y += HIP_HEIGHT * (1.0 - cos(a)) * model.scale.x
+
+
+## How far the body bends back from the hips when drinking: a little when
+## sober, much more the drunker (radians: about 6° up to 30° at 3 per mille).
+func _drink_lean() -> float:
+	return lerpf(0.1, 0.52, clampf(GameState.promille / 3.0, 0.0, 1.0))
+
+
 func _update_eating() -> void:
 	if _eating == null:
 		return
 	if not is_instance_valid(_eating) or _eating != hand_item:
 		if is_instance_valid(_eating):
 			_eating.scale = Vector3.ONE
+			_eating.rotation = Vector3.ZERO
 		_eating = null
 		model.eat_t = -1.0
 		return
-	# Held in the fist, going into the mouth bit by bit.
+	# Held in the fist; food goes into the mouth bit by bit, a drink is
+	# tipped up.
 	_eating.position = Vector3(0, -0.06, 0)
-	var bite: float = model.eat_bite()
-	_eating.scale = Vector3.ONE * maxf(0.05, 1.0 - bite)
+	if _eating.kind == Item.Kind.FOOD:
+		var bite: float = model.eat_bite()
+		_eating.scale = Vector3.ONE * maxf(0.05, 1.0 - bite)
+	else:
+		_eating.rotation.z = lerpf(0.0, 0.9, model.eat_bite())
 	if model.eat_t < 0.0:
+		var it = _eating
 		_eating = null
-		GameState.eat()
-		main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
+		match it.kind:
+			Item.Kind.FOOD:
+				GameState.eat()
+				main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
+			Item.Kind.BOTTLE:
+				# The amount is not shown: it sinks in slowly, and you never
+				# quite know how drunk you are going to get.
+				GameState.drink(Item.DRINK_PROMILLE[it.drink])
+				GameState.warm_up(Item.DRINK_WARMTH[it.drink])
+				main.popup("glug", position + Vector3(0, 2.1, 0), Color(1, 0.8, 0.3))
+			Item.Kind.COFFEE, Item.Kind.ENERGY:
+				var coffee: bool = it.kind == Item.Kind.COFFEE
+				GameState.caffeinate(GameState.COFFEE_AWAKE if coffee else GameState.ENERGY_AWAKE)
+				if coffee:
+					GameState.warm_up(GameState.COFFEE_WARMTH)  # hot coffee
+				main.popup("!", position + Vector3(0, 2.1, 0), Color(0.6, 1.0, 0.4))
 		_consume_hand_item()
 
 
