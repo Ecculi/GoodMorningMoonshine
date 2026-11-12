@@ -300,7 +300,11 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 	if shop != "":
 		var door_x := base.x + w * 0.3
 		var sign_col: Color = SHOP_COLORS[shop]
-		_box(root, Vector3(base.x - w * 0.15, 2.8, base.z + 0.08), Vector3(w * 0.55, 0.6, 0.1), sign_col)
+		# The shop's colour parts (sign board, awning stripes, pharmacy
+		# cross) are tagged so that when drunk their colours can drift
+		# (main._update_shop_colors). One phase per shop, so they differ.
+		var phase: float = fposmod(base.x * 0.137 + base.z * 0.071, 1.0)
+		_shop_colour(_box(root, Vector3(base.x - w * 0.15, 2.8, base.z + 0.08), Vector3(w * 0.55, 0.6, 0.1), sign_col), phase)
 		var key: String = SHOP_SIGNS[shop]
 		if shop == "pharmacy":
 			# A glowing green cross next to the door.
@@ -311,6 +315,7 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 				cm.emission_enabled = true
 				cm.emission = Color(0.2, 0.9, 0.35)
 				cm.emission_energy_multiplier = 1.2
+				_shop_colour(cr, phase)
 		var shop_text := TranslationServer.translate(key)
 		var l := _label(shop_text, 72, 0.006)
 		l.position = Vector3(base.x - w * 0.15, 2.8, base.z + 0.15)
@@ -326,8 +331,10 @@ static func _building(root: Node3D, base: Vector3, w: float, h: float, col: Colo
 		lm.emission_energy_multiplier = 0.6
 		# Striped awning over the door (things can get stuck on top).
 		for k in 4:
-			_box(root, Vector3(door_x - 0.75 + k * 0.5, AWNING_Y - 0.1 * (k % 2), -7.35),
+			var stripe := _box(root, Vector3(door_x - 0.75 + k * 0.5, AWNING_Y - 0.1 * (k % 2), -7.35),
 				Vector3(0.5, 0.08, 1.1), sign_col if k % 2 == 0 else Color(0.95, 0.95, 0.92))
+			if k % 2 == 0:
+				_shop_colour(stripe, phase)
 		# (The bar's bouncer is a character spawned by main.gd.)
 		var shops: Array = root.get_meta("shops")
 		shops.append({"type": shop, "x": door_x})
@@ -391,6 +398,15 @@ static func _checkpoint(root: Node3D) -> void:
 
 
 ## Shop sign colours and texts.
+## Tag a shop's coloured part: its own colour is remembered, and the
+## colour can drift when the player is drunk.
+static func _shop_colour(mi: MeshInstance3D, phase: float) -> void:
+	var m: StandardMaterial3D = mi.material_override
+	mi.set_meta("base_color", m.albedo_color)
+	mi.set_meta("phase", phase)
+	mi.add_to_group("shop_colour")
+
+
 const SHOP_COLORS := {"kiosk": Color(0.85, 0.15, 0.15), "bar": Color(0.35, 0.12, 0.4),
 	"pharmacy": Color(0.1, 0.5, 0.3)}
 const SHOP_SIGNS := {"kiosk": "SIGN_KIOSK", "bar": "SIGN_BAR", "pharmacy": "SIGN_PHARMACY"}

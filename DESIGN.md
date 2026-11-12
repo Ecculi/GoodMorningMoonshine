@@ -257,7 +257,8 @@ Krapula ei kovene päivien mukaan.
 - **Ilman silmälaseja** kadunnimikyltit ovat sumeita, ja niistä saa selvää vasta aivan vierestä.
 - **Humalassa** (yli 1,3 ‰) kyltin kirjaimet menevät sekaisin: yli 5 metrin päästä kyltissä on mitä sattuu kirjaimia. Lähempänä kuin 5 metriä kirjaimet ovat oikeat, mutta ne pyörivät uuteen järjestykseen jokaisella askeleella. **Jokaisella kyltillä on oma kohta** (eri kyltillä eri paikassa) kyltin lähellä: mitä lähempänä sitä kohtaa ollaan, sitä useampi kirjain on oikealla paikallaan, ja oikea nimi näkyy vasta aivan siinä kohdassa.
 - Jos on humalassa ja lasit hukassa, molemmat efektit ovat voimassa.
-- Sama koskee kauppojen kylttejä (kioski, baari).
+- Sama koskee kauppojen kylttejä (kioski, baari, apteekki).
+- **Humalassa myös kauppojen värit liukuvat:** yli 1,3 promillessa kauppojen värilliset osat (kyltin tausta, markiisin raidat ja apteekin vihreä risti) alkavat vaihtaa väriä sulavasti värikehää pitkin, jokainen kauppa omassa tahdissaan (noin 14 sekuntia per kierros). Vaikutus voimistuu humalan mukana ja on täysi 2 promillesta alkaen, joten kioskia, baaria ja apteekkia ei enää erota värin perusteella. Värit palaavat, kun humala laskee.
 
 ### Aurinko ja aurinkolasit
 
