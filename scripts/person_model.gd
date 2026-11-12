@@ -33,6 +33,21 @@ const EAT_LIFT := 0.5
 
 func start_eat() -> void:
 	eat_t = 0.0
+	_drink_lean = 0.0
+
+
+## Drinking: the same arm movement as eating, and meanwhile the upper body
+## bends back from the hips by up to `lean` radians (more the drunker).
+func start_drink(lean: float) -> void:
+	eat_t = 0.0
+	_drink_lean = lean
+
+
+## How far the upper body is bent back from the hips right now (radians);
+## the owner tilts the whole model by this and keeps the feet in place
+## (the legs stay straight, see animate()).
+var hip_lean := 0.0
+var _drink_lean := 0.0
 
 
 ## 0..1 through the eating, -1 when not eating.
@@ -128,6 +143,17 @@ func animate(walk_amount: float, dt: float, speed_mult := 1.0, silly := 0.0) -> 
 		leg_l.rotation.z = PI * 0.5
 		leg_r.rotation.z = PI * 0.5
 		arm_l.rotation.z = 0.5
+	# Bending back from the hips while drinking: up as the bottle comes to
+	# the mouth, held, and back upright at the end.
+	var want_lean := 0.0
+	if eat_t >= 0.0 and _drink_lean > 0.0:
+		var dk := eat_t / EAT_TIME
+		want_lean = _drink_lean * clampf((dk - EAT_BEND) / (EAT_LIFT - EAT_BEND), 0.0, 1.0) \
+			* clampf((1.0 - dk) / 0.15, 0.0, 1.0)
+	hip_lean = lerpf(hip_lean, want_lean, clampf(dt * 12.0, 0.0, 1.0))
+	# The legs stay upright while the body above them leans.
+	leg_l.rotation.z -= hip_lean
+	leg_r.rotation.z -= hip_lean
 	silly_bounce = absf(sin(ph)) * 0.18 * k
 	silly_lean = (0.22 + 0.08 * sin(ph * 2.0)) * k
 	_animate_right_arm(dt, s, ph, k)
