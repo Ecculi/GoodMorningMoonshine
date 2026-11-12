@@ -173,6 +173,12 @@ const WORLD_LAYER := 1
 
 var _body: RigidBody3D = null
 var _hit_done := false
+## Who threw it, if not the player (an angry passer-by throwing it back):
+## it doesn't hit them, and it can hit the player.
+var thrower = null
+## Damage to the player from things thrown back at them (by hit_kind()).
+const THROWN_BACK_DAMAGE := {Kind.BOTTLE: 8.0, Kind.CAN: 2.0, Kind.FOOD: 1.0, Kind.COFFEE: 3.0,
+	Kind.ENERGY: 4.0}
 var _still_t := 0.0
 var _air_t := 0.0
 var _frozen := false
@@ -253,12 +259,26 @@ func _fly(delta: float) -> void:
 	if not _hit_done and main.knock_high_lost(centre):
 		_hit_done = true
 		_bounce_off()
+	if not _hit_done and thrower != null:
+		var pp: Vector3 = main.player.position
+		if Vector2(centre.x - pp.x, centre.z - pp.z).length() < 0.55 and centre.y < 2.1 \
+				and not main.player.is_helpless():
+			_hit_done = true
+			var from_x: float = thrower.position.x if is_instance_valid(thrower) else centre.x
+			main.player.take_hit(THROWN_BACK_DAMAGE.get(hit_kind(), 3.0), from_x, "fight")
+			main.popup("*", pp + Vector3(0, 1.9, 0), Color(1, 0.6, 0.4))
+			_bounce_off()
+			if kind == Kind.BOTTLE and _shatters():
+				_break()
+				return
 	if not _hit_done:
 		var npc = main.npc_at(centre, 0.6)
 		var animal = main.animal_at(centre, 0.5)
+		if npc != null and npc == thrower:
+			npc = null
 		if npc != null and centre.y < 2.2:
 			_hit_done = true
-			npc.hit_by_item(hit_kind())
+			npc.hit_by_item(hit_kind(), self)
 			_bounce_off()
 			if kind == Kind.BOTTLE and _shatters():
 				_break()
@@ -383,6 +403,7 @@ func throw_from(start: Vector3, dir: Vector3, dist: float, via := Vector3.INF) -
 	state = St.FLYING
 	_hit_done = false
 	_shatter_rolled = false
+	thrower = null
 	_still_t = 0.0
 	_air_t = 0.0
 	_frozen = false

@@ -1583,6 +1583,8 @@ func _point_at_player(dt: float) -> bool:
 
 
 func _walk(dt: float) -> void:
+	if _fetch_mode != "" and _fetch(dt):
+		return
 	if _point_at_player(dt):
 		return
 	if _hug_t > 0.0:
@@ -1700,6 +1702,110 @@ func _car_circle_rage(dt: float) -> bool:
 		GameState.unlock("CAR_CIRCLE")
 		return true
 	return false
+
+
+## Hit by something thrown: "look" (head turns to it, "?"), "go" (walks
+## over), then "eat" (a sausage, sometimes) or "throw" (back at the player).
+const FETCH_CHANCE := 0.45
+const FETCH_EAT_CHANCE := 0.5
+var _fetch_item = null
+var _fetch_mode := ""
+var _fetch_t := 0.0
+
+
+func _can_fetch() -> bool:
+	return (role == "civ" or role == "punk" or role == "granny") and not stationary and not model.sitting
+
+
+func _start_fetch(it) -> void:
+	_fetch_item = it
+	_fetch_mode = "look"
+	_fetch_t = 0.0
+	state = S.WALK
+	_windup = -1.0
+	main.popup("?", position + Vector3(0, 2.2, 0), Color(1, 1, 0.8))
+
+
+func _cancel_fetch() -> void:
+	if _fetch_item != null and is_instance_valid(_fetch_item) and _fetch_item.state == Item.St.HELD \
+			and _fetch_item.get_parent() == model.hand:
+		_fetch_item.scale = Vector3.ONE
+		_fetch_item.drop_at(position + Vector3(0.3 * dir, 0, 0))
+	_fetch_item = null
+	_fetch_mode = ""
+	model.eat_t = -1.0
+	model.turn_head(0.0)
+
+
+func _fetch(dt: float) -> bool:
+	var it = _fetch_item
+	if it == null or not is_instance_valid(it):
+		_fetch_item = null
+		_fetch_mode = ""
+		model.turn_head(0.0)
+		return false
+	var p = main.player
+	_fetch_t += dt
+	match _fetch_mode:
+		"look":
+			# Head turns towards the thing for a moment.
+			var at: Vector3 = it.global_position
+			var want := atan2(-(at.z - position.z), at.x - position.x)
+			model.turn_head(clampf(wrapf(want - model.rotation.y, -PI, PI), -1.2, 1.2))
+			model.animate(0.0, dt)
+			if it.state == Item.St.HELD:
+				_cancel_fetch()  # someone (the player) got it first
+				provoke()
+				return true
+			if _fetch_t > 0.9 and it.state == Item.St.GROUND:
+				_fetch_mode = "go"
+				model.turn_head(0.0)
+		"go":
+			if it.state != Item.St.GROUND:
+				_cancel_fetch()
+				provoke()
+				return true
+			var to := Vector2(it.global_position.x - position.x, it.global_position.z - position.z)
+			if to.length() > 0.45:
+				var st := to.normalized() * minf(1.6 * dt, to.length())
+				position.x += st.x
+				position.z += st.y
+				dir = 1 if st.x >= 0.0 else -1
+				model.animate(1.0, dt, 1.2)
+			else:
+				it.hold(model.hand)
+				_fetch_t = 0.0
+				if it.kind == Item.Kind.FOOD and randf() < FETCH_EAT_CHANCE:
+					_fetch_mode = "eat"
+					model.start_eat()
+				else:
+					_fetch_mode = "throw"
+					model.raise_arm(true)
+		"eat":
+			model.animate(0.0, dt)
+			it.position = Vector3(0, -0.06, 0)
+			it.scale = Vector3.ONE * maxf(0.05, 1.0 - model.eat_bite())
+			if model.eat_t < 0.0:
+				main.remove_item(it)
+				main.popup("♥", position + Vector3(0, 2.2, 0), Color(1, 0.5, 0.6))
+				_fetch_item = null
+				_fetch_mode = ""
+		"throw":
+			# Face the player, arm up... and back it comes.
+			dir = 1 if p.position.x >= position.x else -1
+			model.animate(0.0, dt)
+			if _fetch_t > 0.45:
+				model.raise_arm(false)
+				model.punch()
+				var to3: Vector3 = p.position - position
+				to3.y = 0.0
+				it.throw_from(model.hand.global_position, to3, to3.length())
+				it.thrower = self
+				main.popup("!", position + Vector3(0, 2.2, 0), Color(1, 0.4, 0.3))
+				_fetch_item = null
+				_fetch_mode = ""
+				provoke()
+	return true
 
 
 ## Going round a car: which side (+1 / -1 in z), the line walked on
@@ -1933,6 +2039,8 @@ func _someone_else_swinging() -> bool:
 func take_hit(dmg: int, attacker: Node3D, knock_mult := 1.0, surprise := false, floor_them := false) -> void:
 	if state == S.KO:
 		return
+	if _fetch_mode != "":
+		_cancel_fetch()
 	if attacker == main.player:
 		_hit_by_player()
 		if role == "ex":
@@ -2008,7 +2116,7 @@ var times_hit := 0
 var _shoeless := false
 
 
-func hit_by_item(kind: int) -> void:
+func hit_by_item(kind: int, it = null) -> void:
 	if state == S.KO:
 		return
 	_hit_by_player()
@@ -2070,6 +2178,11 @@ func hit_by_item(kind: int) -> void:
 				state = S.STUNNED
 				_timer = 2.0
 		_:
+			# Sometimes they look at what hit them, pick it up and throw it
+			# back (or eat it, if it's a sausage).
+			if it != null and _can_fetch() and randf() < FETCH_CHANCE:
+				_start_fetch(it)
+				return
 			# Anything else just makes them cross.
 			if not is_lawman():
 				provoke()
@@ -2176,6 +2289,8 @@ func _end_ragdoll() -> void:
 ## face_down: a direction to topple the rag doll over forwards (fall on
 ## the face); zero = the usual random tumble.
 func _knock_out(push := Vector3(0, 1.5, 0), face_down := Vector3.ZERO) -> void:
+	if _fetch_mode != "":
+		_cancel_fetch()
 	if role == "exbf" and partner != null and is_instance_valid(partner):
 		main.ex_offended(partner, false)  # her man flattened: she's off
 	_drop_carried(Vector3(position.x + 0.4 * float(dir), 0.0, position.z))

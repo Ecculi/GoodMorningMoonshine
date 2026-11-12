@@ -21,6 +21,31 @@ var _windup := -1.0
 var _raised := false
 ## Arm held straight out, pointing at something in front.
 var pointing := false
+## Eating: seconds since it started (-1 = not eating). The forearm comes up
+## to a right angle at the elbow, then the arm turns up from the shoulder
+## and in, bringing the hand to the mouth, where the food goes in.
+var eat_t := -1.0
+const EAT_TIME := 1.6
+## Share of EAT_TIME: bending the elbow to 90°, then lifting to the mouth.
+const EAT_BEND := 0.22
+const EAT_LIFT := 0.5
+
+
+func start_eat() -> void:
+	eat_t = 0.0
+
+
+## 0..1 through the eating, -1 when not eating.
+func eat_progress() -> float:
+	return eat_t / EAT_TIME if eat_t >= 0.0 else -1.0
+
+
+## 0..1: how far the food has gone into the mouth (after the hand is there).
+func eat_bite() -> float:
+	var k := eat_progress()
+	if k < 0.0:
+		return 0.0
+	return clampf((k - EAT_LIFT) / (0.95 - EAT_LIFT), 0.0, 1.0)
 
 
 var shirt_color: Color
@@ -158,7 +183,29 @@ func _animate_right_arm(dt: float, s: float, ph: float, k: float) -> void:
 	var tf := 0.15  # a relaxed little bend
 	var tpull := 0.0
 	var rate := 30.0
-	if pointing and _punch_t <= 0.0 and _windup < 0.0:
+	if eat_t >= 0.0:
+		eat_t += dt
+		var k := eat_t / EAT_TIME
+		if k >= 1.0:
+			eat_t = -1.0
+		if k < EAT_BEND:
+			# Forearm up to a right angle at the elbow.
+			tz = 0.0
+			tf = lerpf(0.15, PI * 0.5, k / EAT_BEND)
+		elif k < EAT_LIFT:
+			# The whole arm turns up from the shoulder and in towards the
+			# face, the elbow closing, until the hand is at the mouth.
+			var w := (k - EAT_BEND) / (EAT_LIFT - EAT_BEND)
+			tz = lerpf(0.0, 0.4, w)
+			tf = lerpf(PI * 0.5, 2.6, w)
+			tx = lerpf(0.0, 0.5, w)
+		else:
+			# At the mouth: chewing, a little bob.
+			tz = 0.4 + 0.05 * sin(eat_t * 18.0)
+			tf = 2.6
+			tx = 0.5
+		rate = 22.0
+	elif pointing and _punch_t <= 0.0 and _windup < 0.0:
 		# Pointing: arm straight out in front, held there.
 		tz = PI * 0.5
 		tf = 0.0
