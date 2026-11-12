@@ -1029,10 +1029,20 @@ func _limit_exhausted_run(moving: bool, delta: float) -> void:
 		_exhausted_run = minf(EXHAUSTED_RUN_TIME, _exhausted_run + delta * 0.25)
 
 
+## Something in the hand is used (drunk, eaten) with a short press unless
+## someone is out to fight the player close by: then the press punches.
+## Peaceful passers-by nearby don't stop you drinking.
+const THREAT_RANGE := 2.5
+
+
+func _fight_on() -> bool:
+	return main.threat_near(position, THREAT_RANGE)
+
+
 func _short_action() -> void:
 	if main.try_enter_door(position):
 		return
-	if hand_item == null or main.nearest_npc_distance(position) > 2.5:
+	if hand_item == null or not _fight_on():
 		if main.try_search_bin(position):
 			return
 	GameState.busy_time = maxf(GameState.busy_time, 0.35)
@@ -1042,7 +1052,7 @@ func _short_action() -> void:
 	var trader = main.trader_near(position, 1.6)
 	if trader != null and trader.offer_trade(self):
 		return
-	if target == null and hand_item != null and main.nearest_npc_distance(position) > 2.5:
+	if hand_item != null and not _fight_on():
 		if hand_item.kind == Item.Kind.BOTTLE:
 			# The amount is not shown: it sinks in slowly, and you never
 			# quite know how drunk you are going to get.
@@ -1140,6 +1150,11 @@ func _punch(target, charge: float, charged := false) -> void:
 		dmg = maxi(dmg, 1) + 1
 		knock += 1.5
 		main.popup("×3", target.position + Vector3(0, 2.4, 0), Color(1, 0.75, 0.25), 1.6)
+	# Something in the hand hits harder: a bottle (which may smash on
+	# them) or a bag with a few things in it.
+	var weapon := _hand_weapon()
+	if weapon > 0:
+		dmg = maxi(dmg, 1) + weapon
 	if surprise:
 		# Double damage (even a hangover punch lands), triple when sneaking
 		# up barefoot, and a fully charged one knocks out at once.
@@ -1155,9 +1170,31 @@ func _punch(target, charge: float, charged := false) -> void:
 		main.shake(0.04 + 0.03 * mini(dmg, 4))
 		main.sfx.play("punch", target.position + Vector3(0, 1.4, 0), 0.0, 1.15 - 0.08 * mini(dmg, 4))
 	target.take_hit(dmg, self, knock, surprise, full)
+	if weapon > 0 and hand_item != null and hand_item.kind == Item.Kind.BOTTLE and randf() < BOTTLE_SMASH_CHANCE:
+		# The bottle smashes on them: shards on the street, hand empty.
+		main.popup("KLIRR!", target.position + Vector3(0, 1.9, 0), Color(0.7, 1.0, 0.75), 1.2)
+		main.spawn_glass(target.position + Vector3(-facing * 0.3, 0, 0), Item.DRINK_COLOR[hand_item.drink])
+		_consume_hand_item()
 	GameState.silly_moment.emit()
 	if charged and charge >= 1.0 and target.is_down() and target.times_hit == 1:
 		GameState.unlock("ONE_PUNCH")
+
+
+## Extra damage from what is in the hand when punching.
+const BOTTLE_HIT := 1
+const BAG_HIT := 1
+const BOTTLE_SMASH_CHANCE := 0.3
+
+
+func _hand_weapon() -> int:
+	if hand_item == null or not is_instance_valid(hand_item):
+		return 0
+	match hand_item.kind:
+		Item.Kind.BOTTLE:
+			return BOTTLE_HIT
+		Item.Kind.BAG:
+			return BAG_HIT if hand_item.contents.size() >= Item.BAG_HEAVY else 0
+	return 0
 
 
 ## Fighting system: one punch is free, but punching again right away
@@ -1369,7 +1406,7 @@ var hand_hint_t := 0.0
 func hand_short_action_key() -> String:
 	if hand_item == null:
 		return "ACT_PUNCH"
-	if main.find_npc_in_front(position, facing, PUNCH_RANGE) != null or main.nearest_npc_distance(position) <= 2.5:
+	if _fight_on():
 		return "ACT_PUNCH"
 	match hand_item.kind:
 		Item.Kind.BOTTLE, Item.Kind.COFFEE, Item.Kind.ENERGY:

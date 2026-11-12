@@ -1378,6 +1378,20 @@ func npc_at(pos: Vector3, radius: float):
 	return null
 
 
+## Someone threatening the player close by: fighting or chasing them (or
+## winding up a swing) within `r` metres. Peaceful passers-by don't count,
+## so you can drink or eat next to them.
+func threat_near(pos: Vector3, r: float) -> bool:
+	for n in npcs:
+		if n.is_down():
+			continue
+		if not (n.is_hostile() or n._windup >= 0.0):
+			continue
+		if Vector2(n.position.x - pos.x, n.position.z - pos.z).length() <= r:
+			return true
+	return false
+
+
 func nearest_npc_distance(pos: Vector3) -> float:
 	var best := INF
 	for n in npcs:
