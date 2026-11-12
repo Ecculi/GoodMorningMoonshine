@@ -73,7 +73,7 @@ const STAGGER_TIME := {Item.Kind.BOTTLE: 2.2, Item.Kind.ENERGY: 1.8, Item.Kind.C
 const DAZE_TIME_MIN := 3.0
 const DAZE_TIME_MAX := 5.0
 var _ko_time := KO_TIME
-## Knocked out this many times; at _ko_limit (2-4, per person) they stay
+## Knocked out this many times; at _ko_limit (2-3, per person) they stay
 ## out cold and don't get up any more.
 var _ko_count := 0
 var _ko_limit := 3
@@ -175,7 +175,7 @@ func setup(rng: RandomNumberGenerator, x: float, z: float, d: int, who := "civ")
 	position = Vector3(x, 0, z)
 	dir = d
 	role = who
-	_ko_limit = rng.randi_range(2, 4)
+	_ko_limit = rng.randi_range(2, 3)
 	speed = rng.randf_range(1.0, 1.6)
 	telegraphs = rng.randf() < 0.6
 	var skin: Color = SKINS[rng.randi() % SKINS.size()]
