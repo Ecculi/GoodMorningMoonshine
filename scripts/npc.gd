@@ -84,6 +84,8 @@ const PICKPOCKET_CHANCE := 0.6
 const POLICE_SPEED := 3.4
 const GUARD_SPEED := 3.0
 const GUARD_DAMAGE := 12.0
+## A knocked-out police officer drops the baton this often.
+const BATON_DROP_CHANCE := 0.5
 ## Granny: slow on her feet, but the handbag hits hard.
 const GRANNY_CHASE_SPEED := 2.1
 const GRANNY_DAMAGE := 16.0
@@ -2212,6 +2214,13 @@ func _knock_out(push := Vector3(0, 1.5, 0), face_down := Vector3.ZERO) -> void:
 	model.visible = false
 	# Let the fall play out even if the player stands still.
 	GameState.busy_time = maxf(GameState.busy_time, 1.2)
+	# A knocked-out police officer may drop the baton (the first time).
+	if role == "police" and not _looted:
+		_looted = true
+		if randf() < BATON_DROP_CHANCE:
+			var from := position + Vector3(0, 0.9, 0)
+			var b = main.spawn_item(Item.Kind.BATON, from)
+			b.launch(from, Vector3(randf_range(-1.5, 1.5), randf_range(1.5, 2.5), randf_range(-0.8, 0.8)))
 	# Loot only the first time (no farming the same person); never from
 	# police or guards.
 	if not _looted and not is_lawman():

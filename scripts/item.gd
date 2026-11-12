@@ -1,7 +1,7 @@
 extends Node3D
 ## An item on the street, in the player's hand, or flying after a throw.
 
-enum Kind { BOTTLE, CAN, FOOD, COIN, COFFEE, ENERGY, PILLS, BAG, FLYER, FLOWER }
+enum Kind { BOTTLE, CAN, FOOD, COIN, COFFEE, ENERGY, PILLS, BAG, FLYER, FLOWER, BATON }
 enum St { GROUND, HELD, FLYING }
 
 
@@ -79,6 +79,11 @@ func setup(k: Kind, v := 1, d: Drink = Drink.BOTTLE) -> void:
 			sheet.scale = Vector3(1.0, 1.0, 1.4)
 			var txt := _cyl(0.04, 0.008, Color(0.15, 0.15, 0.17), Vector3(0, 0.006, 0))
 			txt.scale = Vector3(1.0, 1.0, 1.6)
+		Kind.BATON:
+			# A police baton: black shaft, a ribbed grip at one end.
+			_cyl(0.017, 0.3, Color(0.06, 0.06, 0.07), Vector3(0, 0.15, 0))
+			_cyl(0.021, 0.08, Color(0.25, 0.25, 0.27), Vector3(0, 0.04, 0))
+			_cyl(0.022, 0.012, Color(0.12, 0.12, 0.13), Vector3(0, 0.002, 0))
 		Kind.ENERGY:
 			_cyl(0.05, 0.19, Color(0.1, 0.1, 0.12), Vector3(0, 0.095, 0))
 			_cyl(0.052, 0.06, Color(0.4, 0.95, 0.2), Vector3(0, 0.1, 0))
@@ -124,6 +129,8 @@ func update_bag_look() -> void:
 func hit_kind() -> int:
 	if kind == Kind.BAG:
 		return Kind.BOTTLE if contents.size() >= BAG_HEAVY else Kind.CAN
+	if kind == Kind.BATON:
+		return Kind.BOTTLE  # hard: hits like a bottle (but doesn't break)
 	return kind
 
 
@@ -156,9 +163,10 @@ const SHAPES := {
 	Kind.BAG: ["box", 0.2, 0.26, 0.13],
 	Kind.FLYER: ["box", 0.14, 0.02, 0.01],
 	Kind.FLOWER: ["box", 0.06, 0.34, 0.17],
+	Kind.BATON: ["cyl", 0.022, 0.3, 0.15],
 }
 const MASS := {Kind.BOTTLE: 0.8, Kind.CAN: 0.15, Kind.COFFEE: 0.3, Kind.ENERGY: 0.35, Kind.FOOD: 0.2, Kind.PILLS: 0.05,
-	Kind.FLYER: 0.03, Kind.FLOWER: 0.05}
+	Kind.FLYER: 0.03, Kind.FLOWER: 0.05, Kind.BATON: 0.6}
 ## Items fly on their own collision layer and hit the world only.
 const ITEM_LAYER := 4
 const WORLD_LAYER := 1
@@ -351,6 +359,8 @@ func hold(hand: Node3D) -> void:
 	transform = Transform3D.IDENTITY
 	position = Vector3(0, -0.2, 0)
 	_root.scale = Vector3.ONE
+	if kind == Kind.BATON:
+		_root.scale = Vector3.ONE * 1.7  # a proper length in the hand
 	_flop_vel = 0.0
 	_flop_off = 0.0
 
