@@ -1274,6 +1274,13 @@ func _apply_hip_lean() -> void:
 	model.position.y += HIP_HEIGHT * (1.0 - cos(a)) * model.scale.x
 
 
+## Drinking: where the bottle sits in the fist (along the hand's x, so its
+## neck ends at the mouth) and how far it is tipped, start to end.
+const DRINK_GRIP := -0.3
+const DRINK_TILT_START := 0.15
+const DRINK_TILT_END := 0.75
+
+
 ## How far the body bends back from the hips when drinking: a little when
 ## sober, much more the drunker (radians: about 6° up to 30° at 3 per mille).
 func _drink_lean() -> float:
@@ -1297,7 +1304,11 @@ func _update_eating() -> void:
 		var bite: float = model.eat_bite()
 		_eating.scale = Vector3.ONE * maxf(0.05, 1.0 - bite)
 	else:
-		_eating.rotation.z = lerpf(0.0, 0.9, model.eat_bite())
+		# Neck towards the mouth (the hand's +x points back at the face
+		# when the hand is up there), gripped near the neck so the rest of
+		# the bottle sticks out in front; the bottom tips up as it's drunk.
+		_eating.position = Vector3(DRINK_GRIP, -0.06, 0)
+		_eating.rotation = Vector3(0, 0, -PI * 0.5 + lerpf(DRINK_TILT_START, DRINK_TILT_END, model.eat_bite()))
 	if model.eat_t < 0.0:
 		var it = _eating
 		_eating = null
