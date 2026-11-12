@@ -1648,6 +1648,58 @@ func _walk(dt: float) -> void:
 		position.x = EDGE_X
 
 
+## Run round a car twice with someone after you and they lose it for a
+## moment: they stop, stamp and shake their fists, then carry on. The
+## laps are counted from the player's angle round the car nearest them,
+## while the pursuer is close to that car too.
+const CIRCLE_RAGE_LAPS := 2.0
+const CIRCLE_RAGE_TIME := 2.5
+const CIRCLE_NEAR := 5.0
+var _circle_car = null
+var _circle_angle := 0.0
+var _circle_sum := 0.0
+var _rage_t := 0.0
+var _rage_puff := 0.0
+
+
+func _car_circle_rage(dt: float) -> bool:
+	if _rage_t > 0.0:
+		_rage_t -= dt
+		_windup = -1.0
+		model.animate(0.0, dt)
+		# Stamping and fist shaking.
+		model.raise_arm(int(_rage_t * 5.0) % 2 == 0)
+		_flinch = -0.12 * absf(sin(_rage_t * 14.0))
+		_rage_puff -= dt
+		if _rage_puff <= 0.0:
+			_rage_puff = 0.8
+			main.popup(["#@!", "%&#!", "ARGH"][randi() % 3], position + Vector3(0, 2.2, 0), Color(1, 0.3, 0.25))
+		if _rage_t <= 0.0:
+			model.raise_arm(false)
+		return true
+	var p: Vector3 = main.player.position
+	var car = main.nearest_car(p, CIRCLE_NEAR)
+	if car == null or Vector2(car.position.x - position.x, car.position.z - position.z).length() > CIRCLE_NEAR + 1.0:
+		_circle_car = null
+		_circle_sum = 0.0
+		return false
+	var a := atan2(p.z - car.position.z, p.x - car.position.x)
+	if car != _circle_car:
+		_circle_car = car
+		_circle_angle = a
+		_circle_sum = 0.0
+		return false
+	_circle_sum += wrapf(a - _circle_angle, -PI, PI)
+	_circle_angle = a
+	if absf(_circle_sum) >= CIRCLE_RAGE_LAPS * TAU:
+		_circle_sum = 0.0
+		_rage_t = CIRCLE_RAGE_TIME
+		_rage_puff = 0.0
+		GameState.unlock("CAR_CIRCLE")
+		return true
+	return false
+
+
 ## Going round a car: which side (+1 / -1 in z), the line walked on
 ## before (NAN = not detouring) and how long ago a car was last in the way.
 var _detour_side := 0.0
@@ -1740,6 +1792,8 @@ func end_choke() -> void:
 
 ## Police: run after the player. Contact time is counted in main.gd.
 func _chase(dt: float) -> void:
+	if _car_circle_rage(dt):
+		return
 	var p = main.player
 	var to := Vector2(p.position.x - position.x, p.position.z - position.z)
 	dir = 1 if to.x >= 0.0 else -1
@@ -1784,6 +1838,8 @@ func _chase(dt: float) -> void:
 
 
 func _fight(dt: float) -> void:
+	if _car_circle_rage(dt):
+		return
 	var p = main.player
 	var dx: float = p.position.x - position.x
 	var dz: float = p.position.z - position.z
