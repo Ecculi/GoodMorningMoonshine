@@ -25,7 +25,7 @@ var pointing := false
 ## to a right angle at the elbow, then the arm turns up from the shoulder
 ## and in, bringing the hand to the mouth, where the food goes in.
 var eat_t := -1.0
-const EAT_TIME := 1.6
+const EAT_TIME := 1.28
 ## Share of EAT_TIME: bending the elbow to 90°, then lifting to the mouth.
 const EAT_BEND := 0.22
 const EAT_LIFT := 0.5
