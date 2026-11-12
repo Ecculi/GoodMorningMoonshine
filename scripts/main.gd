@@ -2189,6 +2189,20 @@ func spawn_driver(car, pos: Vector3):
 	return n
 
 
+## The car closest to `pos` within `r` metres (centre to centre), or null.
+func nearest_car(pos: Vector3, r: float):
+	var best = null
+	var best_d := r
+	for c in cars:
+		if not is_instance_valid(c):
+			continue
+		var d := Vector2(c.position.x - pos.x, c.position.z - pos.z).length()
+		if d < best_d:
+			best_d = d
+			best = c
+	return best
+
+
 ## A car right in front of someone at `pos` heading `moved` (a step),
 ## or null. Only cars blocking the way count, not ones beside the path.
 func car_in_way(pos: Vector3, moved: Vector2):

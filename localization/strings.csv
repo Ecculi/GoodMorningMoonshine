@@ -308,3 +308,5 @@ ACH_NEVER_AGAIN,Ei ikinä enää
 ACH_NEVER_AGAIN_DESC,Selviä päivästä 10 tapaamatta exää.
 ACH_EX_BACK,Takaisin saatu
 ACH_EX_BACK_DESC,Saa hukattu tavara takaisin exältä.
+ACH_CAR_CIRCLE,Hippa auton ympäri
+ACH_CAR_CIRCLE_DESC,"Juokse auton ympäri kahdesti niin, että takaa-ajaja raivostuu."
