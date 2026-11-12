@@ -292,7 +292,9 @@ func _process(delta: float) -> void:
 	model.shade_eyes = move_toward(model.shade_eyes, main.shade_amount(), delta * 3.0)
 	model.set_shoes(not GameState.is_lost("shoes"))
 
-	_handle_action(delta)
+	_update_eating()
+	if _eating == null:
+		_handle_action(delta)
 	_check_pickups()
 	_check_glass(delta)
 	_hunger_signs()
@@ -1070,9 +1072,10 @@ func _short_action() -> void:
 			_consume_hand_item()
 			return
 		if hand_item.kind == Item.Kind.FOOD:
-			GameState.eat()
-			main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
-			_consume_hand_item()
+			# Up to the mouth and in (see _update_eating).
+			_eating = hand_item
+			model.start_eat()
+			GameState.busy_time = maxf(GameState.busy_time, model.EAT_TIME)
 			return
 		if hand_item.kind == Item.Kind.PILLS:
 			GameState.take_pills()
@@ -1255,6 +1258,30 @@ func _update_rest(delta: float) -> void:
 		# Let it be seen: the heart over the head fills back up.
 		if GameState.strain > 5.0:
 			main.hud.show_head_heart_briefly()
+
+
+## The food being eaten (still in the hand until it's all in the mouth).
+var _eating = null
+
+
+func _update_eating() -> void:
+	if _eating == null:
+		return
+	if not is_instance_valid(_eating) or _eating != hand_item:
+		if is_instance_valid(_eating):
+			_eating.scale = Vector3.ONE
+		_eating = null
+		model.eat_t = -1.0
+		return
+	# Held in the fist, going into the mouth bit by bit.
+	_eating.position = Vector3(0, -0.06, 0)
+	var bite: float = model.eat_bite()
+	_eating.scale = Vector3.ONE * maxf(0.05, 1.0 - bite)
+	if model.eat_t < 0.0:
+		_eating = null
+		GameState.eat()
+		main.popup("+", position + Vector3(0, 2.1, 0), Color(1, 0.35, 0.35))
+		_consume_hand_item()
 
 
 func _consume_hand_item() -> void:
