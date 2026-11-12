@@ -160,6 +160,7 @@ func _ready() -> void:
 	_build_precipitation()
 	_build_camera()
 	_build_post_process()
+	_prewarm_glass()
 
 	player = Player.new()
 	player.main = self
@@ -1413,6 +1414,18 @@ func spawn_item(kind: int, pos: Vector3, value := 1, drink := 0):
 
 
 ## A bottle smashed here: shards on the ground (stay for the day).
+## Draw a bit of broken glass once, tiny, right in front of the camera at
+## the start, so its see-through glinting shader gets compiled while the
+## game loads, not in the middle of the first smashed bottle.
+func _prewarm_glass() -> void:
+	var g = Glass.new()
+	g.setup(rng, Item.DRINK_COLOR[Item.Drink.BOTTLE])
+	camera.add_child(g)
+	g.position = Vector3(0, 0, -1.0)
+	g.scale = Vector3.ONE * 0.01
+	get_tree().create_timer(0.5).timeout.connect(g.queue_free)
+
+
 func spawn_glass(pos: Vector3, col: Color) -> void:
 	var g = Glass.new()
 	g.main = self
