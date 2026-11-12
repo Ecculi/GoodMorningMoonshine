@@ -1522,6 +1522,10 @@ func _process(_delta: float) -> void:
 			if absf(position.x) > EDGE_X:
 				main.respawn_npc(self)
 				return
+	# A car in the way (parked, stopped, wrecked): go round it instead of
+	# walking into it on the spot.
+	if state != S.KO:
+		_go_round_cars(Vector2(position.x - start_pos.x, position.z - start_pos.z), dt)
 	position.x += _knock * dt
 	_knock = move_toward(_knock, 0.0, 12.0 * dt)
 	# Cars are solid for everyone.
@@ -1633,10 +1637,59 @@ func _walk(dt: float) -> void:
 			return
 	position.x += dir * speed * dt
 	model.animate(1.0, dt, speed / 1.3)
+	# Back to the line they were walking on after going round a car.
+	if not is_nan(_lane_z) and _detour_t <= 0.0:
+		position.z = move_toward(position.z, _lane_z, 0.8 * dt)
+		if absf(position.z - _lane_z) < 0.02:
+			_lane_z = NAN
 	if position.x > EDGE_X:
 		position.x = -EDGE_X
 	elif position.x < -EDGE_X:
 		position.x = EDGE_X
+
+
+## Going round a car: which side (+1 / -1 in z), the line walked on
+## before (NAN = not detouring) and how long ago a car was last in the way.
+var _detour_side := 0.0
+var _detour_car = null
+var _lane_z := NAN
+var _detour_t := 0.0
+## Clearance kept from a car's side when going round it.
+const CAR_CLEARANCE := 0.55
+
+
+## Moving (`moved` this frame) into a car: sidestep along the car to its
+## nearer free side, keeping the same pace, so the person goes round it
+## (and on past it) instead of pushing against it. The side is kept until
+## the car is passed, so nobody dithers at the bumper.
+func _go_round_cars(moved: Vector2, dt: float) -> void:
+	_detour_t = maxf(0.0, _detour_t - dt)
+	var step := moved.length()
+	if step < 0.0001:
+		return
+	var car = main.car_in_way(position, moved)
+	if car == null:
+		_detour_car = null
+		return
+	if is_nan(_lane_z):
+		_lane_z = start_lane_z(moved)
+	_detour_t = 0.6
+	var hw: float = main.Car.HALF_WIDTH + CAR_CLEARANCE
+	if car != _detour_car:
+		_detour_car = car
+		_detour_side = 1.0 if position.z >= car.position.z else -1.0
+		# No room on that side (wall, hedge): the other way.
+		var tz: float = car.position.z + _detour_side * hw
+		if tz < -7.4 or tz > 5.2:
+			_detour_side = -_detour_side
+	var target_z: float = clampf(car.position.z + _detour_side * hw, -7.4, 5.2)
+	# Undo most of the push into the car and step sideways instead.
+	position.x -= moved.x * 0.85
+	position.z = move_toward(position.z, target_z, maxf(step, 1.2 * dt))
+
+
+func start_lane_z(moved: Vector2) -> float:
+	return position.z - moved.y
 
 
 ## The player hit this person. Decides once who started it: if they were

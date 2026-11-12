@@ -2189,6 +2189,20 @@ func spawn_driver(car, pos: Vector3):
 	return n
 
 
+## A car right in front of someone at `pos` heading `moved` (a step),
+## or null. Only cars blocking the way count, not ones beside the path.
+func car_in_way(pos: Vector3, moved: Vector2):
+	var look := pos + Vector3(moved.normalized().x, 0, moved.normalized().y) * 0.35
+	for c in cars:
+		if not is_instance_valid(c):
+			continue
+		var hx: float = Car.HALF_LEN + 0.3
+		var hz: float = Car.HALF_WIDTH + 0.3
+		if absf(look.x - c.position.x) < hx and absf(look.z - c.position.z) < hz:
+			return c
+	return null
+
+
 ## Keeps a person out of the cars' footprints (cars are solid).
 func push_out_of_cars(pos: Vector3) -> Vector3:
 	for c in cars:
