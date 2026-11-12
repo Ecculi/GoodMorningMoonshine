@@ -1182,6 +1182,7 @@ func _punch(target, charge: float, charged := false) -> void:
 
 ## Extra damage from what is in the hand when punching.
 const BOTTLE_HIT := 1
+const BATON_HIT := 2
 const BAG_HIT := 1
 const BOTTLE_SMASH_CHANCE := 0.3
 
@@ -1192,6 +1193,8 @@ func _hand_weapon() -> int:
 	match hand_item.kind:
 		Item.Kind.BOTTLE:
 			return BOTTLE_HIT
+		Item.Kind.BATON:
+			return BATON_HIT
 		Item.Kind.BAG:
 			return BAG_HIT if hand_item.contents.size() >= Item.BAG_HEAVY else 0
 	return 0

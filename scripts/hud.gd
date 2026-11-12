@@ -292,6 +292,9 @@ func _draw_kind_icon(c: Vector2, kind: int, drink: int) -> void:
 			draw_line(c + Vector2(0, 2), c + Vector2(0, 9), Color(0.2, 0.6, 0.2), 2.0)
 			draw_circle(c + Vector2(0, -2), 5.0, Color(0.95, 0.3, 0.45))
 			draw_circle(c + Vector2(0, -2), 2.0, Color(1, 0.9, 0.3))
+		Item.Kind.BATON:
+			draw_line(c + Vector2(-8, 8), c + Vector2(8, -8), Color(0.08, 0.08, 0.09), 4.0, true)
+			draw_line(c + Vector2(-8, 8), c + Vector2(-4, 4), Color(0.4, 0.4, 0.42), 5.0, true)
 		Item.Kind.FLYER:
 			draw_rect(Rect2(c + Vector2(-5, -7), Vector2(10, 14)), Color(0.97, 0.97, 0.95))
 			for k in 3:

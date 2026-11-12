@@ -212,6 +212,7 @@ func _process(delta: float) -> void:
 	_check_lost_pickups()
 	_check_arrest()
 	_check_choke()
+	_check_baton_seen()
 	_check_checkpoint()
 	_update_signs()
 	_update_shop_colors(delta)
@@ -2215,6 +2216,19 @@ func nearest_car(pos: Vector3, r: float):
 			best_d = d
 			best = c
 	return best
+
+
+## Walking about with a police baton: any police officer who sees it
+## (in the vision cone) comes after the player.
+func _check_baton_seen() -> void:
+	var h = player.hand_item
+	if h == null or not is_instance_valid(h) or h.kind != Item.Kind.BATON or GameState.world_dt <= 0.0:
+		return
+	var sight := police_sight()
+	for n in npcs:
+		if n.role == "police" and n.state == Npc.S.WALK and not n.is_down() and n.sees(player.position, sight):
+			popup("!", n.position + Vector3(0, 2.4, 0), Color(0.3, 0.5, 1.0))
+			n.notice()
 
 
 ## A car right in front of someone at `pos` heading `moved` (a step),
