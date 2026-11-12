@@ -76,15 +76,34 @@ func _draw_breathalyser(vs: Vector2) -> void:
 
 # --- Phone ------------------------------------------------------------------
 
+## Size of the phone held sideways on touch screens (before scaling up).
+const PHONE_WIDE := Vector2(600, 338)
+
+
 func _draw_phone(vs: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, vs), Color(0, 0, 0, 0.45))
-	var h := minf(vs.y * 0.9, 560.0)
-	var w := h * 0.56
-	var body := Rect2((vs - Vector2(w, h)) * 0.5, Vector2(w, h))
-	draw_rect(body, Color(0.08, 0.08, 0.1))
-	var scr := body.grow(-12.0)
-	scr.position.y += 18.0
-	scr.size.y -= 36.0
+	var body: Rect2
+	var scr: Rect2
+	var wide := DisplayServer.is_touchscreen_available()
+	if wide:
+		# On a phone the game's phone is held sideways and scaled up to
+		# nearly the full screen height, text and icons with it (a
+		# portrait phone on a landscape phone screen was tiny).
+		var k := minf(vs.y * 0.96 / PHONE_WIDE.y, vs.x * 0.86 / (PHONE_WIDE.x + 90.0))
+		draw_set_transform(vs * 0.5, 0.0, Vector2(k, k))
+		body = Rect2(-PHONE_WIDE * 0.5, PHONE_WIDE)
+		draw_rect(body, Color(0.08, 0.08, 0.1))
+		scr = body.grow(-10.0)
+		scr.position.x += 18.0
+		scr.size.x -= 36.0
+	else:
+		var h := minf(vs.y * 0.9, 560.0)
+		var w := h * 0.56
+		body = Rect2((vs - Vector2(w, h)) * 0.5, Vector2(w, h))
+		draw_rect(body, Color(0.08, 0.08, 0.1))
+		scr = body.grow(-12.0)
+		scr.position.y += 18.0
+		scr.size.y -= 36.0
 	draw_rect(scr, Color(0.95, 0.95, 0.97))
 	# Status bar: battery and page dots.
 	_draw_battery(Vector2(scr.end.x - 46, scr.position.y + 8), GameState.battery)
@@ -93,6 +112,7 @@ func _draw_phone(vs: Vector2) -> void:
 		draw_circle(c, 4.0, Color(0.2, 0.2, 0.25) if i == main.phone_page else Color(0.75, 0.75, 0.8))
 	if main.phone_dead_t > 0.0:
 		_draw_dead_battery(scr)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		return
 	var content := Rect2(scr.position + Vector2(8, 30), scr.size - Vector2(16, 56))
 	match main.phone_page:
@@ -106,6 +126,7 @@ func _draw_phone(vs: Vector2) -> void:
 	var mid := body.get_center().y
 	_arrow(Vector2(body.position.x - 22, mid), -1)
 	_arrow(Vector2(body.end.x + 22, mid), 1)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## Dark screen with a big empty battery blinking in red.
