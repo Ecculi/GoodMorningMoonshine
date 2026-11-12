@@ -286,6 +286,7 @@ Krapula ei kovene päivien mukaan.
 
 ### Puhelin
 
+- **Kosketusnäytöllä puhelin on vaakatasossa ja iso:** pelin puhelin käännetään vaakaan ja skaalataan lähes koko ruudun korkuiseksi, joten tekstit, kuvakkeet ja kartta ovat noin kaksi kertaa isompia kuin pystypuhelimessa. Tietokoneella puhelin on pystyssä kuten ennenkin.
 - Puhelin auttaa vain **tavaroiden löytämisessä** ja **oman sijainnin selvittämisessä**.
 - Käyttö on hyvin yksinkertaista: näkymiä selataan vain sivusuunnassa tässä järjestyksessä:
   1. **Viestit:** näkyvät listana kuten WhatsAppissa. Viestit ovat **enimmäkseen emojeja ja pieniä kuvia**, ja välissä on muutama sana, kuten kadunnimi (esim. 🍺➡️ Kirkkokatu 👟❓). Niistä saa vihjeitä siitä, missä hahmo oli eilen.
