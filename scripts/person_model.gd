@@ -185,20 +185,20 @@ func _animate_right_arm(dt: float, s: float, ph: float, k: float) -> void:
 	var rate := 30.0
 	if eat_t >= 0.0:
 		eat_t += dt
-		var k := eat_t / EAT_TIME
-		if k >= 1.0:
+		var ek := eat_t / EAT_TIME
+		if ek >= 1.0:
 			eat_t = -1.0
-		if k < EAT_BEND:
+		if ek < EAT_BEND:
 			# Forearm up to a right angle at the elbow.
 			tz = 0.0
-			tf = lerpf(0.15, PI * 0.5, k / EAT_BEND)
-		elif k < EAT_LIFT:
+			tf = lerpf(0.15, PI * 0.5, ek / EAT_BEND)
+		elif ek < EAT_LIFT:
 			# The whole arm turns up from the shoulder and in towards the
 			# face, the elbow closing, until the hand is at the mouth.
-			var w := (k - EAT_BEND) / (EAT_LIFT - EAT_BEND)
-			tz = lerpf(0.0, 0.4, w)
-			tf = lerpf(PI * 0.5, 2.6, w)
-			tx = lerpf(0.0, 0.5, w)
+			var ew := (ek - EAT_BEND) / (EAT_LIFT - EAT_BEND)
+			tz = lerpf(0.0, 0.4, ew)
+			tf = lerpf(PI * 0.5, 2.6, ew)
+			tx = lerpf(0.0, 0.5, ew)
 		else:
 			# At the mouth: chewing, a little bob.
 			tz = 0.4 + 0.05 * sin(eat_t * 18.0)
